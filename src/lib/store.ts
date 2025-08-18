@@ -39,7 +39,7 @@ const useProjectStore = create<State & Actions>()(
     setActiveProject: (projectId) => {
       const project = get().projects.find((p) => p.id === projectId);
       if (project) {
-        set({ activeProject: project, activeBlockId: project.blocks[0]?.id || null });
+        set({ activeProject: project, activeBlockId: project.blocks && project.blocks.length > 0 ? project.blocks[0]?.id : null });
       }
     },
     
