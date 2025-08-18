@@ -17,6 +17,7 @@ export interface BlockContent {
   // Image
   url?: string;
   alt?: string;
+  caption?: string; // Legenda opcional para a imagem
   // Video
   videoUrl?: string;
   // Button
@@ -42,7 +43,7 @@ export interface Theme {
 }
 
 export interface Project {
-  id: string;
+  id:string;
   title: string;
   description: string;
   theme: Theme;

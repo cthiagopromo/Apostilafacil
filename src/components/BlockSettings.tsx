@@ -1,4 +1,3 @@
-
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -64,6 +63,15 @@ const BlockSettings = () => {
                                 value={activeBlock.content.alt || ''} 
                                 onChange={e => updateBlockContent(activeBlock.id, { alt: e.target.value })} 
                                 placeholder="Descrição da imagem"
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="image-caption">Legenda (Opcional)</Label>
+                            <Input 
+                                id="image-caption" 
+                                value={activeBlock.content.caption || ''} 
+                                onChange={e => updateBlockContent(activeBlock.id, { caption: e.target.value })} 
+                                placeholder="Legenda da imagem"
                             />
                         </div>
                     </div>

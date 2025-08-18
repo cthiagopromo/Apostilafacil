@@ -98,7 +98,7 @@ const useProjectStore = create<State & Actions>()(
                 content = { text: '<p>Novo bloco de texto...</p>' };
                 break;
             case 'image':
-                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image' };
+                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '' };
                 break;
             case 'video':
                 content = { videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
@@ -188,6 +188,10 @@ const useProjectStore = create<State & Actions>()(
 
                 const newBlock = produce(blockToDuplicate, draft => {
                     draft.id = `block_${new Date().getTime()}`;
+                    // Reset quiz answers on duplication
+                    if(draft.type === 'quiz') {
+                        draft.content.userAnswerId = null;
+                    }
                 });
 
                 const index = project.blocks.findIndex(b => b.id === blockId);
@@ -259,10 +263,20 @@ const useProjectStore = create<State & Actions>()(
     
     resetQuiz: (blockId) => {
         set(state => {
-            const block = state.activeProject?.blocks.find(b => b.id === blockId);
-            if (block && block.type === 'quiz') {
-                block.content.userAnswerId = null;
-            }
+            // We need to update both the active project and the project in the main list
+            const projectsToUpdate = [
+                state.activeProject,
+                ...state.projects.filter(p => p.id === state.activeProject?.id)
+            ];
+            
+            projectsToUpdate.forEach(proj => {
+                if (proj) {
+                    const block = proj.blocks.find(b => b.id === blockId);
+                    if (block && block.type === 'quiz') {
+                        block.content.userAnswerId = null;
+                    }
+                }
+            });
         })
     }
 

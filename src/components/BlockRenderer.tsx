@@ -87,8 +87,11 @@ const BlockRenderer = ({ block }: { block: Block }) => {
             return <div dangerouslySetInnerHTML={{ __html: block.content.text || '' }} className="prose dark:prose-invert max-w-none" />;
         case 'image':
             return (
-                <div className='flex justify-center'>
+                <div className='flex flex-col items-center gap-2'>
                     <img src={block.content.url || 'https://placehold.co/600x400.png'} alt={block.content.alt || 'Placeholder image'} className="rounded-md shadow-md max-w-full h-auto" />
+                    {block.content.caption && (
+                        <figcaption className="text-sm text-center text-muted-foreground italic">{block.content.caption}</figcaption>
+                    )}
                 </div>
             )
         case 'video':

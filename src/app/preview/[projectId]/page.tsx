@@ -1,4 +1,3 @@
-// This is a new file
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,32 +7,7 @@ import type { Project } from '@/lib/types';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Book } from 'lucide-react';
-import { toKebabCase } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
-
-const hexToHsl = (hex: string): string => {
-  hex = hex.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-  
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-  
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-};
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -58,36 +32,9 @@ export default function PreviewPage() {
     );
   }
 
-  const { theme, title, blocks } = project;
-
-  const cssVariables = `
-    :root {
-      --background: ${hexToHsl(theme.colorBackground)};
-      --primary: ${hexToHsl(theme.colorPrimary)};
-      --accent: ${hexToHsl(theme.colorAccent)};
-      --foreground: 222.2 84% 4.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 0 0% 3.9%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 0 0% 3.9%;
-      --primary-foreground: 0 0% 98%;
-      --secondary: 0 0% 96.1%;
-      --secondary-foreground: 0 0% 9%;
-      --muted: 0 0% 96.1%;
-      --muted-foreground: 0 0% 45.1%;
-      --accent-foreground: 0 0% 9%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 0 0% 89.8%;
-      --input: 0 0% 89.8%;
-      --ring: ${hexToHsl(theme.colorPrimary)};
-      --radius: 0.5rem;
-    }
-  `;
+  const { title, blocks } = project;
 
   return (
-    <>
-      <style>{cssVariables}</style>
       <div className="min-h-screen bg-background text-foreground">
         <header className="sticky top-0 z-10 flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b">
             <div className='flex items-center gap-4'>
@@ -109,6 +56,5 @@ export default function PreviewPage() {
             ))}
         </main>
       </div>
-    </>
   );
 }
