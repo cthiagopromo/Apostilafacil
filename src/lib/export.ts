@@ -91,29 +91,24 @@ export async function exportToPdf(projects: Project[]) {
         format: 'a4'
     });
 
-    // Use a single project for now as an example, but you could loop
     const project = projects[0]; 
     const htmlContent = generatePdfHtmlForProject(project);
 
-    // Create a temporary element to render the HTML
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px'; // Position off-screen
-    tempDiv.style.width = '600px'; // A bit wider than A4 to ensure good rendering
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.width = '600px'; 
     tempDiv.innerHTML = htmlContent;
     document.body.appendChild(tempDiv);
     
-    // Use html2canvas to capture the content
     const canvas = await html2canvas(tempDiv.querySelector('#pdf-content')!, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true, // For external images
+        scale: 2, 
+        useCORS: true,
         logging: true,
     });
 
-    // Clean up the temporary element
     document.body.removeChild(tempDiv);
 
-    // Add the captured image to the PDF
     const imgData = canvas.toDataURL('image/png');
     const imgProps = doc.getImageProperties(imgData);
     const pdfWidth = doc.internal.pageSize.getWidth();
@@ -121,15 +116,16 @@ export async function exportToPdf(projects: Project[]) {
     
     let heightLeft = pdfHeight;
     let position = 0;
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-    heightLeft -= doc.internal.pageSize.getHeight();
+    doc.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, pdfHeight);
+    heightLeft -= pageHeight;
 
     while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
+        position -= pageHeight;
         doc.addPage();
-        doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= doc.internal.pageSize.getHeight();
+        doc.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, pdfHeight);
+        heightLeft -= pageHeight;
     }
     
     const mainTitle = projects.length > 0 ? projects[0].title : 'apostila';
@@ -1006,3 +1002,5 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
+
+    
