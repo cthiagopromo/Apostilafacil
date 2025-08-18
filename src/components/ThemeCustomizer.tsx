@@ -1,16 +1,20 @@
 'use client';
 
-import { useProject } from '@/context/ProjectContext';
+import useProjectStore from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ThemeCustomizer() {
-  const { project, updateProject } = useProject();
+  const { activeProject } = useProjectStore();
 
   const handleThemeChange = (key: string, value: string) => {
-    updateProject({ theme: { ...project.theme, [key]: value } });
+    // Lógica para atualizar o tema no Zustand
   };
+
+  if (!activeProject) {
+    return null;
+  }
 
   return (
     <Card>
@@ -24,12 +28,12 @@ export default function ThemeCustomizer() {
              <Input
                 type="color"
                 className="p-1 h-10 w-10"
-                value={project.theme.colorPrimary}
+                value={activeProject.theme.colorPrimary}
                 onChange={(e) => handleThemeChange('colorPrimary', e.target.value)}
             />
             <Input
               id="primary-color"
-              value={project.theme.colorPrimary}
+              value={activeProject.theme.colorPrimary}
               onChange={(e) => handleThemeChange('colorPrimary', e.target.value)}
             />
           </div>
@@ -40,12 +44,12 @@ export default function ThemeCustomizer() {
             <Input
                 type="color"
                 className="p-1 h-10 w-10"
-                value={project.theme.colorBackground}
+                value={activeProject.theme.colorBackground}
                 onChange={(e) => handleThemeChange('colorBackground', e.target.value)}
             />
             <Input
               id="background-color"
-              value={project.theme.colorBackground}
+              value={activeProject.theme.colorBackground}
               onChange={(e) => handleThemeChange('colorBackground', e.target.value)}
             />
           </div>
@@ -56,12 +60,12 @@ export default function ThemeCustomizer() {
             <Input
                 type="color"
                 className="p-1 h-10 w-10"
-                value={project.theme.colorAccent}
+                value={activeProject.theme.colorAccent}
                 onChange={(e) => handleThemeChange('colorAccent', e.target.value)}
             />
             <Input
               id="accent-color"
-              value={project.theme.colorAccent}
+              value={activeProject.theme.colorAccent}
               onChange={(e) => handleThemeChange('colorAccent', e.target.value)}
             />
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useProject } from '@/context/ProjectContext';
+import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
@@ -16,42 +16,41 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export default function ModuleList() {
-  const { project, activeModuleId, setActiveModuleId, deleteModule, reorderModules } = useProject();
+export default function PageList() {
+  const { activeProject, activePageId, setActivePageId } = useProjectStore();
 
+  if (!activeProject) {
+    return <div className="p-4 text-sm text-muted-foreground">Nenhum projeto ativo.</div>;
+  }
+  
   const handleMove = (index: number, direction: 'up' | 'down') => {
-    const newModules = [...project.modules];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newModules.length) return;
-
-    [newModules[index], newModules[targetIndex]] = [newModules[targetIndex], newModules[index]];
-    reorderModules(newModules);
+    // Lógica de reordenação a ser implementada no Zustand
   };
   
   return (
     <nav className="p-2 space-y-1">
-      {project.modules.map((module, index) => (
+      {activeProject.pages.map((page, index) => (
         <div
-          key={module.id}
+          key={page.id}
           className={cn(
             'group flex items-center justify-between rounded-md text-sm font-medium transition-colors',
-            activeModuleId === module.id
+            activePageId === page.id
               ? 'bg-primary/10 text-primary'
               : 'hover:bg-muted'
           )}
         >
           <button
-            onClick={() => setActiveModuleId(module.id)}
+            onClick={() => setActivePageId(page.id)}
             className="flex-1 flex items-center gap-2 text-left p-2 truncate"
           >
             <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-            <span className="truncate">{module.title}</span>
+            <span className="truncate">{page.title}</span>
           </button>
           <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity pr-1">
              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
                 <ArrowUp className="h-4 w-4"/>
              </Button>
-             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove(index, 'down')} disabled={index === project.modules.length - 1}>
+             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMove(index, 'down')} disabled={index === activeProject.pages.length - 1}>
                 <ArrowDown className="h-4 w-4"/>
              </Button>
             <AlertDialog>
@@ -64,12 +63,12 @@ export default function ModuleList() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isto irá deletar permanentemente o módulo "{module.title}".
+                    Esta ação não pode ser desfeita. Isto irá deletar permanentemente a página "{page.title}".
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteModule(module.id)}>Deletar</AlertDialogAction>
+                  <AlertDialogAction onClick={() => { /* Lógica de deleção */ }}>Deletar</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

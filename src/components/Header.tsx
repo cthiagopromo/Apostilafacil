@@ -1,19 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { useProject } from '@/context/ProjectContext';
+import { useState, useEffect } from 'react';
+import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Book, PlusCircle, Eye, Download, Check, X } from 'lucide-react';
+import { Book, PlusCircle, Eye, Download, Check, X, Home, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Header() {
-  const { project, updateProject } = useProject();
+  const activeProject = useProjectStore((s) => s.activeProject);
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(project.title);
+  const [title, setTitle] = useState(activeProject?.title || '');
+
+  useEffect(() => {
+    setTitle(activeProject?.title || '');
+  }, [activeProject]);
 
   const handleTitleSave = () => {
     if (title.trim()) {
-      updateProject({ title: title.trim() });
+      // Lógica para atualizar o título do projeto no Zustand
       setIsEditing(false);
     }
   };
@@ -22,7 +27,7 @@ export default function Header() {
     if (e.key === 'Enter') {
       handleTitleSave();
     } else if (e.key === 'Escape') {
-      setTitle(project.title);
+      setTitle(activeProject?.title || '');
       setIsEditing(false);
     }
   };
@@ -31,33 +36,42 @@ export default function Header() {
     <header className="flex items-center justify-between p-2 h-16 bg-card/80 backdrop-blur-sm border-b">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-primary">
+            <Link href="/" passHref>
+                <Button variant="ghost" size="icon">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+            </Link>
           <Book className="h-7 w-7" />
           <span className="text-xl font-bold">ApostilaFácil</span>
         </div>
         <div className="w-px h-6 bg-border mx-2"></div>
-        {isEditing ? (
-          <div className="flex items-center gap-2">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-9"
-              autoFocus
-            />
-            <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleTitleSave}>
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => setIsEditing(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <h1
-            className="text-lg font-semibold cursor-pointer rounded-md px-2 py-1 hover:bg-muted"
-            onClick={() => setIsEditing(true)}
-          >
-            {project.title}
-          </h1>
+        {activeProject && (
+          <>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="h-9"
+                  autoFocus
+                />
+                <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleTitleSave}>
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => setIsEditing(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <h1
+                className="text-lg font-semibold cursor-pointer rounded-md px-2 py-1 hover:bg-muted"
+                onClick={() => setIsEditing(true)}
+              >
+                {activeProject.title}
+              </h1>
+            )}
+          </>
         )}
       </div>
       <div className="flex items-center gap-2">

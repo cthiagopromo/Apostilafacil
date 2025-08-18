@@ -1,31 +1,45 @@
-export interface Block {
-  id: string;
-  type: 'quiz' | 'callout' | 'accordion';
-  props: Record<string, any>;
+export type TemplateType = 
+  | 'cover' 
+  | 'text_image' 
+  | 'columns' 
+  | 'list' 
+  | 'highlight_box'
+  | 'timeline'
+  | 'text_media';
+
+export interface PageContent {
+  title?: string;
+  subtitle?: string;
+  backgroundImageUrl?: string;
+  alt?: string;
+  text?: string;
+  imageUrl?: string;
+  columns?: string[];
+  items?: string[];
+  videoUrl?: string;
+  events?: { year: string; description: string }[];
 }
 
-export interface Module {
+export interface Page {
   id: string;
   title: string;
-  slug: string;
-  contentHTML: string;
-  blocks: Block[];
+  template: TemplateType;
+  content: PageContent;
 }
 
-export interface ThemeTokens {
+export interface Theme {
   colorPrimary: string;
   colorBackground: string;
   colorAccent: string;
   fontBody: string;
-  containerWidth: 'sm' | 'md' | 'lg';
 }
 
 export interface Project {
   id: string;
   title: string;
   description: string;
-  theme: ThemeTokens;
-  modules: Module[];
+  theme: Theme;
+  pages: Page[];
   version: string;
   createdAt: string;
   updatedAt: string;

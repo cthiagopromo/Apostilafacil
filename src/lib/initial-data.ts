@@ -1,33 +1,42 @@
 import type { Project } from './types';
 
-export const initialProject: Project = {
-  id: `proj_${new Date().getTime()}`,
-  title: 'Apostila de Biologia Celular',
-  description: 'Uma introdução à fascinante jornada dentro da célula.',
-  theme: {
-    colorPrimary: '#2563EB',
-    colorBackground: '#F9FAFB',
-    colorAccent: '#60A5FA',
-    fontBody: 'Inter',
-    containerWidth: 'md',
+export const initialProjects: Project[] = [
+  {
+    id: `proj_${new Date().getTime()}`,
+    title: 'Apostila de Biologia Celular',
+    description: 'Uma introdução à fascinante jornada dentro da célula.',
+    theme: {
+      colorPrimary: '#2563EB',
+      colorBackground: '#F9FAFB',
+      colorAccent: '#60A5FA',
+      fontBody: 'Inter',
+    },
+    pages: [
+      {
+        id: `page_${new Date().getTime()}`,
+        title: 'Capa',
+        template: 'cover',
+        content: {
+          title: 'Biologia Celular',
+          subtitle: 'Uma Viagem ao Centro da Vida',
+          backgroundImageUrl: 'https://placehold.co/1200x800.png',
+          alt: 'ilustracao de celulas',
+        },
+      },
+      {
+        id: `page_${new Date().getTime() + 1}`,
+        title: 'Introdução',
+        template: 'text_image',
+        content: {
+          title: 'O que é uma Célula?',
+          text: 'A célula é a menor unidade estrutural e funcional dos seres vivos. Todos os organismos, desde as bactérias mais simples até os seres humanos, são compostos por células.',
+          imageUrl: 'https://placehold.co/600x400.png',
+          alt: 'diagrama de uma celula eucarionte',
+        },
+      },
+    ],
+    version: '1.0.0',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
-  modules: [
-    {
-      id: `mod_${new Date().getTime()}`,
-      title: 'Introdução à Célula',
-      slug: 'introducao-a-celula',
-      contentHTML: `<h1>Bem-vindo à Biologia Celular!</h1><p>Neste módulo, vamos explorar os fundamentos da célula, a unidade básica da vida. Prepare-se para uma viagem incrível ao mundo microscópico.</p><p>Abordaremos a teoria celular, os tipos de células (procariontes e eucariontes) e as principais organelas.</p>`,
-      blocks: [],
-    },
-    {
-      id: `mod_${new Date().getTime() + 1}`,
-      title: 'A Membrana Plasmática',
-      slug: 'a-membrana-plasmatica',
-      contentHTML: `<h2>A Guardiã da Célula</h2><p>A membrana plasmática é uma estrutura vital que envolve a célula, controlando o que entra e sai. É composta por uma bicamada lipídica com proteínas incrustadas.</p>`,
-      blocks: [],
-    },
-  ],
-  version: '1.0.0',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
+];
