@@ -243,7 +243,7 @@ const useProjectStore = create<State & Actions>()(
         };
 
         if (state.activeProject) {
-            state.activeProject = state.projects[projectIndex];
+            state.activeProject = {...state.projects[projectIndex]};
         }
       });
     },
@@ -313,9 +313,25 @@ if (typeof window !== 'undefined') {
     const loadState = () => {
         try {
             const storedProjects = localStorage.getItem(KEY);
-            const parsed = storedProjects ? JSON.parse(storedProjects) : null;
-            if (Array.isArray(parsed)) {
-                return parsed.length > 0 ? parsed : initialProjects;
+            let projects: Project[] | null = null;
+            if (storedProjects) {
+                projects = JSON.parse(storedProjects);
+            }
+            
+            if (Array.isArray(projects)) {
+                // This is the migration logic.
+                // It ensures all loaded projects have a layoutSettings object.
+                const migratedProjects = projects.map(p => {
+                    if (!p.layoutSettings) {
+                        p.layoutSettings = {
+                            containerWidth: 'large',
+                            sectionSpacing: 'standard',
+                            navigationType: 'sidebar',
+                        };
+                    }
+                    return p;
+                });
+                return migratedProjects.length > 0 ? migratedProjects : initialProjects;
             }
         } catch (e) {
             console.error("Failed to parse projects from localStorage", e);

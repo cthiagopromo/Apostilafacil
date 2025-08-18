@@ -14,7 +14,8 @@ import type { LayoutSettings } from '@/lib/types';
 export default function LayoutSettings() {
   const { activeProject, updateLayoutSetting } = useProjectStore();
 
-  if (!activeProject) {
+  // Safety check: Don't render if there's no active project or if layoutSettings is missing.
+  if (!activeProject || !activeProject.layoutSettings) {
     return null;
   }
   
