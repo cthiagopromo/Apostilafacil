@@ -17,7 +17,10 @@ export default function Header() {
   const { toast } = useToast();
 
   const handleExport = async () => {
-    if (!projects || projects.length === 0) {
+    // Directly get the latest state from the store at the moment of export
+    const currentProjects = useProjectStore.getState().projects;
+
+    if (!currentProjects || currentProjects.length === 0) {
         toast({
             variant: "destructive",
             title: "Nenhum projeto para exportar",
@@ -28,8 +31,7 @@ export default function Header() {
 
     setIsExporting(true);
     try {
-      // Pass the current state of projects to the export function
-      await exportToZip(projects);
+      await exportToZip(currentProjects);
       toast({
         title: "Exportação Concluída",
         description: "Seu projeto foi exportado como um arquivo ZIP.",
