@@ -28,6 +28,7 @@ export default function Header() {
 
     setIsExporting(true);
     try {
+      // Pass the current state of projects to the export function
       await exportToZip(projects);
       toast({
         title: "Exportação Concluída",

@@ -12,8 +12,8 @@ function renderBlockToHtml(block: Block): string {
         case 'image':
             const width = block.content.width ?? 100;
             return `
-                <div class="block block-image" style="width: ${width}%; margin-left: auto; margin-right: auto;">
-                    <figure>
+                <div class="block block-image" style="display: flex; justify-content: center;">
+                    <figure style="width: ${width}%;">
                         <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" />
                         ${block.content.caption ? `<figcaption>${block.content.caption}</figcaption>` : ''}
                     </figure>
