@@ -14,8 +14,8 @@ function renderBlockToHtml(block: Block): string {
             return `
                 <div class="block block-image" style="display: flex; justify-content: center;">
                     <figure style="width: ${width}%;">
-                        <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" />
-                        ${block.content.caption ? `<figcaption>${block.content.caption}</figcaption>` : ''}
+                        <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                        ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
                     </figure>
                 </div>
             `;
@@ -262,9 +262,7 @@ main {
 
 .block { margin-bottom: 2rem; }
 .block:last-child { margin-bottom: 0; }
-.block-image figure { margin: 0; }
-.block-image img { max-width: 100%; height: auto; display: block; border-radius: 6px; }
-.block-image figcaption { padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center; }
+
 .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 6px; }
 .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .block-button { text-align: center; }

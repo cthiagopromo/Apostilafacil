@@ -88,15 +88,17 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         case 'image':
             const width = block.content.width ?? 100;
             return (
-                <div className='flex flex-col items-center gap-2' style={{ width: `${width}%`, margin: '0 auto' }}>
-                    <img 
-                      src={block.content.url || 'https://placehold.co/600x400.png'} 
-                      alt={block.content.alt || 'Placeholder image'} 
-                      className="rounded-md shadow-md max-w-full h-auto" 
-                    />
-                    {block.content.caption && (
-                        <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
-                    )}
+                <div className='flex justify-center'>
+                    <figure className='flex flex-col items-center gap-2' style={{ width: `${width}%` }}>
+                        <img 
+                          src={block.content.url || 'https://placehold.co/600x400.png'} 
+                          alt={block.content.alt || 'Placeholder image'} 
+                          className="rounded-md shadow-md max-w-full h-auto" 
+                        />
+                        {block.content.caption && (
+                            <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
+                        )}
+                    </figure>
                 </div>
             )
         case 'quote':

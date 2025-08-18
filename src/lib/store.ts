@@ -70,7 +70,9 @@ const useProjectStore = create<State & Actions>()(
         
         const projects = get().projects;
         if (projects.length > 0) {
-          set({ activeProject: projects[0] });
+          set(state => {
+            state.activeProject = JSON.parse(JSON.stringify(projects[0]));
+          });
         }
       }
     },
@@ -349,11 +351,12 @@ const useProjectStore = create<State & Actions>()(
 if (typeof window !== 'undefined') {
   useProjectStore.getState().initializeStore();
   
-  window.addEventListener('storage', (event) => {
-    if (event.key === STORE_KEY) {
-      useProjectStore.getState().initializeStore();
-    }
-  });
+  // Optional: Listen for storage changes from other tabs.
+  // window.addEventListener('storage', (event) => {
+  //   if (event.key === STORE_KEY) {
+  //     useProjectStore.getState().initializeStore();
+  //   }
+  // });
 }
 
 export default useProjectStore;
