@@ -3,7 +3,7 @@ import { FileText } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="container mx-auto p-6 sm:p-8 lg:p-10">
       <header className="mb-8 flex items-center gap-4">
         <div className="p-3 bg-primary/10 rounded-lg">
           <FileText className="h-8 w-8 text-primary" />

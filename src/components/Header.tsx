@@ -44,7 +44,7 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center justify-between p-2 h-16 bg-card border-b">
+    <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
       <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-primary">
             <div className="p-2 bg-primary/10 rounded-lg">

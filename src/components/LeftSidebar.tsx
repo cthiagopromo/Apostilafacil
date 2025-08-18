@@ -65,7 +65,7 @@ export default function LeftSidebar() {
             ))}
         </div>
       </ScrollArea>
-      <div className='p-2 border-t text-xs text-center text-muted-foreground'>
+      <div className='p-3 border-t text-xs text-center text-muted-foreground'>
           <p>Última atualização: {new Date().toLocaleTimeString()}</p>
           <p className='text-green-600 font-semibold'>Salvo automaticamente</p>
       </div>

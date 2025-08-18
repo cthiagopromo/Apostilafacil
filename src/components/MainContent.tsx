@@ -22,7 +22,7 @@ export default function MainContent() {
         )}
       </div>
       <ScrollArea className="flex-1 bg-secondary/40">
-        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <div className="p-6 sm:p-8 lg:p-12 max-w-4xl mx-auto">
           {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
             <>
               {activeProject.blocks.map((block, index) => (
@@ -39,7 +39,7 @@ export default function MainContent() {
             </div>
           )}
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-6">
             <Button variant="outline" onClick={() => setIsModalOpen(true)}>
               <PlusCircle className="mr-2" />
               Adicionar Bloco

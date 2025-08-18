@@ -79,7 +79,7 @@ export default function PreviewPage() {
                 <Button variant="ghost" size="icon"><Volume2 /></Button>
             </div>
         </header>
-        <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <main className="p-6 sm:p-8 lg:p-12 max-w-4xl mx-auto">
             {blocks.map((block) => (
               <Card key={block.id} className="mb-6 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                 <div className='p-6'>
