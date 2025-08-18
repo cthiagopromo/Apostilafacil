@@ -1,109 +1,31 @@
 diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
-index 9694628..12e52b2 100644
+index 9b75a6a..e04a43b 100644
 --- a/node_modules/react-quill/lib/index.js
 +++ b/node_modules/react-quill/lib/index.js
-@@ -321,7 +321,7 @@
- 		},
+@@ -282,10 +282,7 @@
  	},
  
--	/*
-+	/**
- 	 * The component has been mounted.
- 	 */
- 	componentDidMount: function componentDidMount() {
-@@ -339,7 +339,7 @@
- 		}
+ 	getEditor: function(){
+-		if (!this.quill) return;
+-		// using findDOMNode because of https://github.com/facebook/react/issues/3587
+-		return this.quill.root;
++		return this.quill;
  	},
  
--	/*
-+	/**
- 	 * The component is about to be unmounted.
- 	 */
- 	componentWillUnmount: function componentWillUnmount() {
-@@ -348,7 +348,7 @@
- 		this.destroy();
+ 	getEditingArea: function(){
+@@ -433,7 +430,7 @@
  	},
  
--	/*
-+	/**
- 	 * The component has been updated.
- 	 */
- 	componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
-@@ -406,12 +406,10 @@
- 		}
+ 	focus: function(){
+-		this.quill.focus();
++		this.quill.focus()
  	},
  
--	/*
--	 * If the component is supplied a new `value` prop, we need to
--	 * update the editor to match.
--	 */
-+	/**
-+	 * If the component is supplied a new `value` prop, we need to update the editor to match.
-+  */
- 	setEditorContents: function setEditorContents(editor, value) {
--
- 		var sel = editor.getSelection();
+ 	blur: function(){
+@@ -482,4 +479,4 @@
+ 	displayName: 'React Quill'
+ };
  
- 		if (typeof value === 'string') {
-@@ -428,10 +426,10 @@
- 		}
- 	},
- 
--	/*
-+	/**
- 	 * We consider the editor to be focused when the quill editor's
- 	 * container has focus, or when one of the editor's toolbars
--	 * has focus.
-+	 * has focus. The later is determined by checking if the active
- 	 */
- 	isFocused: function isFocused() {
- 		var _this2 = this;
-@@ -442,10 +440,9 @@
- 		return false;
- 	},
- 
--	/*
-+	/**
- 	 * Returns the DOM handle of the editor.
--	 * @return {?Element}
--	 */
-+ 	*/
- 	getEditorNode: function getEditorNode() {
- 		return this.editor;
- 	},
-@@ -531,7 +528,7 @@
- 		}
- 	},
- 
--	/*
-+	/**
- 	 * Manually focus the editor.
- 	 */
- 	focus: function focus() {
-@@ -539,7 +536,7 @@
- 		this.editor.focus();
- 	},
- 
--	/*
-+	/**
- 	 * Manually blur the editor.
- 	 */
- 	blur: function blur() {
-@@ -547,7 +544,7 @@
- 		this.editor.blur();
- 	},
- 
--	/*
-+	/**
- 	 * Creates the editor.
- 	 */
- 	createEditor: function createEditor(element, config) {
-@@ -625,7 +622,7 @@
- 		var children = this.props.children;
- 		var editor = React.Children.only(children);
- 		var editorProps = _extends({}, editor.props, {
--			ref: this.setEditor,
-+			ref: this.setEditorNode,
- 			style: this.getEditorStyle()
- 		});
- 		return React.cloneElement(editor, editorProps);
+-module.exports = ReactQuill;
+\ No newline at end of file
++module.exports = ReactQuill;
