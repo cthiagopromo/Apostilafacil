@@ -1,46 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
 import useProjectStore from '@/lib/store';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, PlusCircle } from 'lucide-react';
-import { initialProjects } from '@/lib/initial-data';
 import { useRouter } from 'next/navigation';
 
 export function ProjectList() {
-  const { projects, setProjects, addProject } = useProjectStore();
+  const { projects, addProject } = useProjectStore();
   const router = useRouter();
   
-  useEffect(() => {
-    // A inicialização agora é feita no próprio store, 
-    // então podemos remover a lógica daqui se ela estiver duplicada.
-    // Mas vamos garantir que os projetos sejam carregados se o array estiver vazio.
-    if (projects.length === 0) {
-        const storedProjects = localStorage.getItem('apostila-facil-projects');
-        if (storedProjects) {
-          try {
-            const parsedProjects = JSON.parse(storedProjects);
-            if (Array.isArray(parsedProjects)) {
-              setProjects(parsedProjects);
-            } else {
-               setProjects(initialProjects);
-            }
-          } catch {
-            setProjects(initialProjects);
-          }
-        } else {
-          setProjects(initialProjects);
-        }
-    }
-  }, [projects.length, setProjects]);
-
   const handleNewProject = () => {
     const newProject = addProject();
     router.push(`/editor/${newProject.id}`);
   };
-
 
   return (
     <div className="space-y-4">

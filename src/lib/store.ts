@@ -185,16 +185,26 @@ const useProjectStore = create<State & Actions>()(
 
 // Inicializar a store com dados do localStorage se existirem, ou com dados iniciais
 if (typeof window !== 'undefined') {
-    const storedProjects = localStorage.getItem('apostila-facil-projects');
+    const KEY = 'apostila-facil-projects';
+    const storedProjects = localStorage.getItem(KEY);
+    let initialData = initialProjects;
+    
     if (storedProjects) {
-        useProjectStore.setState({ projects: JSON.parse(storedProjects) });
-    } else {
-        useProjectStore.setState({ projects: initialProjects });
+        try {
+            const parsed = JSON.parse(storedProjects);
+            if (Array.isArray(parsed)) {
+                initialData = parsed;
+            }
+        } catch (e) {
+            console.error("Failed to parse projects from localStorage", e);
+        }
     }
+    
+    useProjectStore.setState({ projects: initialData });
 
     useProjectStore.subscribe(
         (state) => {
-            localStorage.setItem('apostila-facil-projects', JSON.stringify(state.projects));
+            localStorage.setItem(KEY, JSON.stringify(state.projects));
         }
     );
 }

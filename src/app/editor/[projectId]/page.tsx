@@ -15,14 +15,11 @@ export default function EditorPage() {
   const projectId = params.projectId as string;
 
   useEffect(() => {
-    // O store pode não ter sido hidratado ainda, então esperamos um pouco
-    setTimeout(() => {
-      const foundProject = getProjectById(projectId);
-      setProject(foundProject);
-      if (foundProject) {
-        setActiveProject(foundProject.id);
-      }
-    }, 100);
+    const foundProject = getProjectById(projectId);
+    setProject(foundProject);
+    if (foundProject) {
+      setActiveProject(foundProject.id);
+    }
   }, [projectId, getProjectById, setActiveProject]);
   
   if (project === undefined) {
