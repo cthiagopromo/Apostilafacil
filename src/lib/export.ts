@@ -9,31 +9,31 @@ function generatePdfHtmlForProject(project: Project): string {
     const blocksHtml = project.blocks.map(block => {
         switch (block.type) {
             case 'text':
-                return `<div class="block block-text" style="margin-bottom: 20px;">${block.content.text || ''}</div>`;
+                return `<div class="block block-text" style="margin-bottom: 20px; page-break-inside: avoid;">${block.content.text || ''}</div>`;
             case 'image':
                 return `
                     <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin: 0 0 5px 0; font-weight: bold;">Imagem:</p>
-                        <p style="margin: 0 0 5px 0;"><strong>URL:</strong> <a href="${block.content.url || ''}">${block.content.url || ''}</a></p>
-                        <p style="margin: 0 0 5px 0;"><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
-                        ${block.content.caption ? `<p style="margin: 0 0 10px 0;"><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
-                        <div style="display: flex; justify-content: center; padding-top: 10px;">
-                           <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 80%; height: auto; display: block; border-radius: 6px;" />
+                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">Imagem</p>
+                        <div style="display: flex; justify-content: center; padding: 10px 0;">
+                           <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 90%; height: auto; display: block; border-radius: 6px;" />
                         </div>
+                        ${block.content.caption ? `<p style="margin: 5px 0 0 0; text-align: center; font-style: italic; color: #555;"><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
+                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Fonte (URL):</strong> <a href="${block.content.url || '#'}">${block.content.url || 'N/A'}</a></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
                     </div>
                 `;
             case 'video':
                 if (!block.content.videoUrl) return '';
                 return `
                     <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo</a></p>
+                        <p style="margin:0;"><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${block.content.videoUrl}</a></p>
                     </div>
                 `;
             case 'button':
                  if (!block.content.buttonText || !block.content.buttonUrl) return '';
                  return `
                     <div class="block block-button-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Botão:</strong> ${block.content.buttonText} <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
+                        <p style="margin:0;"><strong>Botão:</strong> "${block.content.buttonText}" <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
                     </div>
                  `;
             case 'quote':
@@ -59,17 +59,20 @@ function generatePdfHtmlForProject(project: Project): string {
       <head>
           <meta charset="UTF-8">
           <style>
-              body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; }
-              h1 { color: #000; }
-              p { margin-bottom: 10px; }
-              a { color: #007bff; text-decoration: none; }
+              body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.6; }
               .pdf-content { padding: 20px; }
+              h1 { color: #000; font-size: 28px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;}
+              p { margin-bottom: 10px; color: #333; }
+              a { color: #007bff; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              .prose { max-width: none; }
+              .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 0.5em; }
           </style>
       </head>
       <body>
-          <div class="pdf-content">
-              <h1 style="font-size: 24px; margin-bottom: 10px;">${project.title}</h1>
-              <p style="font-size: 14px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px;">${project.description}</p>
+          <div class="pdf-content prose">
+              <h1>${project.title}</h1>
+              <p style="font-size: 14px; margin-bottom: 20px; color: #555;">${project.description}</p>
               ${blocksHtml}
           </div>
       </body>
@@ -117,17 +120,17 @@ export async function exportToPdf(projects: Project[]) {
         const imgData = canvas.toDataURL('image/png');
         const imgProps = doc.getImageProperties(imgData);
         const pdfWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
         let heightLeft = pdfHeight;
         let position = 0;
-        const pageHeight = doc.internal.pageSize.getHeight();
     
         doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
         heightLeft -= pageHeight;
     
-        while (heightLeft > 0) {
-            position -= pageHeight -30; // Adjust for margins
+        while (heightLeft > -pageHeight) {
+            position -= pageHeight - 30; // Adjust for margins
             doc.addPage();
             doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
             heightLeft -= pageHeight;
