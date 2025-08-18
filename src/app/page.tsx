@@ -1,3 +1,12 @@
+'use client';
+
+import { ApostilaFacilApp } from '@/components/ApostilaFacilApp';
+import { ProjectProvider } from '@/context/ProjectContext';
+
 export default function Home() {
-  return <></>;
+  return (
+    <ProjectProvider>
+      <ApostilaFacilApp />
+    </ProjectProvider>
+  );
 }
