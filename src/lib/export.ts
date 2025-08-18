@@ -1006,6 +1006,3 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
-```
-
-Agora que você tem o backup, por favor, me diga qual é o próximo passo que você gostaria de tomar. Podemos tentar uma nova abordagem para a exportação do PDF. Estou pronto para ajudar.
