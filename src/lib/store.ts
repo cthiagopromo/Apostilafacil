@@ -17,6 +17,7 @@ type Actions = {
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
   updateProjectTitle: (projectId: string, title: string) => void;
+  updateProjectDescription: (projectId: string, description: string) => void;
   addBlock: (projectId: string, type: BlockType) => void;
   deleteBlock: (projectId: string, blockId: string) => void;
   moveBlock: (projectId: string, blockId: string, direction: 'up' | 'down') => void;
@@ -52,7 +53,7 @@ const useProjectStore = create<State & Actions>()(
     addProject: () => {
         const newProject: Project = {
             id: `proj_${new Date().getTime()}`,
-            title: 'Novo Projeto de Apostila',
+            title: 'Novo Módulo',
             description: 'Uma nova apostila com blocos editáveis.',
             theme: {
               colorPrimary: '#2563EB',
@@ -60,15 +61,7 @@ const useProjectStore = create<State & Actions>()(
               colorAccent: '#60A5FA',
               fontBody: 'Inter',
             },
-            blocks: [
-              {
-                id: `block_${new Date().getTime()}`,
-                type: 'text',
-                content: {
-                  text: '<h1>Bem-vindo à sua nova apostila!</h1><p>Comece a adicionar conteúdo clicando nos tipos de bloco à esquerda.</p>',
-                },
-              },
-            ],
+            blocks: [],
             version: '1.0.0',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -86,6 +79,18 @@ const useProjectStore = create<State & Actions>()(
           project.title = title;
           if (state.activeProject?.id === projectId) {
             state.activeProject.title = title;
+          }
+        }
+      })
+    },
+
+    updateProjectDescription: (projectId, description) => {
+      set(state => {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
+          project.description = description;
+          if (state.activeProject?.id === projectId) {
+            state.activeProject.description = description;
           }
         }
       })

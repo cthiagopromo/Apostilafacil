@@ -25,7 +25,7 @@ const BlockSettings = () => {
 
     if (!activeBlock) {
         return (
-            <div className="text-center text-muted-foreground mt-8">
+            <div className="text-center text-muted-foreground p-8">
                 <p>Selecione um bloco para ver suas configurações.</p>
             </div>
         );
@@ -124,7 +124,7 @@ const BlockSettings = () => {
                         <div className="space-y-3">
                             <Label>Opções de Resposta</Label>
                             {activeBlock.content.options?.map((option: QuizOption, index: number) => (
-                                <div key={option.id} className="p-3 bg-muted/50 rounded-md space-y-2">
+                                <div key={option.id} className="p-3 bg-secondary rounded-md space-y-2">
                                     <div className="flex items-center gap-2">
                                         <Input
                                             value={option.text}
@@ -162,13 +162,12 @@ const BlockSettings = () => {
         }
     }
 
-
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Configurações do Bloco</CardTitle>
                 <CardDescription>
-                    Tipo de Bloco: <span className="font-semibold text-primary">{activeBlock.type}</span>
+                    Tipo: <span className="font-semibold text-primary">{activeBlock.type}</span>
                 </CardDescription>
             </CardHeader>
             <CardContent>

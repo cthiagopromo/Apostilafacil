@@ -23,12 +23,18 @@ export default function EditorPage() {
   }, [projectId, getProjectById, setActiveProject]);
   
   if (project === undefined) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-secondary">
+        <div className="text-center">
+          <p className="text-xl">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!project) {
     return (
-        <div className="flex flex-col items-center justify-center h-screen">
+        <div className="flex flex-col items-center justify-center h-screen bg-secondary">
             <p className="text-xl mb-4">Projeto não encontrado.</p>
             <Button onClick={() => router.push('/')}>Voltar para a lista de projetos</Button>
         </div>

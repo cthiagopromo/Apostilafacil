@@ -2,46 +2,72 @@
 
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Type, Image, Video, Link2, HelpCircle } from 'lucide-react';
-import type { BlockType } from '@/lib/types';
-
-const blockTypes: { name: BlockType, label: string, icon: React.ReactNode }[] = [
-    { name: 'text', label: 'Texto', icon: <Type /> },
-    { name: 'image', label: 'Imagem', icon: <Image /> },
-    { name: 'video', label: 'Vídeo/Embed', icon: <Video /> },
-    { name: 'button', label: 'Botão', icon: <Link2 /> },
-    { name: 'quiz', label: 'Quiz', icon: <HelpCircle /> },
-]
+import { PlusCircle, Search, File, MoreHorizontal, GripVertical } from 'lucide-react';
+import { Input } from './ui/input';
+import { ScrollArea } from './ui/scroll-area';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Badge } from './ui/badge';
 
 export default function LeftSidebar() {
-  const { addBlock, activeProject } = useProjectStore();
-
-  const handleAddBlock = (type: BlockType) => {
-    if (activeProject) {
-        addBlock(activeProject.id, type);
-    }
+  const { projects, activeProject, addProject, setActiveProject } = useProjectStore();
+  const router = useRouter();
+  
+  const handleNewProject = () => {
+    const newProject = addProject();
+    router.push(`/editor/${newProject.id}`);
   };
 
+  const handleProjectSelect = (projectId: string) => {
+    setActiveProject(projectId);
+    router.push(`/editor/${projectId}`);
+  }
+
   return (
-    <aside className="w-72 bg-card/60 border-r flex flex-col">
-      <div className="p-2 border-b">
-        <h2 className="text-md font-semibold px-2">Adicionar Blocos</h2>
+    <aside className="w-72 bg-card border-r flex flex-col">
+      <div className="p-4 border-b">
+        <div className="flex justify-between items-center mb-4">
+            <div className='flex items-center gap-2'>
+                <h2 className="text-lg font-semibold">Módulos</h2>
+                <Badge variant="secondary">{projects.length}</Badge>
+            </div>
+        </div>
+        <Button onClick={handleNewProject} className='w-full'>
+           <PlusCircle className="mr-2" />
+           Novo Módulo
+        </Button>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
-        <div className='grid grid-cols-2 gap-2'>
-            {blockTypes.map(block => (
+      <div className="p-4 border-b">
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Filtrar módulos..." className="pl-9" />
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className='p-2 space-y-1'>
+            {projects.map((project) => (
                 <Button 
-                    key={block.name}
-                    variant="outline" 
-                    className="h-24 flex flex-col gap-2"
-                    onClick={() => handleAddBlock(block.name)}
-                    disabled={!activeProject}
+                    key={project.id}
+                    variant="ghost" 
+                    className={cn(
+                        "w-full h-auto justify-start items-start p-3",
+                        activeProject?.id === project.id && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                    )}
+                    onClick={() => handleProjectSelect(project.id)}
                 >
-                    {block.icon}
-                    <span className='text-sm'>{block.label}</span>
+                    <File className='mr-3 mt-1 flex-shrink-0' />
+                    <div className='flex flex-col items-start'>
+                        <span className='font-semibold'>{project.title}</span>
+                        <span className='text-xs text-muted-foreground'>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
+                    </div>
+                    <MoreHorizontal className='ml-auto h-5 w-5' />
                 </Button>
             ))}
         </div>
+      </ScrollArea>
+      <div className='p-2 border-t text-xs text-center text-muted-foreground'>
+          <p>Última atualização: {new Date().toLocaleTimeString()}</p>
+          <p className='text-green-600 font-semibold'>Salvo automaticamente</p>
       </div>
     </aside>
   );

@@ -16,8 +16,6 @@ export function EditorLayout({ project }: EditorLayoutProps) {
   const { setActiveProject, activeProject } = useProjectStore();
 
   useEffect(() => {
-    // Apenas define o projeto ativo se ele for diferente do que já está no store
-    // ou se nenhum projeto estiver ativo. Evita re-renderizações desnecessárias.
     if (!activeProject || activeProject.id !== project.id) {
        setActiveProject(project.id);
     }
@@ -28,7 +26,7 @@ export function EditorLayout({ project }: EditorLayoutProps) {
       <Header />
       <div className="flex flex-1 border-t border-border overflow-hidden">
         <LeftSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden bg-white">
           <MainContent />
         </main>
         <RightSidebar />

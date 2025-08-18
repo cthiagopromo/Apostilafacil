@@ -1,13 +1,21 @@
 import { ProjectList } from '@/components/ProjectList';
+import { FileText } from 'lucide-react';
 
 export default function Home() {
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold text-primary">ApostilaFácil</h1>
-        <p className="text-lg text-muted-foreground">Seus projetos de apostilas interativas.</p>
+      <header className="mb-8 flex items-center gap-4">
+        <div className="p-3 bg-primary/10 rounded-lg">
+          <FileText className="h-8 w-8 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-4xl font-bold text-primary">Editor de Apostilas</h1>
+          <p className="text-lg text-muted-foreground">Seus projetos de apostilas interativas.</p>
+        </div>
       </header>
-      <ProjectList />
+      <main>
+        <ProjectList />
+      </main>
     </div>
   );
 }

@@ -21,9 +21,10 @@ import BlockRenderer from './BlockRenderer';
 
 interface BlockEditorProps {
     block: Block;
+    index: number;
 }
 
-const BlockEditor = ({ block }: BlockEditorProps) => {
+const BlockEditor = ({ block, index }: BlockEditorProps) => {
     const { activeProject, activeBlockId, setActiveBlockId, deleteBlock, moveBlock, duplicateBlock } = useProjectStore();
 
     const isActive = block.id === activeBlockId;
@@ -36,40 +37,36 @@ const BlockEditor = ({ block }: BlockEditorProps) => {
     }
     
     return (
-        <div className="relative group mb-4" onClick={() => setActiveBlockId(block.id)}>
-            <Card className={cn("transition-all", isActive ? 'border-primary ring-2 ring-primary/50' : 'hover:border-primary/50')}>
+        <div className="relative group" onClick={() => setActiveBlockId(block.id)}>
+            <Card className={cn("transition-all mb-4", isActive ? 'border-primary ring-2 ring-primary/50' : 'hover:border-primary/50')}>
                 <CardContent className="p-4">
                     <BlockRenderer block={block} />
                 </CardContent>
             </Card>
 
-             <div className="absolute top-1/2 -translate-y-1/2 -left-12 h-8 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center bg-card p-1 rounded-md border shadow-sm">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 cursor-grab" onMouseDown={e => e.preventDefault()}>
-                        <GripVertical className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            <div className="absolute top-1/2 -translate-y-1/2 -right-14 h-8 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-1/2 -translate-y-1/2 -left-12 h-full flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="flex flex-col items-center bg-card p-1 rounded-md border shadow-sm space-y-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'up'))}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" onMouseDown={e => e.preventDefault()}>
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <div className="w-4 h-px bg-border"></div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'up'))} disabled={index === 0}>
                         <ArrowUp className="h-4 w-4" />
                     </Button>
-                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'down'))}>
+                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'down'))} disabled={index === (activeProject?.blocks?.length ?? 0) - 1}>
                         <ArrowDown className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
             
-            <div className="absolute -top-3 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="flex items-center bg-card p-1 rounded-md border shadow-sm">
-                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleAction(duplicateBlock)}>
+                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction(duplicateBlock)}>
                         <Copy className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                             <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={(e) => e.stopPropagation()}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </AlertDialogTrigger>

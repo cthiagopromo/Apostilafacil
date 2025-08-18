@@ -19,27 +19,37 @@ export function ProjectList() {
   return (
     <div className="space-y-4">
        <div className="flex justify-end">
-         <Button onClick={handleNewProject}>
+         <Button onClick={handleNewProject} size="lg">
            <PlusCircle className="mr-2" />
            Novo Projeto
          </Button>
        </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
         {projects.map((project) => (
-          <Card key={project.id}>
+          <Card key={project.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <CardTitle>{project.title}</CardTitle>
               <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
             <CardFooter>
               <Link href={`/editor/${project.id}`} passHref>
-                <Button className="w-full">
+                <Button className="w-full" variant="outline">
                   Editar Apostila <ArrowRight className="ml-2" />
                 </Button>
               </Link>
             </CardFooter>
           </Card>
         ))}
+         {projects.length === 0 && (
+          <div className="md:col-span-2 lg:col-span-3 text-center py-16 border-2 border-dashed rounded-lg">
+            <h3 className="text-xl font-medium text-muted-foreground">Nenhum projeto encontrado.</h3>
+            <p className="text-muted-foreground mb-4">Comece criando um novo projeto.</p>
+            <Button onClick={handleNewProject}>
+              <PlusCircle className="mr-2" />
+              Criar meu primeiro projeto
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
