@@ -5,7 +5,7 @@ import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Download, Save, Loader } from 'lucide-react';
+import { FileText, Eye, Download, Save, Loader, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
@@ -64,15 +64,12 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
       <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-primary">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold leading-none">Editor de Apostilas</span>
-              <span className="text-xs text-muted-foreground">Templates Prontos</span>
-            </div>
-          </div>
+          <Button variant="outline" asChild>
+            <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Ver todos
+            </Link>
+          </Button>
           <div className="w-px h-8 bg-border"></div>
           {activeProject && (
             <div className='flex items-center gap-3'>
