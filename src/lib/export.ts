@@ -1,4 +1,5 @@
 
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
@@ -123,6 +124,7 @@ function generateHtml(projects: Project[]): string {
     <main>
         ${modulesHtml}
     </main>
+    <button class="floating-action-button">+</button>
     <script src="script.js"></script>
 </body>
 </html>
@@ -333,7 +335,7 @@ main {
 }
 
 .quiz-feedback.correct {
-    background-color: #dbeafe;
+    background-color: #dbeafe; /* Cor primária com transparência */
     color: #1e40af;
     display: block;
 }
@@ -363,6 +365,30 @@ main {
 
 .btn-nav:only-child {
   margin-left: auto;
+}
+
+.floating-action-button {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #1D4ED8;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    font-size: 24px;
+    line-height: 60px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s ease-in-out, background-color 0.2s;
+}
+
+.floating-action-button:hover {
+    background-color: #2563EB; /* um pouco mais claro que o primário */
+    transform: scale(1.05);
 }
     `;
 }
