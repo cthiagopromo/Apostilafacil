@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'react-quill/dist/quill.snow.css';
+
 @layer base {
   :root {
     --background: 210 40% 98%; /* #F9FAFB */
@@ -67,4 +69,8 @@
     @apply bg-secondary text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+.ql-editor {
+    min-height: 200px;
 }

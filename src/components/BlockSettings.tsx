@@ -4,11 +4,12 @@ import useProjectStore from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { Switch } from './ui/switch';
 import type { QuizOption } from '@/lib/types';
+import RichTextEditor from './RichTextEditor';
+import { Textarea } from './ui/textarea';
 
 const BlockSettings = () => {
     const { 
@@ -35,12 +36,10 @@ const BlockSettings = () => {
             case 'text':
                 return (
                     <div className="space-y-2">
-                        <Label htmlFor="text-content">Conteúdo do Texto (HTML)</Label>
-                        <Textarea 
-                            id="text-content"
+                        <Label htmlFor="text-content">Conteúdo do Texto</Label>
+                        <RichTextEditor 
                             value={activeBlock.content.text || ''}
-                            onChange={(e) => updateBlockContent(activeBlock.id, { text: e.target.value })}
-                            className="h-48 font-mono text-xs"
+                            onChange={(value) => updateBlockContent(activeBlock.id, { text: value })}
                         />
                     </div>
                 )
