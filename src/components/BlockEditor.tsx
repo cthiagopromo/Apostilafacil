@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from './ui/switch';
 import RichTextEditor from './RichTextEditor';
 import { Textarea } from './ui/textarea';
+import { Slider } from './ui/slider';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: () => void }) => {
     const { 
@@ -72,6 +73,17 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: () => vo
                                 value={block.content.caption || ''} 
                                 onChange={e => updateBlockContent(block.id, { caption: e.target.value })} 
                                 placeholder="Legenda da imagem"
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor={`image-width-${block.id}`}>Largura da Imagem ({block.content.width || 100}%)</Label>
+                            <Slider
+                                id={`image-width-${block.id}`}
+                                min={25}
+                                max={100}
+                                step={5}
+                                value={[block.content.width || 100]}
+                                onValueChange={(value) => updateBlockContent(block.id, { width: value[0] })}
                             />
                         </div>
                     </div>

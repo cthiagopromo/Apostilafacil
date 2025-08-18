@@ -103,7 +103,7 @@ const useProjectStore = create<State & Actions>()(
                 content = { text: '<p>Novo bloco de texto...</p>' };
                 break;
             case 'image':
-                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '' };
+                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '', width: 100 };
                 break;
             case 'video':
                 content = { videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
@@ -211,20 +211,18 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-          const updateInProject = (project: Project) => {
-              const block = project.blocks.find((b) => b.id === blockId);
-              if (block) {
-                  block.content = { ...block.content, ...newContent };
-              }
-          };
+          const projectIndex = state.projects.findIndex(p => p.id === state.activeProject?.id);
+          if (projectIndex === -1) return;
 
-          if (state.activeProject) {
-              updateInProject(state.activeProject);
-          }
-          const projectInList = state.projects.find(p => p.id === state.activeProject?.id);
-          if (projectInList) {
-              updateInProject(projectInList);
-          }
+          const project = state.projects[projectIndex];
+          const blockIndex = project.blocks.findIndex((b) => b.id === blockId);
+          if (blockIndex === -1) return;
+          
+          const block = project.blocks[blockIndex];
+          block.content = { ...block.content, ...newContent };
+          
+          // Ensure activeProject reflects the change
+          state.activeProject = state.projects[projectIndex];
       });
     },
 
@@ -268,7 +266,6 @@ const useProjectStore = create<State & Actions>()(
     
     resetQuiz: (blockId) => {
         set(state => {
-            // We need to update both the active project and the project in the main list
             const projectsToUpdate = [
                 state.activeProject,
                 ...state.projects.filter(p => p.id === state.activeProject?.id)

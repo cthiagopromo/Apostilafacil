@@ -18,6 +18,7 @@ export interface BlockContent {
   url?: string;
   alt?: string;
   caption?: string; // Legenda opcional para a imagem
+  width?: number; // Largura da imagem em %
   // Video
   videoUrl?: string;
   // Button

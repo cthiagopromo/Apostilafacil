@@ -86,11 +86,16 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         case 'text':
             return <div dangerouslySetInnerHTML={{ __html: block.content.text || '' }} className="prose dark:prose-invert max-w-none" />;
         case 'image':
+            const width = block.content.width ?? 100;
             return (
-                <div className='flex flex-col items-center gap-2'>
-                    <img src={block.content.url || 'https://placehold.co/600x400.png'} alt={block.content.alt || 'Placeholder image'} className="rounded-md shadow-md max-w-full h-auto" />
+                <div className='flex flex-col items-center gap-2' style={{ width: `${width}%`, margin: '0 auto' }}>
+                    <img 
+                      src={block.content.url || 'https://placehold.co/600x400.png'} 
+                      alt={block.content.alt || 'Placeholder image'} 
+                      className="rounded-md shadow-md max-w-full h-auto" 
+                    />
                     {block.content.caption && (
-                        <figcaption className="text-sm text-center text-muted-foreground italic">{block.content.caption}</figcaption>
+                        <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
                     )}
                 </div>
             )
