@@ -18,10 +18,13 @@ export default function EditorPage() {
   useEffect(() => {
     const foundProject = projects.find(p => p.id === projectId);
     setProjectData(foundProject);
-    if (foundProject && (!activeProject || activeProject.id !== foundProject.id)) {
-      setActiveProject(foundProject.id);
+    if (foundProject) {
+      // Condition to avoid re-setting the active project if it's already the correct one.
+      if (!activeProject || activeProject.id !== foundProject.id) {
+          setActiveProject(foundProject.id);
+      }
     }
-  }, [projectId, projects, activeProject, setActiveProject]);
+  }, [projectId, projects, setActiveProject, activeProject]);
   
   if (projectData === undefined) {
     return (
