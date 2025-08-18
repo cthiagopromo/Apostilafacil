@@ -24,7 +24,7 @@ function generatePdfHtmlForProject(project: Project): string {
                  return `<div class="block block-quote"><p>${block.content.text || ''}</p></div>`;
             case 'quiz':
                 const optionsHtml = block.content.options?.map(option => {
-                    const isCorrect = option.isCorrect ? ' (Correta)' : '';
+                    const isCorrect = option.isCorrect ? '<span style="color: green; font-weight: bold;"> (Correta)</span>' : '';
                     return `<div>- ${option.text}${isCorrect}</div>`;
                 }).join('') || '';
                 return `<div class="block block-quiz"><p><strong>${block.content.question || ''}</strong></p>${optionsHtml}</div>`;
@@ -131,16 +131,10 @@ function renderBlockToHtml(block: Block): string {
             return '';
         case 'quiz':
             const optionsHtml = block.content.options?.map(option => {
-                const isCorrect = option.isCorrect;
-                return `<div class="quiz-option ${isCorrect ? 'correct' : ''}">${isCorrect ? '✔' : '☐'} ${option.text}</div>`;
+                const isCorrect = option.isCorrect ? ' (Correta)' : '';
+                return `<div>- ${option.text}${isCorrect}</div>`;
             }).join('') || '';
-
-            return `
-                <div class="block block-quiz">
-                    <p class="quiz-question">${block.content.question || ''}</p>
-                    <div class="quiz-options">${optionsHtml}</div>
-                </div>
-            `;
+            return `<div class="block block-quiz"><p><strong>${block.content.question || ''}</strong></p>${optionsHtml}</div>`;
         default:
             return '';
     }

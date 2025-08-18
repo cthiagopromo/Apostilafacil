@@ -314,14 +314,7 @@ const useProjectStore = create<State & Actions>()(
     addQuizOption: (blockId) => {
         set(state => {
             if (!state.activeProject) return;
-            const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
-            if (projectIndex === -1) return;
-
-            const blockIndex = state.projects[projectIndex].blocks.findIndex(b => b.id === blockId);
-            if (blockIndex === -1) return;
-
-            const block = state.projects[projectIndex].blocks[blockIndex];
-
+            const block = state.activeProject.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz') {
                 if (!block.content.options) {
                     block.content.options = [];
@@ -333,15 +326,6 @@ const useProjectStore = create<State & Actions>()(
                 };
                 block.content.options.push(newOption);
                 state.isDirty = true;
-                if(state.activeProject){
-                  const activeBlock = state.activeProject.blocks.find(b => b.id === blockId);
-                  if (activeBlock && activeBlock.type === 'quiz') {
-                     if (!activeBlock.content.options) {
-                        activeBlock.content.options = [];
-                     }
-                     activeBlock.content.options.push(newOption);
-                  }
-                }
             }
         });
     },
