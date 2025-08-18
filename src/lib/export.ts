@@ -3,7 +3,8 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
-import { toKebabCase } from './utils';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 function renderBlockToHtml(block: Block): string {
     switch (block.type) {
@@ -84,14 +85,15 @@ function generateModulesHtml(projects: Project[]): string {
         
         const navButtons = `
             <div class="module-navigation">
-                ${index > 0 ? `<button class="btn nav-btn" data-target="${index - 1}">Módulo Anterior</button>` : ''}
-                ${index < projects.length - 1 ? `<button class="btn nav-btn" data-target="${index + 1}">Próximo Módulo</button>` : ''}
+                ${index > 0 ? `<button class="btn nav-btn nav-prev" data-target="${index - 1}">Módulo Anterior</button>` : '<div></div>'}
+                ${index < projects.length - 1 ? `<button class="btn nav-btn nav-next" data-target="${index + 1}">Próximo Módulo</button>` : '<div></div>'}
             </div>
         `;
 
         modulesHtml += `
             <section id="${moduleId}" class="modulo" style="display: none;">
                 <div class="module-content">
+                    <h1 class="module-title-header">${project.title}</h1>
                     ${blocksHtml}
                 </div>
                 ${navButtons}
@@ -123,21 +125,24 @@ function generateHtml(projects: Project[]): string {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="main-header">
-        <div class="header-content">
-            <h1 id="main-title">${mainTitle}</h1>
-            <div id="accessibility-toolbar" class="accessibility-toolbar">
-                <button class="icon-btn" id="btn-increase-font" title="Aumentar Fonte">A+</button>
-                <button class="icon-btn" id="btn-decrease-font" title="Diminuir Fonte">A-</button>
-                <button class="icon-btn" id="btn-dark-mode" title="Modo Escuro">🌗</button>
-                <button class="icon-btn" id="btn-speak" title="Ler em Voz Alta">🔊</button>
+    <div id="pdf-content">
+        <header class="main-header">
+            <div class="header-content">
+                <h1 id="main-title">${mainTitle}</h1>
+                <div id="accessibility-toolbar" class="accessibility-toolbar">
+                    <button class="icon-btn" id="btn-export-pdf" title="Exportar para PDF">📄</button>
+                    <button class="icon-btn" id="btn-increase-font" title="Aumentar Fonte">A+</button>
+                    <button class="icon-btn" id="btn-decrease-font" title="Diminuir Fonte">A-</button>
+                    <button class="icon-btn" id="btn-dark-mode" title="Modo Escuro">🌗</button>
+                    <button class="icon-btn" id="btn-speak" title="Ler em Voz Alta">🔊</button>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main>
-        ${modulesHtml}
-    </main>
+        <main>
+            ${modulesHtml}
+        </main>
+    </div>
 
     <div class="fab-container">
         <button class="floating-action-button" id="fab-open-panel">
@@ -150,6 +155,8 @@ function generateHtml(projects: Project[]): string {
         </div>
     </div>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
@@ -256,6 +263,13 @@ main {
     padding: 2rem;
 }
 
+.module-title-header {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 2rem;
+}
+
 .module-content {
     padding-bottom: 1rem;
 }
@@ -329,7 +343,8 @@ body.dark-mode .quiz-feedback.incorrect { background-color: #991b1b; color: #fee
 
 .module-navigation {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
     margin-top: 2rem;
     padding-top: 1rem;
@@ -496,6 +511,7 @@ function generateJs(): string {
 let currentModuleIndex = 0;
 const synth = window.speechSynthesis;
 let utterance = null;
+const { jsPDF } = window.jspdf;
 
 function showModule(index) {
   document.querySelectorAll('.modulo').forEach(module => {
@@ -553,6 +569,38 @@ function speakText() {
     }
 }
 
+async function exportToPdf() {
+    const doc = new jsPDF();
+    const modules = document.querySelectorAll('.modulo');
+    const title = document.querySelector('#main-title').textContent || 'apostila';
+
+    for (let i = 0; i < modules.length; i++) {
+        const module = modules[i];
+        
+        // Temporarily show the module to capture it
+        const originalDisplay = module.style.display;
+        module.style.display = 'block';
+
+        const canvas = await html2canvas(module);
+        const imgData = canvas.toDataURL('image/png');
+        
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        if (i > 0) {
+            doc.addPage();
+        }
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
+        // Restore original display style
+        module.style.display = originalDisplay;
+    }
+
+    doc.save(\`\${title}.pdf\`);
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Restore preferences
     const savedTheme = localStorage.getItem('theme');
@@ -595,6 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-decrease-font').addEventListener('click', () => changeFontSize('decrease'));
     document.getElementById('btn-dark-mode').addEventListener('click', toggleDarkMode);
     document.getElementById('btn-speak').addEventListener('click', speakText);
+    document.getElementById('btn-export-pdf').addEventListener('click', exportToPdf);
 
     // --- Module Navigation (Bottom buttons) ---
     document.body.addEventListener('click', e => {
@@ -649,4 +698,44 @@ export async function exportToZip(projects: Project[]) {
     const fileName = `apostila-interativa.zip`;
     
     saveAs(content, fileName);
+}
+
+export async function exportToPdf(projects: Project[]) {
+  const doc = new jsPDF();
+  const mainElement = document.createElement('div');
+  mainElement.innerHTML = generateModulesHtml(projects);
+  document.body.appendChild(mainElement);
+
+  const modules = mainElement.querySelectorAll('.modulo');
+
+  for (let i = 0; i < modules.length; i++) {
+    const module = modules[i] as HTMLElement;
+    module.style.display = 'block';
+    
+    // Temporarily remove interactive elements for PDF export
+    module.querySelectorAll('.fab-container, .module-navigation, .btn').forEach(el => el.remove());
+
+    const canvas = await html2canvas(module, {
+        scale: 2,
+        useCORS: true,
+        logging: true,
+    });
+    const imgData = canvas.toDataURL('image/png');
+    
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    if (i > 0) {
+      doc.addPage();
+    }
+    
+    doc.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight - 20);
+    module.style.display = 'none';
+  }
+
+  document.body.removeChild(mainElement);
+
+  const projectTitle = projects[0]?.title || 'apostila';
+  doc.save(`${projectTitle}.pdf`);
 }

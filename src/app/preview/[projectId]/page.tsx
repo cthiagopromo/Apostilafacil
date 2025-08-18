@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import type { Project } from '@/lib/types';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
+import { exportToPdf } from '@/lib/export';
 import { 
     ArrowLeft, 
     Book, 
@@ -14,7 +15,9 @@ import {
     ZoomIn, 
     ZoomOut, 
     Moon, 
-    Volume2 
+    Volume2,
+    FilePdf,
+    Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -23,6 +26,7 @@ export default function PreviewPage() {
   const router = useRouter();
   const params = useParams();
   const [project, setProject] = useState<Project | null | undefined>(undefined);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const projectId = params.projectId as string;
   
   useEffect(() => {
@@ -41,6 +45,18 @@ export default function PreviewPage() {
       }
     }
   }, [projectId]);
+
+  const handleExportPdf = async () => {
+    if (!project) return;
+    setIsExportingPdf(true);
+    try {
+        await exportToPdf([project]); // Pass the single project in an array
+    } catch (e) {
+        console.error("PDF Export failed", e);
+    } finally {
+        setIsExportingPdf(false);
+    }
+  }
 
   if (project === undefined) {
     return (
@@ -90,6 +106,9 @@ export default function PreviewPage() {
             </div>
             
             <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={handleExportPdf} disabled={isExportingPdf}>
+                    {isExportingPdf ? <Loader2 className="animate-spin" /> : <FilePdf />}
+                </Button>
                 <Button variant="ghost" size="icon"><Download /></Button>
                 <Separator orientation="vertical" className="h-8" />
                 <Button variant="ghost" size="icon"><ZoomIn /></Button>
