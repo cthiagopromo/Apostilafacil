@@ -33,9 +33,16 @@ export default function PreviewPage() {
     if (typeof window !== 'undefined') {
       const storedProjects = localStorage.getItem('apostila-facil-projects');
       if (storedProjects) {
-        const projects: Project[] = JSON.parse(storedProjects);
-        const foundProject = projects.find(p => p.id === projectId);
-        setProject(foundProject || null);
+        try {
+          const projects: Project[] = JSON.parse(storedProjects);
+          const foundProject = projects.find(p => p.id === projectId);
+          setProject(foundProject || null);
+        } catch (e) {
+          console.error("Failed to parse projects from localStorage", e);
+          const { projects } = useProjectStore.getState();
+          const foundProject = projects.find(p => p.id === projectId);
+          setProject(foundProject || null);
+        }
       } else {
         const { projects } = useProjectStore.getState();
         const foundProject = projects.find(p => p.id === projectId);
@@ -115,7 +122,7 @@ export default function PreviewPage() {
                 <Button variant="ghost" size="icon"><Volume2 /></Button>
             </div>
         </header>
-        <main className={`p-6 sm:p-8 lg:p-12 mx-auto ${containerWidthClass}`}>
+        <main id="preview-content" className={`p-6 sm:p-8 lg:p-12 mx-auto ${containerWidthClass}`}>
             {blocks.map((block) => (
               <Card key={block.id} className={`${sectionSpacingClass} overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}>
                 <div className='p-6'>

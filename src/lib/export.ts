@@ -5,6 +5,97 @@ import type { Project, Block } from './types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+function generatePdfHtmlForProject(project: Project): string {
+    // This function can be improved to generate more styled HTML
+    const blocksHtml = project.blocks.map(block => {
+        switch (block.type) {
+            case 'text':
+                return `<div class="block block-text">${block.content.text || ''}</div>`;
+            case 'image':
+                 const width = block.content.width ?? 100;
+                return `
+                    <div class="block block-image" style="display: flex; justify-content: center;">
+                        <figure style="width: ${width}%;">
+                            <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                            ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
+                        </figure>
+                    </div>
+                `;
+            case 'quote':
+                 return `<div class="block block-quote"><p>${block.content.text || ''}</p></div>`;
+            case 'quiz':
+                const optionsHtml = block.content.options?.map(option => {
+                    const isCorrect = option.isCorrect ? ' (Correta)' : '';
+                    return `<div>- ${option.text}${isCorrect}</div>`;
+                }).join('') || '';
+                return `<div class="block block-quiz"><p><strong>${block.content.question || ''}</strong></p>${optionsHtml}</div>`;
+            default:
+                return '';
+        }
+    }).join('');
+
+    return `
+        <div class="pdf-page">
+            <h1>${project.title}</h1>
+            ${blocksHtml}
+        </div>
+    `;
+}
+
+
+export async function exportToPdf(projects: Project[]) {
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+    });
+
+    for (const project of projects) {
+        const pageElement = document.getElementById(`preview-content`);
+        if (!pageElement) continue;
+
+        // Clone the element to avoid modifying the original
+        const clonedElement = pageElement.cloneNode(true) as HTMLElement;
+
+        // Temporarily append to the body to ensure styles are applied
+        document.body.appendChild(clonedElement);
+
+        // Remove interactive elements from the clone
+        clonedElement.querySelectorAll('button').forEach(btn => btn.remove());
+        
+        await html2canvas(clonedElement, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            logging: true,
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            let position = 0;
+            let heightLeft = pdfHeight;
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+              position = heightLeft - pdfHeight;
+              doc.addPage();
+              doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+              heightLeft -= pageHeight;
+            }
+        });
+        
+        document.body.removeChild(clonedElement);
+    }
+    
+    const projectTitle = projects[0]?.title || 'apostila';
+    doc.save(`${projectTitle}.pdf`);
+}
+
+
 function renderBlockToHtml(block: Block): string {
     switch (block.type) {
         case 'text':
@@ -46,67 +137,6 @@ function renderBlockToHtml(block: Block): string {
         default:
             return '';
     }
-}
-
-function generatePdfHtmlForProject(project: Project): string {
-    const blocksHtml = project.blocks.map(renderBlockToHtml).join('\n');
-    return `
-        <div class="pdf-page">
-            <h1>${project.title}</h1>
-            ${blocksHtml}
-        </div>
-    `;
-}
-
-export async function exportToPdf(projects: Project[]) {
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'pt',
-        format: 'a4'
-    });
-
-    for (let i = 0; i < projects.length; i++) {
-        const project = projects[i];
-        const htmlContent = generatePdfHtmlForProject(project);
-
-        const tempContainer = document.createElement('div');
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.width = '595pt'; // A4 width in points
-        tempContainer.innerHTML = `
-            <style>
-                .pdf-page { padding: 40pt; font-family: Helvetica, Arial, sans-serif; color: #333; }
-                h1 { color: #2563EB; border-bottom: 2px solid #2563EB; padding-bottom: 10pt; margin-bottom: 20pt;}
-                .block { margin-bottom: 24pt; }
-                img { max-width: 100%; border-radius: 6px; }
-                .block-quote { padding: 12pt; background-color: #f0f4ff; border-left: 4px solid #2563EB; font-style: italic; }
-                .quiz-question { font-weight: bold; margin-bottom: 8pt; }
-                .quiz-option { margin-bottom: 4pt; }
-                .quiz-option.correct { font-weight: bold; color: #16a34a; }
-            </style>
-            ${htmlContent}
-        `;
-        document.body.appendChild(tempContainer);
-        
-        if (i > 0) {
-            doc.addPage();
-        }
-        
-        await doc.html(tempContainer, {
-            callback: function (doc) {
-                // done
-            },
-            x: 0,
-            y: 0,
-            width: 595,
-            windowWidth: 595
-        });
-
-        document.body.removeChild(tempContainer);
-    }
-    
-    const projectTitle = projects[0]?.title || 'apostila';
-    doc.save(`${projectTitle}.pdf`);
 }
 
 
@@ -216,12 +246,12 @@ main {
 }
 .modulo { display: none; }
 .module-title-header { color: #2563EB; }
-.block { margin-bottom: 1.5rem; }
+.block { margin-bottom: 2rem; }
 img { max-width: 100%; height: auto; border-radius: 6px; }
 .block-image { display: flex; justify-content: center; }
 .block-quote {
     position: relative;
-    padding: 1rem 1rem 1rem 2rem;
+    padding: 1.5rem 1.5rem 1.5rem 2.5rem;
     background-color: #f0f4ff;
     border-left: 4px solid #2563EB;
     border-radius: 4px;
@@ -239,6 +269,9 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     text-align: center;
     border-top: 1px solid #e5e7eb;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
 }
 .btn {
     background-color: #2563EB;
@@ -251,6 +284,22 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     margin: 0 0.5rem;
 }
 .btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+    .main-header {
+        padding: 0.5rem 1rem;
+    }
+    .main-header h1 {
+        font-size: 1.25rem;
+    }
+    main {
+        margin: 1rem;
+        padding: 0.5rem;
+    }
+    .module-navigation {
+        flex-direction: column;
+    }
+}
     `;
 }
 
