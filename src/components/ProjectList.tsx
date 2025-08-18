@@ -32,9 +32,24 @@ export function ProjectList() {
     deleteProject(projectId);
   };
 
+  if (projects.length === 0) {
+    return (
+      <div className="text-center">
+        <div className="border-2 border-dashed rounded-xl p-12 bg-card">
+          <h3 className="text-2xl font-medium text-foreground">Nenhum projeto encontrado.</h3>
+          <p className="text-muted-foreground my-4">Comece a criar sua primeira apostila interativa agora mesmo.</p>
+          <Button onClick={handleNewProject} size="lg">
+            <PlusCircle className="mr-2" />
+            Criar meu primeiro projeto
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-       <div className="flex justify-end">
+    <div className="space-y-8">
+       <div className="flex justify-center">
          <Button onClick={handleNewProject} size="lg">
            <PlusCircle className="mr-2" />
            Novo Projeto
@@ -42,12 +57,12 @@ export function ProjectList() {
        </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col">
+          <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col bg-card">
             <CardHeader className="flex-grow">
               <CardTitle>{project.title}</CardTitle>
               <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
-            <CardFooter className="flex gap-2">
+            <CardFooter className="flex gap-2 bg-muted/50 p-4 rounded-b-lg">
               <Button asChild className="w-full" variant="outline">
                 <Link href={`/editor/${project.id}`}>
                   Editar <ArrowRight className="ml-2" />
@@ -80,16 +95,6 @@ export function ProjectList() {
             </CardFooter>
           </Card>
         ))}
-         {projects.length === 0 && (
-          <div className="md:col-span-2 lg:col-span-3 text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-xl font-medium text-muted-foreground">Nenhum projeto encontrado.</h3>
-            <p className="text-muted-foreground mb-4">Comece criando um novo projeto.</p>
-            <Button onClick={handleNewProject}>
-              <PlusCircle className="mr-2" />
-              Criar meu primeiro projeto
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
