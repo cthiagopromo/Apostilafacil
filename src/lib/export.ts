@@ -50,48 +50,48 @@ export async function exportToPdf(projects: Project[]) {
         format: 'a4'
     });
 
-    for (const project of projects) {
-        const pageElement = document.getElementById(`preview-content`);
-        if (!pageElement) continue;
+    const projectToExport = projects.length > 0 ? projects[0] : null;
 
-        // Clone the element to avoid modifying the original
-        const clonedElement = pageElement.cloneNode(true) as HTMLElement;
-
-        // Temporarily append to the body to ensure styles are applied
-        document.body.appendChild(clonedElement);
-
-        // Remove interactive elements from the clone
-        clonedElement.querySelectorAll('button').forEach(btn => btn.remove());
-        
-        await html2canvas(clonedElement, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            logging: true,
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            let position = 0;
-            let heightLeft = pdfHeight;
-            const pageHeight = doc.internal.pageSize.getHeight();
-
-            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
-
-            while (heightLeft >= 0) {
-              position = heightLeft - pdfHeight;
-              doc.addPage();
-              doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-              heightLeft -= pageHeight;
-            }
-        });
-        
-        document.body.removeChild(clonedElement);
+    if (!projectToExport) {
+        alert("Nenhum projeto para exportar para PDF.");
+        return;
     }
     
-    const projectTitle = projects[0]?.title || 'apostila';
+    // Temporarily create an element to render for PDF generation
+    const pdfRenderElement = document.createElement('div');
+    pdfRenderElement.style.width = '210mm'; // A4 width
+    pdfRenderElement.style.padding = '20mm';
+    pdfRenderElement.innerHTML = generatePdfHtmlForProject(projectToExport);
+    document.body.appendChild(pdfRenderElement);
+
+    await html2canvas(pdfRenderElement, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: true,
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let position = 0;
+        let heightLeft = pdfHeight;
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - pdfHeight;
+          doc.addPage();
+          doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+    });
+    
+    document.body.removeChild(pdfRenderElement);
+    
+    const projectTitle = projectToExport.title || 'apostila';
     doc.save(`${projectTitle}.pdf`);
 }
 
@@ -156,8 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateNavButtons() {
-        document.getElementById('nav-anterior').disabled = currentModuleIndex === 0;
-        document.getElementById('nav-proximo').disabled = currentModuleIndex === modules.length - 1;
+        const prevButton = document.getElementById('nav-anterior');
+        const nextButton = document.getElementById('nav-proximo');
+        if (prevButton) prevButton.style.display = currentModuleIndex > 0 ? 'inline-block' : 'none';
+        if (nextButton) nextButton.style.display = currentModuleIndex < modules.length - 1 ? 'inline-block' : 'none';
     }
 
     document.getElementById('nav-proximo').addEventListener('click', () => {
@@ -184,6 +186,10 @@ function generateModulesHtml(projects: Project[]): string {
                 <h1 class="module-title-header">${project.title}</h1>
                 ${project.blocks.map(renderBlockToHtml).join('\n')}
             </div>
+             <div class="module-navigation">
+                <button class="btn nav-btn" id="nav-anterior">Módulo Anterior</button>
+                <button class="btn nav-btn" id="nav-proximo">Próximo Módulo</button>
+            </div>
         </section>
     `).join('');
 }
@@ -205,14 +211,15 @@ function generateHtml(projects: Project[]): string {
 <body>
     <header class="main-header">
         <h1>${mainTitle}</h1>
+        <div class="header-nav">
+             <button class="btn">PDF</button>
+             <button class="btn">A+</button>
+             <button class="btn">A-</button>
+        </div>
     </header>
     <main>
         ${modulesHtml}
     </main>
-    <div class="module-navigation">
-        <button class="btn nav-btn" id="nav-anterior">Módulo Anterior</button>
-        <button class="btn nav-btn" id="nav-proximo">Próximo Módulo</button>
-    </div>
     <script src="script.js"></script>
 </body>
 </html>
@@ -222,82 +229,124 @@ function generateHtml(projects: Project[]): string {
 function generateCss(): string {
     // A simplified CSS for the ZIP export, focusing on content presentation.
     return `
+:root {
+    --primary-color: #2563EB;
+    --background-color: #F4F5F7;
+    --text-color: #111827;
+    --card-background: #FFFFFF;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.6;
-    background-color: #f4f5f7;
-    color: #333;
+    background-color: var(--background-color);
+    color: var(--text-color);
     margin: 0;
-    padding: 0;
+    padding-top: 80px; /* Space for fixed header */
 }
+
 .main-header {
-    background-color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 1rem 2rem;
-    border-bottom: 1px solid #e5e7eb;
-    text-align: center;
+    background-color: rgba(37, 99, 235, 0.9);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    backdrop-filter: blur(5px);
 }
+
+.main-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
 main {
     max-width: 800px;
     margin: 2rem auto;
-    padding: 1rem;
-    background-color: white;
+    padding: 2rem;
+    background-color: var(--card-background);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 .modulo { display: none; }
-.module-title-header { color: #2563EB; }
-.block { margin-bottom: 2rem; }
+.module-title-header { color: var(--primary-color); }
+.block { margin-bottom: 2.5rem; }
+
 img { max-width: 100%; height: auto; border-radius: 6px; }
-.block-image { display: flex; justify-content: center; }
+
+.block-image { text-align: center; }
+
 .block-quote {
     position: relative;
     padding: 1.5rem 1.5rem 1.5rem 2.5rem;
     background-color: #f0f4ff;
-    border-left: 4px solid #2563EB;
+    border-left: 4px solid var(--primary-color);
     border-radius: 4px;
     font-style: italic;
 }
+
 .quiz-question { font-weight: bold; margin-bottom: 0.5rem; }
 .quiz-option.correct { font-weight: bold; color: #16a34a; }
+
 .module-navigation {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: white;
-    padding: 1rem;
     text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
     border-top: 1px solid #e5e7eb;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
 }
+
 .btn {
-    background-color: #2563EB;
+    background-color: var(--primary-color);
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.2rem;
     border: none;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
     margin: 0 0.5rem;
+    transition: background-color 0.2s;
 }
+
+.btn:hover {
+    background-color: #1D4ED8;
+}
+
+.header-nav .btn {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.header-nav .btn:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+
 .btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
 
 @media (max-width: 768px) {
+    body {
+        padding-top: 60px;
+    }
     .main-header {
-        padding: 0.5rem 1rem;
+        flex-direction: column;
+        padding: 0.75rem 1rem;
     }
     .main-header h1 {
-        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
     }
     main {
         margin: 1rem;
-        padding: 0.5rem;
-    }
-    .module-navigation {
-        flex-direction: column;
+        padding: 1.5rem;
     }
 }
     `;
