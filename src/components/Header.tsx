@@ -1,15 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Download, Save, Settings, ChevronsLeft, ChevronsRight, FileJson } from 'lucide-react';
+import { FileText, Eye, Download, Save, Settings, ChevronsLeft, ChevronsRight, FileJson, Loader } from 'lucide-react';
 import Link from 'next/link';
+import { exportToZip } from '@/lib/export';
+import { toast } from '@/hooks/use-toast';
 
 export default function Header() {
   const { activeProject } = useProjectStore();
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Supondo que a sidebar comece aberta
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!activeProject) return;
+
+    setIsExporting(true);
+    try {
+      await exportToZip(activeProject);
+      toast({
+        title: "Exportação Concluída",
+        description: "Seu projeto foi exportado como um arquivo ZIP.",
+      });
+    } catch (error) {
+      console.error("Failed to export project", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na Exportação",
+        description: "Não foi possível exportar o projeto. Tente novamente.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <header className="flex items-center justify-between p-2 h-16 bg-card border-b">
@@ -40,19 +64,28 @@ export default function Header() {
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="outline">
-          <Eye className="mr-2 h-4 w-4" />
-          Pré-visualizar
+        <Button variant="outline" asChild>
+          <Link href={`/preview/${activeProject?.id}`} target="_blank">
+            <Eye className="mr-2 h-4 w-4" />
+            Pré-visualizar
+          </Link>
         </Button>
         <Button variant="outline">
           <Save className="mr-2 h-4 w-4" />
           Salvar
         </Button>
-        <Button asChild>
-          <Link href={`/preview/${activeProject?.id}`} target="_blank">
-            <Download className="mr-2 h-4 w-4" />
-            Exportar ZIP
-          </Link>
+        <Button onClick={handleExport} disabled={isExporting}>
+            {isExporting ? (
+                <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Exportando...
+                </>
+            ) : (
+                <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar ZIP
+                </>
+            )}
         </Button>
       </div>
     </header>
