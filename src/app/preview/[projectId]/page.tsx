@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,8 +7,18 @@ import { useParams, useRouter } from 'next/navigation';
 import type { Project } from '@/lib/types';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Book } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    Book, 
+    Download, 
+    ZoomIn, 
+    ZoomOut, 
+    Contrast, 
+    Moon, 
+    Volume2 
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -48,13 +59,25 @@ export default function PreviewPage() {
       <div className="min-h-screen bg-secondary text-foreground">
         <header className="sticky top-0 z-10 flex items-center justify-between p-4 bg-background/80 backdrop-blur-md border-b">
             <div className='flex items-center gap-4'>
-                <Book className="h-7 w-7 text-primary" />
-                <h1 className="text-2xl font-bold">{title}</h1>
+                <Button variant="outline" size="icon" onClick={() => router.push(`/editor/${projectId}`)}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Separator orientation="vertical" className="h-8" />
+                <div className='flex items-center gap-3'>
+                    <Book className="h-7 w-7 text-primary" />
+                    <h1 className="text-2xl font-bold">{title}</h1>
+                </div>
             </div>
-            <Button variant="outline" onClick={() => router.push(`/editor/${projectId}`)}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar ao Editor
-            </Button>
+            
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon"><Download /></Button>
+                <Separator orientation="vertical" className="h-8" />
+                <Button variant="ghost" size="icon"><ZoomIn /></Button>
+                <Button variant="ghost" size="icon"><ZoomOut /></Button>
+                <Button variant="ghost" size="icon"><Contrast /></Button>
+                <Button variant="ghost" size="icon"><Moon /></Button>
+                <Button variant="ghost" size="icon"><Volume2 /></Button>
+            </div>
         </header>
         <main className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
             {blocks.map((block) => (
