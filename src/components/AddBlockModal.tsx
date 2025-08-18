@@ -11,7 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import useProjectStore from '@/lib/store';
-import { Type, Image, Video, MousePointerClick, HelpCircle } from 'lucide-react';
+import { Type, Image, Video, MousePointerClick, HelpCircle, Quote } from 'lucide-react';
 import type { BlockType } from '@/lib/types';
 
 interface AddBlockModalProps {
@@ -33,6 +33,13 @@ const blockOptions = [
     description: 'Insira imagens com legenda e texto alternativo',
     icon: <Image className="h-6 w-6 text-primary" />,
     badgeColor: 'bg-green-100 text-green-800',
+  },
+    {
+    type: 'quote' as BlockType,
+    title: 'Citação',
+    description: 'Destaque uma citação ou frase importante',
+    icon: <Quote className="h-6 w-6 text-primary" />,
+    badgeColor: 'bg-yellow-100 text-yellow-800',
   },
   {
     type: 'video' as BlockType,

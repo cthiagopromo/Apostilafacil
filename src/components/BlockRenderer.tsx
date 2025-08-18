@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Quote, XCircle } from 'lucide-react';
 
 const YoutubeEmbed = ({ url }: { url: string }) => {
     try {
@@ -98,6 +98,13 @@ const BlockRenderer = ({ block }: { block: Block }) => {
                         <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
                     )}
                 </div>
+            )
+        case 'quote':
+            return (
+                 <div className="relative p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg">
+                    <Quote className="absolute -top-4 -left-3 h-12 w-12 text-primary/30" />
+                    <p className="text-lg italic text-foreground/80">{block.content.text}</p>
+                 </div>
             )
         case 'video':
             if (!block.content.videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>

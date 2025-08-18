@@ -3,7 +3,8 @@ export type BlockType =
   | 'image' 
   | 'video'
   | 'button'
-  | 'quiz';
+  | 'quiz'
+  | 'quote';
 
 export interface QuizOption {
   id: string;

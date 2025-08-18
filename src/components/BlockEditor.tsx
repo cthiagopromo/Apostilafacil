@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import BlockRenderer from './BlockRenderer';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Input } from './ui/input';
 import { Switch } from './ui/switch';
 import RichTextEditor from './RichTextEditor';
 import { Textarea } from './ui/textarea';
@@ -42,6 +42,18 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                         <RichTextEditor 
                             value={block.content.text || ''}
                             onChange={(value) => updateBlockContent(block.id, { text: value })}
+                        />
+                    </div>
+                )
+            case 'quote':
+                 return (
+                    <div className="space-y-2">
+                        <Label htmlFor={`quote-content-${block.id}`}>Texto da Citação</Label>
+                        <Textarea 
+                            id={`quote-content-${block.id}`}
+                            value={block.content.text || ''}
+                            onChange={(e) => updateBlockContent(block.id, { text: e.target.value })}
+                            rows={5}
                         />
                     </div>
                 )

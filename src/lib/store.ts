@@ -151,6 +151,9 @@ const useProjectStore = create<State & Actions>()(
             case 'button':
                 content = { buttonText: 'Clique Aqui', buttonUrl: '#' };
                 break;
+            case 'quote':
+                content = { text: 'No início de 1905, Albert Einstein tinha 25 anos de idade e era um desconhecido funcionário do departamento de patentes da Suíça.' };
+                break;
             case 'quiz':
                 content = { 
                     question: 'Qual é a pergunta?', 
