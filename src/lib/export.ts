@@ -283,15 +283,15 @@ main {
 
 .block-quote {
     position: relative;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 1.5rem 2.5rem;
     background-color: #f0f4ff;
     border-left: 5px solid var(--primary-color);
     border-radius: 0 8px 8px 0;
 }
 .block-quote .quote-icon {
     position: absolute;
-    top: -10px;
-    left: 10px;
+    top: 10px;
+    left: -5px;
     font-size: 4rem;
     color: rgba(37, 99, 235, 0.15);
     line-height: 1;
@@ -701,41 +701,62 @@ export async function exportToZip(projects: Project[]) {
 }
 
 export async function exportToPdf(projects: Project[]) {
-  const doc = new jsPDF();
-  const mainElement = document.createElement('div');
-  mainElement.innerHTML = generateModulesHtml(projects);
-  document.body.appendChild(mainElement);
+    const doc = new jsPDF();
+    const mainElement = document.querySelector('main');
 
-  const modules = mainElement.querySelectorAll('.modulo');
-
-  for (let i = 0; i < modules.length; i++) {
-    const module = modules[i] as HTMLElement;
-    module.style.display = 'block';
-    
-    // Temporarily remove interactive elements for PDF export
-    module.querySelectorAll('.fab-container, .module-navigation, .btn').forEach(el => el.remove());
-
-    const canvas = await html2canvas(module, {
-        scale: 2,
-        useCORS: true,
-        logging: true,
-    });
-    const imgData = canvas.toDataURL('image/png');
-    
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    if (i > 0) {
-      doc.addPage();
+    if (!mainElement) {
+        console.error("Main element not found for PDF export.");
+        return;
     }
-    
-    doc.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight - 20);
-    module.style.display = 'none';
-  }
 
-  document.body.removeChild(mainElement);
+    const projectTitle = projects[0]?.title || 'apostila';
 
-  const projectTitle = projects[0]?.title || 'apostila';
-  doc.save(`${projectTitle}.pdf`);
+    // Clone the main element to avoid modifying the live page
+    const contentToPrint = mainElement.cloneNode(true) as HTMLElement;
+    contentToPrint.style.width = '800px'; // Set a fixed width for consistent rendering
+    document.body.appendChild(contentToPrint);
+
+    // Remove interactive elements from the clone
+    contentToPrint.querySelectorAll('.fab-container, .module-navigation, .btn').forEach(el => el.remove());
+
+    const modules = contentToPrint.querySelectorAll('.modulo');
+
+    for (let i = 0; i < modules.length; i++) {
+        const module = modules[i] as HTMLElement;
+        module.style.display = 'block';
+
+        const canvas = await html2canvas(module, {
+            scale: 2,
+            useCORS: true,
+            logging: true,
+            width: module.scrollWidth,
+            height: module.scrollHeight,
+            windowWidth: document.documentElement.scrollWidth,
+            windowHeight: document.documentElement.scrollHeight
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        let position = 0;
+        let heightLeft = pdfHeight;
+        
+        if (i > 0) {
+            doc.addPage();
+        }
+
+        doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= doc.internal.pageSize.getHeight();
+
+        while (heightLeft > 0) {
+            position = heightLeft - pdfHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= doc.internal.pageSize.getHeight();
+        }
+    }
+
+    document.body.removeChild(contentToPrint);
+    doc.save(`${projectTitle}.pdf`);
 }

@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Settings, Info, Palette, Type, Layout } from 'lucide-react';
+import { Settings, Info, Palette, Type, Layout, Book } from 'lucide-react';
 import ModuleSettings from './ModuleSettings';
 import LayoutSettings from './LayoutSettings';
 
@@ -30,6 +30,17 @@ export default function RightSidebar() {
             </AccordionTrigger>
             <AccordionContent>
               <ModuleSettings />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-5">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <Book className="h-4 w-4" />
+                <span>Configurações da Apostila</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              Em breve...
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="item-2">
