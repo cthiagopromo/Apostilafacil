@@ -18,12 +18,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useState } from 'react';
 
 export function ProjectList() {
   const { projects, addProject, deleteProject } = useProjectStore();
   const router = useRouter();
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   
   const handleNewProject = () => {
     const newProject = addProject();
@@ -32,18 +30,17 @@ export function ProjectList() {
 
   const handleDeleteProject = (projectId: string) => {
     deleteProject(projectId);
-    setProjectToDelete(null); // Close dialog
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
        <div className="flex justify-end">
          <Button onClick={handleNewProject} size="lg">
            <PlusCircle className="mr-2" />
            Novo Projeto
          </Button>
        </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col">
             <CardHeader className="flex-grow">
@@ -51,11 +48,11 @@ export function ProjectList() {
               <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
             <CardFooter className="flex gap-2">
-              <Link href={`/editor/${project.id}`} passHref className="flex-grow">
-                <Button className="w-full" variant="outline">
+              <Button asChild className="w-full" variant="outline">
+                <Link href={`/editor/${project.id}`}>
                   Editar <ArrowRight className="ml-2" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon">
