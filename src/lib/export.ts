@@ -19,6 +19,13 @@ function renderBlockToHtml(block: Block): string {
                     </figure>
                 </div>
             `;
+        case 'quote':
+            return `
+                <div class="block block-quote">
+                    <div class="quote-icon">❞</div>
+                    <p>${block.content.text || ''}</p>
+                </div>
+            `;
         case 'video':
             let videoUrl = block.content.videoUrl || '';
             if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
@@ -116,7 +123,6 @@ function generateHtml(projects: Project[]): string {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="overlay" class="overlay"></div>
     <header class="main-header">
         <div class="header-content">
             <h1 id="main-title">${mainTitle}</h1>
@@ -129,23 +135,20 @@ function generateHtml(projects: Project[]): string {
         </div>
     </header>
 
-    <aside id="side-panel" class="side-panel">
-        <div class="panel-header">
-            <h3>Módulos</h3>
-            <button id="close-panel-btn" class="icon-btn">&times;</button>
-        </div>
-        <ul id="module-menu-list">
-            ${moduleMenuHtml}
-        </ul>
-    </aside>
-
     <main>
         ${modulesHtml}
     </main>
 
-    <button class="floating-action-button" id="fab-open-panel">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-    </button>
+    <div class="fab-container">
+        <button class="floating-action-button" id="fab-open-panel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </button>
+        <div id="module-menu" class="module-menu">
+             <ul id="module-menu-list">
+                ${moduleMenuHtml}
+            </ul>
+        </div>
+    </div>
     
     <script src="script.js"></script>
 </body>
@@ -262,6 +265,36 @@ main {
 .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .block-button { text-align: center; }
 
+.block-quote {
+    position: relative;
+    padding: 1.5rem;
+    background-color: #f0f4ff;
+    border-left: 5px solid var(--primary-color);
+    border-radius: 8px;
+}
+.block-quote .quote-icon {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    font-size: 4rem;
+    color: rgba(37, 99, 235, 0.15);
+    line-height: 1;
+}
+.block-quote p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+}
+body.dark-mode .block-quote {
+    background-color: #2a2a3a;
+}
+body.dark-mode .block-quote .quote-icon {
+     color: rgba(93, 147, 255, 0.15);
+}
+
+
 .btn {
     display: inline-block;
     background-color: var(--primary-color);
@@ -294,18 +327,26 @@ body.dark-mode .quiz-feedback.incorrect { background-color: #991b1b; color: #fee
 
 .module-navigation {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 1rem;
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
 }
+.nav-btn {
+    font-weight: bold;
+}
 
-.floating-action-button {
+
+.fab-container {
     position: fixed;
     bottom: 25px;
     right: 25px;
     z-index: 1000;
-    background-color: #1D4ED8;
+}
+
+.floating-action-button {
+    background-color: var(--primary-color);
     color: white;
     width: 60px;
     height: 60px;
@@ -320,52 +361,37 @@ body.dark-mode .quiz-feedback.incorrect { background-color: #991b1b; color: #fee
 }
 
 .floating-action-button:hover {
-    background-color: #2563EB;
+    background-color: #1D4ED8;
     transform: scale(1.05);
 }
 
-.side-panel {
-    position: fixed;
-    top: 0;
-    left: -320px; /* Hidden by default */
-    width: 300px;
-    height: 100%;
+.module-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    width: 280px;
     background-color: var(--card-bg-color);
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-    z-index: 1100;
-    transition: left 0.3s ease-in-out;
-    display: flex;
-    flex-direction: column;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px var(--shadow-color);
+    transform: translateY(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: -1;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-.side-panel.open {
-    left: 0;
-}
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-.panel-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-}
-
-#close-panel-btn {
-    font-size: 1.5rem;
-    width: 40px;
-    height: 40px;
+.module-menu.open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 #module-menu-list {
     list-style: none;
     margin: 0;
     padding: 0.5rem 0;
-    overflow-y: auto;
-    flex-grow: 1;
 }
 
 .module-menu-item {
@@ -393,23 +419,6 @@ body.dark-mode .module-menu-item:hover {
 }
 body.dark-mode .module-menu-item.active {
     border-left-color: lightblue;
-}
-
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
-    z-index: 1050;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-}
-.overlay.show {
-    opacity: 1;
-    visibility: visible;
 }
     `;
 }
@@ -488,33 +497,28 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.fontSize = savedFontSize;
     }
 
-    // --- Panel Logic ---
-    const sidePanel = document.getElementById('side-panel');
-    const fabOpen = document.getElementById('fab-open-panel');
-    const closeBtn = document.getElementById('close-panel-btn');
-    const overlay = document.getElementById('overlay');
-    const moduleMenuList = document.getElementById('module-menu-list');
+    // --- New Menu Logic ---
+    const fab = document.getElementById('fab-open-panel');
+    const moduleMenu = document.getElementById('module-menu');
+    
+    fab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moduleMenu.classList.toggle('open');
+    });
 
-    const openPanel = () => {
-        sidePanel.classList.add('open');
-        overlay.classList.add('show');
-    };
-
-    const closePanel = () => {
-        sidePanel.classList.remove('open');
-        overlay.classList.remove('show');
-    };
-
-    fabOpen.addEventListener('click', openPanel);
-    closeBtn.addEventListener('click', closePanel);
-    overlay.addEventListener('click', closePanel);
-
-    moduleMenuList.addEventListener('click', e => {
+    moduleMenu.addEventListener('click', e => {
         if (e.target.classList.contains('module-menu-item')) {
             e.preventDefault();
             const index = parseInt(e.target.dataset.moduleIndex);
             showModule(index);
-            closePanel();
+            moduleMenu.classList.remove('open');
+        }
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!moduleMenu.contains(e.target) && !fab.contains(e.target)) {
+            moduleMenu.classList.remove('open');
         }
     });
 
@@ -524,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-dark-mode').addEventListener('click', toggleDarkMode);
     document.getElementById('btn-speak').addEventListener('click', speakText);
 
-    // --- Module Navigation ---
+    // --- Module Navigation (Bottom buttons) ---
     document.body.addEventListener('click', e => {
         if (e.target.classList.contains('nav-btn')) {
             const targetIndex = parseInt(e.target.dataset.target);
