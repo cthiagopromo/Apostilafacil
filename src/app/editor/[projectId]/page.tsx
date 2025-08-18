@@ -19,14 +19,13 @@ export default function EditorPage() {
     const foundProject = projects.find(p => p.id === projectId);
     setProjectData(foundProject);
     if (foundProject) {
-      // Condition to avoid re-setting the active project if it's already the correct one.
       if (!activeProject || activeProject.id !== foundProject.id) {
           setActiveProject(foundProject.id);
       }
     }
-  }, [projectId, projects, setActiveProject, activeProject]);
+  }, [projectId, projects, activeProject, setActiveProject]);
   
-  if (projectData === undefined) {
+  if (projectData === undefined && !activeProject) {
     return (
       <div className="flex items-center justify-center h-screen bg-secondary">
         <div className="text-center">
@@ -36,7 +35,7 @@ export default function EditorPage() {
     );
   }
 
-  if (!projectData) {
+  if (!projectData && !activeProject) {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-secondary">
             <p className="text-xl mb-4">Projeto não encontrado.</p>
