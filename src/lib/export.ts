@@ -199,7 +199,66 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    
+    // --- Accessibility Buttons ---
 
+    // PDF
+    document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+
+    // Font Size
+    let tamanhoFonte = parseInt(localStorage.getItem('tamanhoFonte')) || 16;
+    document.documentElement.style.fontSize = tamanhoFonte + 'px';
+
+    document.getElementById('btn-fonte-mais').addEventListener('click', () => {
+        tamanhoFonte = Math.min(tamanhoFonte + 2, 24);
+        document.documentElement.style.fontSize = tamanhoFonte + 'px';
+        localStorage.setItem('tamanhoFonte', tamanhoFonte);
+    });
+
+    document.getElementById('btn-fonte-menos').addEventListener('click', () => {
+        tamanhoFonte = Math.max(tamanhoFonte - 2, 12);
+        document.documentElement.style.fontSize = tamanhoFonte + 'px';
+        localStorage.setItem('tamanhoFonte', tamanhoFonte);
+    });
+
+    // Contrast
+    const btnContraste = document.getElementById('btn-contraste');
+    if (localStorage.getItem('altoContraste') === 'true') {
+        document.body.classList.add('alto-contraste');
+    }
+    btnContraste.addEventListener('click', () => {
+        document.body.classList.toggle('alto-contraste');
+        localStorage.setItem('altoContraste', document.body.classList.contains('alto-contraste'));
+    });
+
+    // Dark Mode
+    const btnModoEscuro = document.getElementById('btn-modo-escuro');
+    const iconeModo = btnModoEscuro.querySelector('.material-icons');
+    if (localStorage.getItem('modoEscuro') === 'true') {
+        document.body.classList.add('modo-escuro');
+        iconeModo.textContent = 'light_mode';
+    }
+    btnModoEscuro.addEventListener('click', function() {
+        document.body.classList.toggle('modo-escuro');
+        const isModoEscuro = document.body.classList.contains('modo-escuro');
+        localStorage.setItem('modoEscuro', isModoEscuro);
+        iconeModo.textContent = isModoEscuro ? 'light_mode' : 'dark_mode';
+    });
+
+    // Audio
+    const btnAudio = document.getElementById('btn-audio');
+    const iconeAudio = btnAudio.querySelector('.material-icons');
+    let audioAtivo = localStorage.getItem('audioAtivo') !== 'false';
+    iconeAudio.textContent = audioAtivo ? 'volume_up' : 'volume_off';
+    btnAudio.addEventListener('click', function() {
+        audioAtivo = !audioAtivo;
+        localStorage.setItem('audioAtivo', audioAtivo);
+        iconeAudio.textContent = audioAtivo ? 'volume_up' : 'volume_off';
+        // You would need to add logic here to actually mute/unmute audio elements if you add any.
+    });
+
+
+    // --- Floating Nav ---
     floatingNavButton.addEventListener('click', (event) => {
         event.stopPropagation();
         floatingNavMenu.classList.toggle('show');
@@ -256,11 +315,42 @@ function generateFloatingNav(projects: Project[]): string {
     `;
 }
 
+function generateHeaderNavHtml(): string {
+    return `
+        <div class="header-nav">
+             <button class="btn-acessibilidade" id="btn-pdf" title="Exportar como PDF">
+                <i class="material-icons">picture_as_pdf</i>
+                <span>PDF</span>
+            </button>
+            <button class="btn-acessibilidade" id="btn-fonte-mais" title="Aumentar fonte">
+                <i class="material-icons">text_increase</i>
+                <span>A+</span>
+            </button>
+            <button class="btn-acessibilidade" id="btn-fonte-menos" title="Diminuir fonte">
+                <i class="material-icons">text_decrease</i>
+                <span>A-</span>
+            </button>
+            <button class="btn-acessibilidade" id="btn-contraste" title="Alto contraste">
+                <i class="material-icons">contrast</i>
+                <span>Contraste</span>
+            </button>
+            <button class="btn-acessibilidade" id="btn-modo-escuro" title="Modo escuro/claro">
+                <i class="material-icons">dark_mode</i>
+                <span>Escuro</span>
+            </button>
+            <button class="btn-acessibilidade" id="btn-audio" title="Ativar/desativar áudio">
+                <i class="material-icons">volume_up</i>
+                <span>Áudio</span>
+            </button>
+        </div>
+    `;
+}
 
 function generateHtml(projects: Project[]): string {
     const modulesHtml = generateModulesHtml(projects);
     const mainTitle = "Apostila Interativa";
     const floatingNavHtml = generateFloatingNav(projects);
+    const headerNavHtml = generateHeaderNavHtml();
     
     return `
 <!DOCTYPE html>
@@ -269,14 +359,13 @@ function generateHtml(projects: Project[]): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${mainTitle}</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="main-header">
         <h1>${projects.length > 0 ? projects[0].title : mainTitle}</h1>
-        <div class="header-nav">
-             <!-- Accessibility buttons here -->
-        </div>
+        ${headerNavHtml}
     </header>
     <main>
         ${modulesHtml}
@@ -299,6 +388,35 @@ function generateCss(): string {
     --header-height: 70px;
 }
 
+/* Dark Mode Styles */
+body.modo-escuro {
+    --background-color: #121212;
+    --text-color: #E0E0E0;
+    --card-background: #1e1e1e;
+    --primary-color: #60A5FA;
+    --primary-color-dark: #3B82F6;
+}
+
+/* High Contrast Styles */
+body.alto-contraste {
+    --background-color: #000;
+    --text-color: #FFFF00;
+    --card-background: #000;
+    --primary-color: #FFFF00;
+    --primary-color-dark: #FFFF00;
+}
+body.alto-contraste .main-header {
+    background-color: #000;
+    color: #FFFF00;
+    border-bottom: 2px solid #FFFF00;
+}
+body.alto-contraste .btn-acessibilidade {
+    background-color: #FFFF00;
+    color: #000;
+}
+body.alto-contraste a { color: #FFFF00; }
+
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.6;
@@ -306,6 +424,7 @@ body {
     color: var(--text-color);
     margin: 0;
     padding-top: var(--header-height);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .main-header {
@@ -324,11 +443,44 @@ body {
     z-index: 1000;
     backdrop-filter: blur(5px);
 }
+body.modo-escuro .main-header {
+     background-color: rgba(29, 78, 216, 0.9);
+}
+
 
 .main-header h1 {
     margin: 0;
     font-size: 1.5rem;
 }
+
+.header-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-acessibilidade {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-acessibilidade:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-acessibilidade .material-icons {
+    font-size: 20px;
+}
+
 
 main {
     max-width: 800px;
@@ -354,6 +506,10 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     border-radius: 4px;
     font-style: italic;
 }
+body.modo-escuro .block-quote {
+    background-color: rgba(96, 165, 250, 0.1);
+    border-left-color: var(--primary-color);
+}
 
 .quiz-question { font-weight: bold; margin-bottom: 0.5rem; }
 .quiz-option.correct { font-weight: bold; color: #16a34a; }
@@ -363,6 +519,9 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid #e5e7eb;
+}
+body.modo-escuro .module-navigation {
+    border-top-color: #374151;
 }
 
 .btn {
@@ -376,6 +535,8 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     margin: 0 0.5rem;
     transition: background-color 0.2s;
 }
+body.alto-contraste .btn { color: #000; }
+
 
 .btn:hover {
     background-color: var(--primary-color-dark);
@@ -402,12 +563,14 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     background-color: var(--primary-color-dark);
     transform: scale(1.05);
 }
+body.alto-contraste #floating-nav-button { color: #000; }
 
 #floating-nav-menu {
     position: fixed;
     top: calc(var(--header-height) + 85px);
     right: 20px;
-    background-color: white;
+    background-color: var(--card-background);
+    border: 1px solid #e5e7eb;
     border-radius: 8px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     z-index: 1000;
@@ -419,6 +582,7 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     max-height: 300px;
     overflow-y: auto;
 }
+body.modo-escuro #floating-nav-menu { border-color: #374151; }
 
 #floating-nav-menu.show {
     opacity: 1;
@@ -442,7 +606,10 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
 }
 
 #floating-nav-menu li a:hover {
-    background-color: #f0f0f0;
+    background-color: rgba(0,0,0,0.05);
+}
+body.modo-escuro #floating-nav-menu li a:hover {
+     background-color: rgba(255,255,255,0.1);
 }
 
 #floating-nav-menu li a.active {
@@ -450,6 +617,7 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
     color: white;
     font-weight: bold;
 }
+body.alto-contraste #floating-nav-menu li a.active { color: #000; }
 
 
 @media (max-width: 768px) {
@@ -457,21 +625,55 @@ img { max-width: 100%; height: auto; border-radius: 6px; }
         padding-top: 60px;
     }
     .main-header {
-        height: 60px;
+        height: auto;
         padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 10px;
     }
     .main-header h1 {
         font-size: 1.2rem;
+    }
+    .header-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .btn-acessibilidade span {
+        display: none; /* Hide text on mobile for cleaner look */
     }
     main {
         margin: 1rem;
         padding: 1.5rem;
     }
     #floating-nav-button {
-      top: 80px;
+      top: 150px;
     }
     #floating-nav-menu {
-      top: 145px;
+      top: 215px;
+      right: 10px;
+      left: 10px;
+      width: auto;
+    }
+}
+@media print {
+    body {
+        padding-top: 0;
+        background-color: #fff;
+        color: #000;
+    }
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-acessibilidade {
+        display: none !important;
+    }
+    main {
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+    }
+    .modulo {
+        display: block !important; /* Show all modules for printing */
+        page-break-after: always;
+    }
+    .block-quote {
+        background-color: #f0f4ff;
     }
 }
     `;
