@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { EditorLayout } from '@/components/EditorLayout';
 import type { Project } from '@/lib/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-export default function EditorPage({ params }: { params: { projectId: string } }) {
+export default function EditorPage() {
   const router = useRouter();
+  const params = useParams();
   const { getProjectById, setActiveProject } = useProjectStore();
   const [project, setProject] = useState<Project | null | undefined>(undefined);
-  const { projectId } = params;
+  const projectId = params.projectId as string;
 
   useEffect(() => {
     // O store pode não ter sido hidratado ainda, então esperamos um pouco
