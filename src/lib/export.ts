@@ -1,4 +1,5 @@
 
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
@@ -565,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (navProximo) {
         navProximo.addEventListener('click', () => {
-            if (currentModule-index < totalModules - 1) {
+            if (currentModuleIndex < totalModules - 1) {
                 mostrarModulo(currentModuleIndex + 1);
             }
         });

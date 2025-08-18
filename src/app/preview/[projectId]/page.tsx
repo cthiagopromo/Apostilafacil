@@ -53,7 +53,20 @@ export default function PreviewPage() {
     );
   }
 
-  const { title, blocks } = project;
+  const { title, blocks, layoutSettings } = project;
+
+  const containerWidthClass = {
+    standard: 'max-w-4xl',
+    large: 'max-w-6xl',
+    full: 'max-w-full px-4',
+  }[layoutSettings?.containerWidth || 'large'];
+
+  const sectionSpacingClass = {
+    compact: 'mb-4',
+    standard: 'mb-6',
+    comfortable: 'mb-8',
+  }[layoutSettings?.sectionSpacing || 'standard'];
+
 
   return (
       <div className="min-h-screen bg-secondary text-foreground">
@@ -79,9 +92,9 @@ export default function PreviewPage() {
                 <Button variant="ghost" size="icon"><Volume2 /></Button>
             </div>
         </header>
-        <main className="p-6 sm:p-8 lg:p-12 max-w-4xl mx-auto">
+        <main className={`p-6 sm:p-8 lg:p-12 mx-auto ${containerWidthClass}`}>
             {blocks.map((block) => (
-              <Card key={block.id} className="mb-6 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card key={block.id} className={`${sectionSpacingClass} overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}>
                 <div className='p-6'>
                     <BlockRenderer block={block} />
                 </div>
