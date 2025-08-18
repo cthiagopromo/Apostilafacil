@@ -57,21 +57,21 @@ export function ProjectList() {
        </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col bg-card">
+          <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col bg-card text-left">
             <CardHeader className="flex-grow">
-              <CardTitle>{project.title}</CardTitle>
+              <CardTitle className="text-xl">{project.title}</CardTitle>
               <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
             <CardFooter className="flex gap-2 bg-muted/50 p-4 rounded-b-lg">
               <Button asChild className="w-full" variant="outline">
                 <Link href={`/editor/${project.id}`}>
-                  Editar <ArrowRight className="ml-2" />
+                  Editar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon">
-                    <Trash2 />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
