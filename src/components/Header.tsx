@@ -10,15 +10,23 @@ import { exportToZip } from '@/lib/export';
 import { toast } from '@/hooks/use-toast';
 
 export default function Header() {
-  const { activeProject } = useProjectStore();
+  const { activeProject, projects } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
-    if (!activeProject) return;
+    if (!projects || projects.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "Nenhum projeto para exportar",
+            description: "Adicione pelo menos um módulo antes de exportar.",
+        });
+        return;
+    };
 
     setIsExporting(true);
     try {
-      await exportToZip(activeProject);
+      // Pass all projects to the export function
+      await exportToZip(projects);
       toast({
         title: "Exportação Concluída",
         description: "Seu projeto foi exportado como um arquivo ZIP.",
