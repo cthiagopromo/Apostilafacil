@@ -71,10 +71,7 @@ function generateModulesHtml(projects: Project[]): string {
     let modulesHtml = '';
     projects.forEach((project, index) => {
         const isFirst = index === 0;
-        const isLast = index === projects.length - 1;
         const moduleId = `modulo-${index}`;
-        const prevModuleId = `modulo-${index - 1}`;
-        const nextModuleId = `modulo-${index + 1}`;
 
         const blocksHtml = project.blocks.map(renderBlockToHtml).join('\n');
 
@@ -82,10 +79,6 @@ function generateModulesHtml(projects: Project[]): string {
             <section id="${moduleId}" class="modulo" style="display: ${isFirst ? 'block' : 'none'};">
                 <div class="module-content">
                     ${blocksHtml}
-                </div>
-                <div class="navegacao-modulo">
-                    ${!isFirst ? `<button class="btn btn-nav" onclick="mostrarModulo('${prevModuleId}')">← Tópico Anterior</button>` : '<div></div>'}
-                    ${!isLast ? `<button class="btn btn-nav" onclick="mostrarModulo('${nextModuleId}')">Próximo Tópico →</button>` : '<div></div>'}
                 </div>
             </section>
         `;
@@ -127,6 +120,12 @@ function generateHtml(projects: Project[]): string {
         <button class="floating-action-button" id="fab-main">+</button>
     </div>
 
+    <div class="navegacao-flutuante">
+        <button id="nav-anterior" class="btn btn-nav">← Anterior</button>
+        <span id="nav-contador">1 / ${projects.length}</span>
+        <button id="nav-proximo" class="btn btn-nav">Próximo →</button>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
@@ -150,7 +149,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
-    padding: 0;
+    padding: 0 0 100px 0; /* Add padding to the bottom to avoid overlap */
     transition: background-color 0.3s, color 0.3s;
 }
 
@@ -202,9 +201,8 @@ main {
 }
 
 .module-content {
-    border-bottom: 1px solid var(--border-color);
     padding-bottom: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .block {
@@ -263,12 +261,19 @@ main {
     text-decoration: none;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .btn:hover {
     filter: brightness(1.1);
 }
+
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+}
+
 
 .block-quiz {
     padding: 1.5rem;
@@ -321,27 +326,6 @@ main {
     background-color: #fee2e2;
     color: #991b1b;
     display: block;
-}
-
-.navegacao-modulo {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 30px;
-  padding-top: 20px;
-}
-
-.btn-nav {
-    border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--primary-color);
-}
-.btn-nav:hover {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-nav:only-child {
-  margin-left: auto;
 }
 
 /* Floating Action Button */
@@ -403,7 +387,6 @@ main {
     align-items: center;
     justify-content: center;
     
-    /* Animation */
     transform: scale(0);
     transition: transform 0.3s ease;
 }
@@ -415,21 +398,74 @@ main {
 .fab-option:hover {
     background-color: #60A5FA;
 }
+
+/* Floating Navigation */
+.navegacao-flutuante {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 999;
+    transition: background-color 0.3s;
+}
+
+body.dark-mode .navegacao-flutuante {
+    background-color: rgba(42, 42, 42, 0.9);
+}
+
+.navegacao-flutuante .btn-nav {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+#nav-contador {
+    font-weight: 500;
+    color: var(--text-color);
+}
     `;
 }
 
 function generateJs(): string {
     return `
-function mostrarModulo(idModulo) {
+let currentModuleIndex = 0;
+let totalModules = 0;
+
+function mostrarModulo(index) {
   document.querySelectorAll('.modulo').forEach(modulo => {
     modulo.style.display = 'none';
   });
   
-  const moduloToShow = document.getElementById(idModulo);
+  const moduloToShow = document.getElementById('modulo-' + index);
   if (moduloToShow) {
     moduloToShow.style.display = 'block';
     window.scrollTo(0, 0);
+    currentModuleIndex = index;
+    updateNavState();
   }
+}
+
+function updateNavState() {
+    const navAnterior = document.getElementById('nav-anterior');
+    const navProximo = document.getElementById('nav-proximo');
+    const navContador = document.getElementById('nav-contador');
+
+    if (!navAnterior || !navProximo || !navContador) return;
+
+    navContador.textContent = (currentModuleIndex + 1) + ' / ' + totalModules;
+
+    navAnterior.disabled = currentModuleIndex === 0;
+    navProximo.disabled = currentModuleIndex === totalModules - 1;
 }
 
 function changeFontSize(direction) {
@@ -449,6 +485,8 @@ function toggleDarkMode() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    totalModules = document.querySelectorAll('.modulo').length;
+
     // Restore preferences
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -490,8 +528,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const firstModule = document.querySelector('.modulo');
     if(firstModule) {
-        firstModule.style.display = 'block';
+        const firstIndex = parseInt(firstModule.id.split('-')[1] || '0');
+        currentModuleIndex = firstIndex;
+        mostrarModulo(currentModuleIndex);
     }
+    
+    updateNavState();
+
 
     // FAB logic
     const fabMain = document.getElementById('fab-main');
@@ -504,6 +547,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 fabMain.innerHTML = '&#x2715;'; // Close icon (X)
             } else {
                 fabMain.innerHTML = '+';
+            }
+        });
+    }
+
+    // Floating Nav logic
+    const navAnterior = document.getElementById('nav-anterior');
+    const navProximo = document.getElementById('nav-proximo');
+
+    if (navAnterior) {
+        navAnterior.addEventListener('click', () => {
+            if (currentModuleIndex > 0) {
+                mostrarModulo(currentModuleIndex - 1);
+            }
+        });
+    }
+
+    if (navProximo) {
+        navProximo.addEventListener('click', () => {
+            if (currentModule-index < totalModules - 1) {
+                mostrarModulo(currentModuleIndex + 1);
             }
         });
     }
@@ -523,5 +586,3 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
-
-    
