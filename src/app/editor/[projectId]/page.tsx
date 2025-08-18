@@ -10,19 +10,19 @@ import { Button } from '@/components/ui/button';
 export default function EditorPage() {
   const router = useRouter();
   const params = useParams();
-  const { getProjectById, setActiveProject } = useProjectStore();
-  const [project, setProject] = useState<Project | null | undefined>(undefined);
+  const { projects, setActiveProject, activeProject } = useProjectStore();
+  const [projectData, setProjectData] = useState<Project | null | undefined>(undefined);
   const projectId = params.projectId as string;
 
   useEffect(() => {
-    const foundProject = getProjectById(projectId);
-    setProject(foundProject);
-    if (foundProject) {
+    const foundProject = projects.find(p => p.id === projectId);
+    setProjectData(foundProject);
+    if (foundProject && (!activeProject || activeProject.id !== foundProject.id)) {
       setActiveProject(foundProject.id);
     }
-  }, [projectId, getProjectById, setActiveProject]);
+  }, [projectId, projects, setActiveProject, activeProject]);
   
-  if (project === undefined) {
+  if (projectData === undefined) {
     return (
       <div className="flex items-center justify-center h-screen bg-secondary">
         <div className="text-center">
@@ -32,7 +32,7 @@ export default function EditorPage() {
     );
   }
 
-  if (!project) {
+  if (!projectData) {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-secondary">
             <p className="text-xl mb-4">Projeto não encontrado.</p>

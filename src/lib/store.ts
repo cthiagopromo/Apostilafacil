@@ -16,7 +16,6 @@ type State = {
 
 type Actions = {
   initializeStore: () => void;
-  getProjectById: (projectId: string) => Project | undefined;
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
@@ -78,10 +77,6 @@ const useProjectStore = create<State & Actions>()(
       }
     },
     
-    getProjectById: (projectId) => {
-        return get().projects.find((p) => p.id === projectId);
-    },
-
     setActiveProject: (projectId) => {
       set(state => {
         const projectToActivate = state.projects.find((p) => p.id === projectId);
@@ -134,18 +129,18 @@ const useProjectStore = create<State & Actions>()(
         if (state.activeProject?.id === projectId) {
           if (state.projects.length > 0) {
             const newActiveIndex = Math.max(0, projectIndex - 1);
-            const nextActiveProject = state.projects[newActiveIndex];
-            state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
-            nextActiveProjectId = nextActiveProject.id;
+            nextActiveProjectId = state.projects[newActiveIndex].id;
+            state.activeProject = JSON.parse(JSON.stringify(state.projects[newActiveIndex]));
           } else {
             state.activeProject = null;
             nextActiveProjectId = null;
           }
         } else if (state.projects.length > 0 && !state.activeProject) {
-            // If for some reason active project was null, set to first one
             const nextActiveProject = state.projects[0];
             state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
             nextActiveProjectId = nextActiveProject.id;
+        } else if (state.activeProject) {
+          nextActiveProjectId = state.activeProject.id;
         }
         state.isDirty = true;
       });
