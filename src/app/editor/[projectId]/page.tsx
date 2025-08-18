@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,7 +21,7 @@ export default function EditorPage() {
     if (foundProject && (!activeProject || activeProject.id !== foundProject.id)) {
       setActiveProject(foundProject.id);
     }
-  }, [projectId, projects, setActiveProject, activeProject]);
+  }, [projectId, projects, activeProject, setActiveProject]);
   
   if (projectData === undefined) {
     return (
