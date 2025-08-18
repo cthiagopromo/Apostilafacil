@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -55,7 +54,7 @@ export default function PreviewPage() {
     if (!project) return;
     setIsExportingPdf(true);
     try {
-        await exportToPdf([project]);
+        await exportToPdf([project]); // Pass the project data to the export function
     } catch (e) {
         console.error("PDF Export failed", e);
     } finally {

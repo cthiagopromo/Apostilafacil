@@ -9,49 +9,72 @@ function generatePdfHtmlForProject(project: Project): string {
     const blocksHtml = project.blocks.map(block => {
         switch (block.type) {
             case 'text':
-                return `<div class="block block-text">${block.content.text || ''}</div>`;
+                return `<div class="block block-text" style="margin-bottom: 20px;">${block.content.text || ''}</div>`;
             case 'image':
                  const width = block.content.width ?? 100;
                 return `
-                    <div class="block block-image" style="display: flex; justify-content: center;">
-                        <figure style="width: ${width}%;">
-                            <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
-                            ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
-                        </figure>
+                    <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
+                        <p><strong>Imagem:</strong></p>
+                        <p><strong>URL:</strong> <a href="${block.content.url || ''}">${block.content.url || ''}</a></p>
+                        <p><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
+                        ${block.content.caption ? `<p><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
+                        <div style="display: flex; justify-content: center; padding-top: 10px;">
+                           <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 80%; height: auto; display: block; border-radius: 6px;" />
+                        </div>
                     </div>
                 `;
             case 'video':
                 if (!block.content.videoUrl) return '';
                 return `
-                    <div class="block block-video-pdf">
+                    <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
                         <p><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo</a></p>
                     </div>
                 `;
             case 'button':
                  if (!block.content.buttonText || !block.content.buttonUrl) return '';
                  return `
-                    <div class="block block-button-pdf">
+                    <div class="block block-button-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
                         <p><strong>Botão:</strong> ${block.content.buttonText} <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
                     </div>
                  `;
             case 'quote':
-                 return `<div class="block block-quote"><p>${block.content.text || ''}</p></div>`;
+                 return `<blockquote class="block block-quote" style="margin-bottom: 20px; border-left: 4px solid #ccc; padding-left: 15px; font-style: italic;"><p>${block.content.text || ''}</p></blockquote>`;
             case 'quiz':
                 const optionsHtml = block.content.options?.map(option => {
                     const isCorrect = option.isCorrect ? '<span style="color: green; font-weight: bold;"> (Correta ✔)</span>' : '';
-                    return `<div>- ${option.text}${isCorrect}</div>`;
+                    return `<li>- ${option.text}${isCorrect}</li>`;
                 }).join('') || '';
-                return `<div class="block block-quiz"><p><strong>${block.content.question || ''}</strong></p>${optionsHtml}</div>`;
+                return `
+                  <div class="block block-quiz-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
+                    <p><strong>Quiz: ${block.content.question || ''}</strong></p>
+                    <ul>${optionsHtml}</ul>
+                  </div>`;
             default:
                 return '';
         }
     }).join('');
 
     return `
-        <div class="pdf-page">
-            <h1>${project.title}</h1>
-            ${blocksHtml}
-        </div>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <style>
+              body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; }
+              h1 { color: #000; }
+              ul { list-style-type: none; padding-left: 10px; }
+              a { color: #007bff; text-decoration: none; }
+          </style>
+      </head>
+      <body>
+          <div id="pdf-content">
+              <h1>${project.title}</h1>
+              <p>${project.description}</p>
+              <hr />
+              ${blocksHtml}
+          </div>
+      </body>
+      </html>
     `;
 }
 
@@ -68,50 +91,47 @@ export async function exportToPdf(projects: Project[]) {
         format: 'a4'
     });
 
-    for (const project of projects) {
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.width = '794px'; // A4 width in pixels at 96dpi
-        tempDiv.style.padding = '20px';
-        tempDiv.innerHTML = generatePdfHtmlForProject(project);
-        document.body.appendChild(tempDiv);
-        
-        const canvas = await html2canvas(tempDiv, {
-            scale: 2,
-            useCORS: true,
-            logging: true,
-            onclone: (clonedDoc) => {
-                const tempDivClone = clonedDoc.querySelector('div');
-                if (tempDivClone) {
-                    // You might want to apply specific styles for PDF rendering here
-                }
-            }
-        });
+    // Use a single project for now as an example, but you could loop
+    const project = projects[0]; 
+    const htmlContent = generatePdfHtmlForProject(project);
 
-        document.body.removeChild(tempDiv);
+    // Create a temporary element to render the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px'; // Position off-screen
+    tempDiv.style.width = '600px'; // A bit wider than A4 to ensure good rendering
+    tempDiv.innerHTML = htmlContent;
+    document.body.appendChild(tempDiv);
+    
+    // Use html2canvas to capture the content
+    const canvas = await html2canvas(tempDiv.querySelector('#pdf-content')!, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true, // For external images
+        logging: true,
+    });
 
-        const imgData = canvas.toDataURL('image/png');
-        const imgProps = doc.getImageProperties(imgData);
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    // Clean up the temporary element
+    document.body.removeChild(tempDiv);
 
-        let heightLeft = pdfHeight;
-        let position = 0;
+    // Add the captured image to the PDF
+    const imgData = canvas.toDataURL('image/png');
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    let heightLeft = pdfHeight;
+    let position = 0;
 
+    doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+    heightLeft -= doc.internal.pageSize.getHeight();
+
+    while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
         doc.addPage();
         doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
         heightLeft -= doc.internal.pageSize.getHeight();
-
-        while (heightLeft >= 0) {
-            position = heightLeft - pdfHeight;
-            doc.addPage();
-            doc.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= doc.internal.pageSize.getHeight();
-        }
     }
-
-    doc.deletePage(1); // remove the initial blank page
+    
     const mainTitle = projects.length > 0 ? projects[0].title : 'apostila';
     doc.save(`${mainTitle}.pdf`);
 }
@@ -986,5 +1006,6 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
+```
 
-    
+Agora que você tem o backup, por favor, me diga qual é o próximo passo que você gostaria de tomar. Podemos tentar uma nova abordagem para a exportação do PDF. Estou pronto para ajudar.
