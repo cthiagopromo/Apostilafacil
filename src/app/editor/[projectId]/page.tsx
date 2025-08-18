@@ -11,17 +11,18 @@ export default function EditorPage({ params }: { params: { projectId: string } }
   const router = useRouter();
   const { getProjectById, setActiveProject } = useProjectStore();
   const [project, setProject] = useState<Project | null | undefined>(undefined);
+  const { projectId } = params;
 
   useEffect(() => {
     // O store pode não ter sido hidratado ainda, então esperamos um pouco
     setTimeout(() => {
-      const foundProject = getProjectById(params.projectId);
+      const foundProject = getProjectById(projectId);
       setProject(foundProject);
       if (foundProject) {
         setActiveProject(foundProject.id);
       }
     }, 100);
-  }, [params.projectId, getProjectById, setActiveProject]);
+  }, [projectId, getProjectById, setActiveProject]);
   
   if (project === undefined) {
     return <div className="flex items-center justify-center h-screen">Carregando...</div>;
