@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { Project, Block, BlockType, BlockContent } from './types';
+import type { Project, Block, BlockType, BlockContent, QuizOption } from './types';
 import { initialProjects } from './initial-data';
 import { produce } from 'immer';
 
@@ -21,7 +21,11 @@ type Actions = {
   deleteBlock: (projectId: string, blockId: string) => void;
   moveBlock: (projectId: string, blockId: string, direction: 'up' | 'down') => void;
   duplicateBlock: (projectId: string, blockId: string) => void;
-  updateBlockContent: (blockId: string, content: Partial<BlockContent>) => void;
+  updateBlockContent: (blockId: string, newContent: Partial<BlockContent>) => void;
+  addQuizOption: (blockId: string) => void;
+  updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
+  deleteQuizOption: (blockId: string, optionId: string) => void;
+  resetQuiz: (blockId: string) => void;
 };
 
 const useProjectStore = create<State & Actions>()(
@@ -88,28 +92,55 @@ const useProjectStore = create<State & Actions>()(
     },
 
     addBlock: (projectId, type) => {
-      const newBlock: Block = {
-        id: `block_${new Date().getTime()}`,
-        type,
-        content: type === 'text' ? { text: '<p>Novo bloco de texto...</p>'} : { url: '', alt: ''},
-      };
-      set((state) => {
-        const project = state.projects.find((p) => p.id === projectId);
-        if (project) {
-          if (!project.blocks) {
-            project.blocks = [];
-          }
-          project.blocks.push(newBlock);
-
-          if (state.activeProject?.id === projectId) {
-              if (!state.activeProject.blocks) {
-                state.activeProject.blocks = [];
-              }
-              state.activeProject.blocks.push(newBlock);
-              state.activeBlockId = newBlock.id;
-          }
+        let content: BlockContent = {};
+        switch (type) {
+            case 'text':
+                content = { text: '<p>Novo bloco de texto...</p>' };
+                break;
+            case 'image':
+                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image' };
+                break;
+            case 'video':
+                content = { videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
+                break;
+            case 'button':
+                content = { buttonText: 'Clique Aqui', buttonUrl: '#' };
+                break;
+            case 'quiz':
+                content = { 
+                    question: 'Qual é a pergunta?', 
+                    options: [
+                        { id: `opt_${new Date().getTime()}`, text: 'Opção 1', isCorrect: true },
+                        { id: `opt_${new Date().getTime() + 1}`, text: 'Opção 2', isCorrect: false }
+                    ],
+                    userAnswerId: null
+                };
+                break;
         }
-      });
+
+        const newBlock: Block = {
+            id: `block_${new Date().getTime()}`,
+            type,
+            content,
+        };
+
+        set((state) => {
+            const project = state.projects.find((p) => p.id === projectId);
+            if (project) {
+                if (!project.blocks) {
+                    project.blocks = [];
+                }
+                project.blocks.push(newBlock);
+
+                if (state.activeProject?.id === projectId) {
+                    if (!state.activeProject.blocks) {
+                        state.activeProject.blocks = [];
+                    }
+                    state.activeProject.blocks.push(newBlock);
+                    state.activeBlockId = newBlock.id;
+                }
+            }
+        });
     },
 
     deleteBlock: (projectId, blockId) => {
@@ -171,49 +202,95 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-        if (state.activeProject) {
-          const block = state.activeProject.blocks.find((b) => b.id === blockId);
-          if (block) {
-            block.content = { ...block.content, ...newContent };
-          }
-          // Also update the main projects array
-          const project = state.projects.find(p => p.id === state.activeProject?.id);
-           if (project) {
-              const blockInProject = project.blocks.find(b => b.id === blockId);
-              if (blockInProject) {
-                  blockInProject.content = { ...blockInProject.content, ...newContent };
+          const updateInProject = (project: Project) => {
+              const block = project.blocks.find((b) => b.id === blockId);
+              if (block) {
+                  block.content = { ...block.content, ...newContent };
               }
-           }
-        }
+          };
+
+          if (state.activeProject) {
+              updateInProject(state.activeProject);
+          }
+          const projectInList = state.projects.find(p => p.id === state.activeProject?.id);
+          if (projectInList) {
+              updateInProject(projectInList);
+          }
       });
     },
+
+    addQuizOption: (blockId) => {
+        set(state => {
+            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            if (block && block.type === 'quiz') {
+                if (!block.content.options) {
+                    block.content.options = [];
+                }
+                const newOption: QuizOption = {
+                    id: `opt_${new Date().getTime()}`,
+                    text: 'Nova Opção',
+                    isCorrect: false,
+                };
+                block.content.options.push(newOption);
+            }
+        });
+    },
+
+    updateQuizOption: (blockId, optionId, updates) => {
+        set(state => {
+            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            if (block && block.type === 'quiz' && block.content.options) {
+                const option = block.content.options.find(o => o.id === optionId);
+                if (option) {
+                    Object.assign(option, updates);
+                }
+            }
+        });
+    },
+
+    deleteQuizOption: (blockId, optionId) => {
+        set(state => {
+            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            if (block && block.type === 'quiz' && block.content.options) {
+                block.content.options = block.content.options.filter(o => o.id !== optionId);
+            }
+        });
+    },
+    
+    resetQuiz: (blockId) => {
+        set(state => {
+            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            if (block && block.type === 'quiz') {
+                block.content.userAnswerId = null;
+            }
+        })
+    }
+
   }))
 );
 
-// Inicializar a store com dados do localStorage se existirem, ou com dados iniciais
 if (typeof window !== 'undefined') {
     const KEY = 'apostila-facil-projects';
-    const storedProjects = localStorage.getItem(KEY);
-    let initialData = initialProjects;
     
-    try {
-        const parsed = storedProjects ? JSON.parse(storedProjects) : null;
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            initialData = parsed;
+    const loadState = () => {
+        try {
+            const storedProjects = localStorage.getItem(KEY);
+            const parsed = storedProjects ? JSON.parse(storedProjects) : null;
+            if (Array.isArray(parsed)) {
+                return parsed.length > 0 ? parsed : initialProjects;
+            }
+        } catch (e) {
+            console.error("Failed to parse projects from localStorage", e);
         }
-    } catch (e) {
-        console.error("Failed to parse projects from localStorage", e);
-        // Se a análise falhar, use os projetos iniciais padrão
-        initialData = initialProjects;
-    }
+        return initialProjects;
+    };
     
-    useProjectStore.setState({ projects: initialData });
+    useProjectStore.setState({ projects: loadState() });
 
-    useProjectStore.subscribe(
-        (state) => {
-            localStorage.setItem(KEY, JSON.stringify(state.projects));
-        }
-    );
+    useProjectStore.subscribe((state) => {
+        localStorage.setItem(KEY, JSON.stringify(state.projects));
+    });
 }
+
 
 export default useProjectStore;

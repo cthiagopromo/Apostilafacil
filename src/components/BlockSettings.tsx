@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -5,9 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from './ui/textarea';
+import { Button } from './ui/button';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Switch } from './ui/switch';
+import type { QuizOption } from '@/lib/types';
 
 const BlockSettings = () => {
-    const { activeProject, activeBlockId, updateBlockContent } = useProjectStore();
+    const { 
+        activeProject, 
+        activeBlockId, 
+        updateBlockContent,
+        addQuizOption,
+        updateQuizOption,
+        deleteQuizOption
+    } = useProjectStore();
 
     const activeBlock = activeProject?.blocks?.find(b => b.id === activeBlockId);
 
@@ -18,7 +30,7 @@ const BlockSettings = () => {
             </div>
         );
     }
-    
+
     const renderSettings = () => {
         switch (activeBlock.type) {
             case 'text':
@@ -53,6 +65,88 @@ const BlockSettings = () => {
                                 onChange={e => updateBlockContent(activeBlock.id, { alt: e.target.value })} 
                                 placeholder="Descrição da imagem"
                             />
+                        </div>
+                    </div>
+                )
+            case 'video':
+                return (
+                    <div className="space-y-2">
+                        <Label htmlFor="video-url">URL do Vídeo (YouTube, Vimeo, etc.)</Label>
+                        <Input 
+                            id="video-url" 
+                            value={activeBlock.content.videoUrl || ''} 
+                            onChange={e => updateBlockContent(activeBlock.id, { videoUrl: e.target.value })} 
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                    </div>
+                )
+            case 'button':
+                return (
+                    <div className='space-y-4'>
+                        <div className="space-y-2">
+                            <Label htmlFor="button-text">Texto do Botão</Label>
+                            <Input 
+                                id="button-text" 
+                                value={activeBlock.content.buttonText || ''} 
+                                onChange={e => updateBlockContent(activeBlock.id, { buttonText: e.target.value })} 
+                                placeholder="Ex: Saiba Mais"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="button-url">URL do Link</Label>
+                            <Input 
+                                id="button-url" 
+                                value={activeBlock.content.buttonUrl || ''} 
+                                onChange={e => updateBlockContent(activeBlock.id, { buttonUrl: e.target.value })} 
+                                placeholder="https://exemplo.com"
+                            />
+                        </div>
+                    </div>
+                )
+            case 'quiz':
+                return (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="quiz-question">Pergunta</Label>
+                            <Textarea 
+                                id="quiz-question"
+                                value={activeBlock.content.question || ''}
+                                onChange={(e) => updateBlockContent(activeBlock.id, { question: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <Label>Opções de Resposta</Label>
+                            {activeBlock.content.options?.map((option: QuizOption, index: number) => (
+                                <div key={option.id} className="p-3 bg-muted/50 rounded-md space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            value={option.text}
+                                            onChange={(e) => updateQuizOption(activeBlock.id, option.id, { text: e.target.value })}
+                                            className='flex-grow'
+                                        />
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                            onClick={() => deleteQuizOption(activeBlock.id, option.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            id={`is-correct-${option.id}`}
+                                            checked={option.isCorrect}
+                                            onCheckedChange={(checked) => updateQuizOption(activeBlock.id, option.id, { isCorrect: checked })}
+                                        />
+                                        <Label htmlFor={`is-correct-${option.id}`}>Resposta Correta</Label>
+                                    </div>
+                                </div>
+                            ))}
+                            <Button variant="outline" size="sm" onClick={() => addQuizOption(activeBlock.id)}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Opção
+                            </Button>
                         </div>
                     </div>
                 )

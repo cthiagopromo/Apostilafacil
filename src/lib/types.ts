@@ -5,6 +5,12 @@ export type BlockType =
   | 'button'
   | 'quiz';
 
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
 export interface BlockContent {
   // Common fields
   text?: string;
@@ -18,7 +24,8 @@ export interface BlockContent {
   buttonUrl?: string;
   // Quiz
   question?: string;
-  options?: { text: string; isCorrect: boolean }[];
+  options?: QuizOption[];
+  userAnswerId?: string | null;
 }
 
 export interface Block {
