@@ -136,23 +136,28 @@ export async function exportToPdf(projects: Project[]) {
 
 
 function renderBlockToHtml(block: Block): string {
+    const animationClass = 'class="animatable"';
     switch (block.type) {
         case 'text':
-            return `<div class="block block-text">${block.content.text || ''}</div>`;
+            return `<div ${animationClass}><div class="block block-text">${block.content.text || ''}</div></div>`;
         case 'image':
             const width = block.content.width ?? 100;
             return `
-                <div class="block block-image" style="display: flex; justify-content: center;">
-                    <figure style="width: ${width}%;">
-                        <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
-                        ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
-                    </figure>
+                <div ${animationClass}>
+                    <div class="block block-image" style="display: flex; justify-content: center;">
+                        <figure style="width: ${width}%;">
+                            <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                            ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
+                        </figure>
+                    </div>
                 </div>
             `;
         case 'quote':
              return `
-                <div class="block block-quote">
-                    <p>${block.content.text || ''}</p>
+                <div ${animationClass}>
+                    <div class="block block-quote">
+                        <p>${block.content.text || ''}</p>
+                    </div>
                 </div>
             `;
         case 'video':
@@ -166,14 +171,16 @@ function renderBlockToHtml(block: Block): string {
                     if (!videoId) return `<div class="block-video-invalid">URL do YouTube inválida.</div>`;
 
                     return `
-                        <div class="block block-video">
-                            <iframe
-                                src="https://www.youtube.com/embed/${videoId}"
-                                title="YouTube video player"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen
-                            ></iframe>
+                        <div ${animationClass}>
+                            <div class="block block-video">
+                                <iframe
+                                    src="https://www.youtube.com/embed/${videoId}"
+                                    title="YouTube video player"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
                         </div>
                     `;
                 } catch (e) {
@@ -181,10 +188,12 @@ function renderBlockToHtml(block: Block): string {
                 }
         case 'button':
              return `
-                <div class="block block-button">
-                    <a href="${block.content.buttonUrl || '#'}" class="btn-block" target="_blank" rel="noopener noreferrer">
-                        ${block.content.buttonText || 'Botão'}
-                    </a>
+                <div ${animationClass}>
+                    <div class="block block-button">
+                        <a href="${block.content.buttonUrl || '#'}" class="btn-block" target="_blank" rel="noopener noreferrer">
+                            ${block.content.buttonText || 'Botão'}
+                        </a>
+                    </div>
                 </div>
             `;
         case 'quiz':
@@ -195,11 +204,13 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `).join('') || '';
             return `
-                <div class="block block-quiz">
-                    <p class="quiz-question">${block.content.question || ''}</p>
-                    <div class="quiz-options-container">${optionsHtml}</div>
-                    <div class="quiz-feedback"></div>
-                    <button class="btn quiz-retry-btn" style="display:none;">Tentar Novamente</button>
+                <div ${animationClass}>
+                    <div class="block block-quiz">
+                        <p class="quiz-question">${block.content.question || ''}</p>
+                        <div class="quiz-options-container">${optionsHtml}</div>
+                        <div class="quiz-feedback"></div>
+                        <button class="btn quiz-retry-btn" style="display:none;">Tentar Novamente</button>
+                    </div>
                 </div>`;
         default:
             return '';
@@ -396,6 +407,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Scroll Reveal Animation ---
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.animatable').forEach(el => {
+        observer.observe(el);
+    });
+
     showModule(0);
     loadPreferences();
 });
@@ -406,12 +433,12 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
     return projects.map((project, index) => `
         <section id="modulo-${index}" class="modulo">
             <div class="module-content">
-                <h2 class="module-main-title">${mainTitle}</h2>
-                <h1 class="module-title-header">${project.title}</h1>
-                <div class="divider"></div>
+                <h2 class="module-main-title animatable">${mainTitle}</h2>
+                <h1 class="module-title-header animatable">${project.title}</h1>
+                <div class="divider animatable"></div>
                 ${project.blocks.map(renderBlockToHtml).join('\n')}
             </div>
-             <div class="module-navigation">
+             <div class="module-navigation animatable">
                 <button class="btn nav-anterior">Módulo Anterior</button>
                 <button class="btn nav-proximo">Próximo Módulo</button>
             </div>
@@ -929,6 +956,18 @@ body.modo-escuro #floating-nav-menu li a:hover {
     background-color: var(--primary-color);
     color: white;
     font-weight: bold;
+}
+
+/* Animation Styles */
+.animatable {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.animatable.revealed {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 
