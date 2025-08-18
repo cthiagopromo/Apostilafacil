@@ -79,9 +79,11 @@ export default function Header() {
         )}
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline">
-          <Eye className="mr-2 h-4 w-4" />
-          Pré-visualizar
+        <Button variant="outline" asChild>
+          <Link href={`/preview/${activeProject?.id}`} target="_blank">
+            <Eye className="mr-2 h-4 w-4" />
+            Pré-visualizar
+          </Link>
         </Button>
         <Button>
           <Download className="mr-2 h-4 w-4" />
