@@ -8,8 +8,9 @@ function renderBlockToHtml(block: Block): string {
         case 'text':
             return `<div class="block block-text">${block.content.text || ''}</div>`;
         case 'image':
+            const width = block.content.width ?? 100;
             return `
-                <div class="block block-image">
+                <div class="block block-image" style="width: ${width}%; margin: 0 auto;">
                     <figure>
                         <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" />
                         ${block.content.caption ? `<figcaption>${block.content.caption}</figcaption>` : ''}
@@ -78,15 +79,12 @@ function generateModulesHtml(projects: Project[]): string {
 
         modulesHtml += `
             <section id="${moduleId}" class="modulo" style="display: ${isFirst ? 'block' : 'none'};">
-                <header class="module-header">
-                    <h2>${project.title}</h2>
-                </header>
                 <div class="module-content">
                     ${blocksHtml}
                 </div>
                 <div class="navegacao-modulo">
                     ${!isFirst ? `<button class="btn btn-nav" onclick="mostrarModulo('${prevModuleId}')">← Tópico Anterior</button>` : '<div></div>'}
-                    ${!isLast ? `<button class="btn btn-nav" onclick="mostrarModulo('${nextModuleId}')">Próximo Tópico →</button>` : ''}
+                    ${!isLast ? `<button class="btn btn-nav" onclick="mostrarModulo('${nextModuleId}')">Próximo Tópico →</button>` : '<div></div>'}
                 </div>
             </section>
         `;
@@ -109,6 +107,18 @@ function generateHtml(projects: Project[]): string {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header class="main-header">
+        <div class="header-content">
+            <h1 id="main-title">${mainTitle}</h1>
+            <nav class="accessibility-toolbar">
+                <button title="Imprimir" onclick="window.print()">📄</button>
+                <button title="Aumentar fonte" onclick="changeFontSize('increase')">A+</button>
+                <button title="Diminuir fonte" onclick="changeFontSize('decrease')">A-</button>
+                <button title="Alto contraste" onclick="toggleHighContrast()"> контраст</button>
+                <button title="Modo escuro" onclick="toggleDarkMode()">🌙</button>
+            </nav>
+        </div>
+    </header>
     <main>
         ${modulesHtml}
     </main>
@@ -120,13 +130,80 @@ function generateHtml(projects: Project[]): string {
 
 function generateCss(): string {
     return `
+:root {
+    --bg-color: #f4f5f7;
+    --text-color: #333;
+    --primary-color: #2563eb;
+    --card-bg-color: white;
+    --border-color: #e5e7eb;
+    font-size: 16px; /* Base font size */
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.6;
-    background-color: #f4f5f7;
-    color: #333;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    --bg-color: #1a1a1a;
+    --text-color: #f0f0f0;
+    --primary-color: #5d93ff;
+    --card-bg-color: #2a2a2a;
+    --border-color: #444;
+}
+
+/* High Contrast Mode */
+body.high-contrast {
+    --bg-color: #000;
+    --text-color: #fff;
+    --primary-color: #ffff00;
+    --card-bg-color: #000;
+    --border-color: #fff;
+}
+body.high-contrast .btn {
+    background-color: #000;
+    color: #ffff00;
+    border: 2px solid #ffff00;
+}
+
+
+.main-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#main-title {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.accessibility-toolbar button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.5rem;
+    margin-left: 0.5rem;
+    padding: 0.25rem;
 }
 
 main {
@@ -136,23 +213,18 @@ main {
 }
 
 .modulo {
-    background-color: white;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     margin-bottom: 2rem;
     padding: 2rem;
 }
 
-.module-header {
-    border-bottom: 1px solid #e5e7eb;
+.module-content {
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 1rem;
     margin-bottom: 2rem;
-}
-
-.module-header h2 {
-    font-size: 2rem;
-    color: #2563eb;
-    margin: 0;
 }
 
 .block {
@@ -163,16 +235,12 @@ main {
     margin-bottom: 0;
 }
 
-.block-text {
-    /* Styles are applied via prose classes if any */
-}
-
 .block-image figure {
     margin: 0;
 }
 
 .block-image img {
-    width: 100%;
+    max-width: 100%;
     height: auto;
     display: block;
     border-radius: 6px;
@@ -207,7 +275,7 @@ main {
 
 .btn {
     display: inline-block;
-    background-color: #2563eb;
+    background-color: var(--primary-color);
     color: white;
     padding: 0.8rem 1.5rem;
     border: none;
@@ -219,12 +287,12 @@ main {
 }
 
 .btn:hover {
-    background-color: #1d4ed8;
+    filter: brightness(1.1);
 }
 
 .block-quiz {
     padding: 1.5rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
 }
 
@@ -238,14 +306,14 @@ main {
     align-items: center;
     padding: 0.75rem;
     margin-bottom: 0.5rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .quiz-options label:hover {
-    background-color: #f0f2f5;
+    background-color: rgba(0,0,0,0.05);
 }
 
 .quiz-options input[type="radio"] {
@@ -280,7 +348,16 @@ main {
   justify-content: space-between;
   margin-top: 30px;
   padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+}
+
+.btn-nav {
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+.btn-nav:hover {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .btn-nav:only-child {
@@ -292,19 +369,56 @@ main {
 function generateJs(): string {
     return `
 function mostrarModulo(idModulo) {
-  // Esconde todos os módulos
   document.querySelectorAll('.modulo').forEach(modulo => {
     modulo.style.display = 'none';
   });
   
-  // Mostra o módulo selecionado
   const moduloToShow = document.getElementById(idModulo);
   if (moduloToShow) {
     moduloToShow.style.display = 'block';
+    window.scrollTo(0, 0);
   }
 }
 
+function changeFontSize(direction) {
+    const html = document.documentElement;
+    let currentSize = parseFloat(window.getComputedStyle(html).fontSize);
+    if (direction === 'increase') {
+        html.style.fontSize = (currentSize + 1) + 'px';
+    } else if (direction === 'decrease') {
+        html.style.fontSize = (currentSize - 1) + 'px';
+    }
+    localStorage.setItem('fontSize', html.style.fontSize);
+}
+
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+}
+
+function toggleHighContrast() {
+    document.body.classList.toggle('high-contrast');
+    localStorage.setItem('contrast', document.body.classList.contains('high-contrast') ? 'high' : 'normal');
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Restore preferences
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+
+    const savedContrast = localStorage.getItem('contrast');
+    if (savedContrast === 'high') {
+        document.body.classList.add('high-contrast');
+    }
+
+    const savedFontSize = localStorage.getItem('fontSize');
+    if (savedFontSize) {
+        document.documentElement.style.fontSize = savedFontSize;
+    }
+
     // Quiz logic
     const quizBlocks = document.querySelectorAll('.block-quiz');
     quizBlocks.forEach(quiz => {
@@ -333,7 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Show first module by default if it exists
     const firstModule = document.querySelector('.modulo');
     if(firstModule) {
         firstModule.style.display = 'block';
