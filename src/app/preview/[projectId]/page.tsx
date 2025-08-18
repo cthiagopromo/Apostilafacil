@@ -30,7 +30,6 @@ export default function PreviewPage() {
   const projectId = params.projectId as string;
   
   useEffect(() => {
-    // This component now reads from localStorage to reflect the SAVED state.
     if (typeof window !== 'undefined') {
       const storedProjects = localStorage.getItem('apostila-facil-projects');
       if (storedProjects) {
@@ -38,9 +37,8 @@ export default function PreviewPage() {
         const foundProject = projects.find(p => p.id === projectId);
         setProject(foundProject || null);
       } else {
-        // Fallback to store if localStorage is empty, though this is less likely
-        const { getProjectById } = useProjectStore.getState();
-        const foundProject = getProjectById(projectId);
+        const { projects } = useProjectStore.getState();
+        const foundProject = projects.find(p => p.id === projectId);
         setProject(foundProject || null);
       }
     }
@@ -50,7 +48,7 @@ export default function PreviewPage() {
     if (!project) return;
     setIsExportingPdf(true);
     try {
-        await exportToPdf([project]); // Pass the single project in an array
+        await exportToPdf([project]);
     } catch (e) {
         console.error("PDF Export failed", e);
     } finally {
@@ -129,5 +127,3 @@ export default function PreviewPage() {
       </div>
   );
 }
-
-    

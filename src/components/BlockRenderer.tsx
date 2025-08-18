@@ -104,8 +104,10 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         case 'quote':
             return (
                  <div className="relative p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg">
-                    <Quote className="absolute -top-4 -left-3 h-12 w-12 text-primary/30" />
-                    <p className="text-lg italic text-foreground/80">{block.content.text}</p>
+                    <Quote className="absolute -top-3 -left-4 h-10 w-10 text-primary/20" />
+                    <blockquote className="text-lg italic text-foreground/80 m-0 p-0 border-none">
+                        {block.content.text}
+                    </blockquote>
                  </div>
             )
         case 'video':
