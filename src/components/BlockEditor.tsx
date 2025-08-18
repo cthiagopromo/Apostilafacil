@@ -25,7 +25,7 @@ import RichTextEditor from './RichTextEditor';
 import { Textarea } from './ui/textarea';
 import { Slider } from './ui/slider';
 
-const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: () => void }) => {
+const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
         updateBlockContent,
         addQuizOption,
@@ -176,7 +176,7 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: () => vo
     }
 
     return (
-        <Card>
+        <Card onClick={(e) => e.stopPropagation()}>
             <CardHeader className="bg-muted/50 py-3 px-4 border-b">
                 <h3 className="font-semibold text-md capitalize">{block.type}</h3>
             </CardHeader>
@@ -207,12 +207,17 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
             action(activeProject.id, block.id);
         }
     }
+
+    const handleSave = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setActiveBlockId(null);
+    }
     
     return (
         <div className="relative group" onClick={() => setActiveBlockId(block.id)}>
             <div className={cn("transition-all mb-4", isActive ? 'border-primary ring-2 ring-primary/50 rounded-lg' : 'hover:border-primary/50 rounded-lg')}>
                  {isActive ? (
-                    <BlockSettingsEditor block={block} onSave={() => setActiveBlockId(null)} />
+                    <BlockSettingsEditor block={block} onSave={handleSave} />
                  ) : (
                     <Card>
                         <CardContent className="p-4">
