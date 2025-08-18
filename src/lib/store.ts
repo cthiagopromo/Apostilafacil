@@ -189,15 +189,15 @@ if (typeof window !== 'undefined') {
     const storedProjects = localStorage.getItem(KEY);
     let initialData = initialProjects;
     
-    if (storedProjects) {
-        try {
-            const parsed = JSON.parse(storedProjects);
-            if (Array.isArray(parsed)) {
-                initialData = parsed;
-            }
-        } catch (e) {
-            console.error("Failed to parse projects from localStorage", e);
+    try {
+        const parsed = storedProjects ? JSON.parse(storedProjects) : null;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            initialData = parsed;
         }
+    } catch (e) {
+        console.error("Failed to parse projects from localStorage", e);
+        // Se a análise falhar, use os projetos iniciais padrão
+        initialData = initialProjects;
     }
     
     useProjectStore.setState({ projects: initialData });
