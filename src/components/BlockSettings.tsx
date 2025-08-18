@@ -71,7 +71,7 @@ const BlockSettings = () => {
             case 'video':
                 return (
                     <div className="space-y-2">
-                        <Label htmlFor="video-url">URL do Vídeo (YouTube, Vimeo, etc.)</Label>
+                        <Label htmlFor="video-url">URL do Vídeo (YouTube)</Label>
                         <Input 
                             id="video-url" 
                             value={activeBlock.content.videoUrl || ''} 
