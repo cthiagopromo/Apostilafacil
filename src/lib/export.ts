@@ -111,35 +111,19 @@ export async function exportToPdf(projects: Project[]) {
     }
     
     try {
-        const canvas = await html2canvas(contentElement as HTMLElement, {
-            scale: 2, 
-            useCORS: true,
-            logging: true,
+        await doc.html(contentElement as HTMLElement, {
+            callback: function (doc) {
+                const mainTitle = project.title || 'apostila';
+                doc.save(`${mainTitle}.pdf`);
+            },
+            x: 15,
+            y: 15,
+            width: 565, // A4 width in points (595) minus margins
+            windowWidth: 600,
+            autoPaging: 'text'
         });
-    
-        const imgData = canvas.toDataURL('image/png');
-        const imgProps = doc.getImageProperties(imgData);
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        let heightLeft = pdfHeight;
-        let position = 0;
-    
-        doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
-        heightLeft -= pageHeight;
-    
-        while (heightLeft > -pageHeight) {
-            position -= pageHeight - 30; // Adjust for margins
-            doc.addPage();
-            doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
-            heightLeft -= pageHeight;
-        }
-        
-        const mainTitle = project.title;
-        doc.save(`${mainTitle}.pdf`);
     } catch(e) {
-        console.error("Erro ao gerar canvas para PDF", e);
+        console.error("Erro ao gerar PDF", e);
         alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.")
     } finally {
         document.body.removeChild(tempDiv);

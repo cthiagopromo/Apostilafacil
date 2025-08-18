@@ -55,6 +55,7 @@ export default function PreviewPage() {
     if (!project) return;
     setIsExportingPdf(true);
     try {
+        // We pass the single project in an array as the function expects it
         await exportToPdf([project]);
     } catch (e) {
         console.error("PDF Export failed", e);
