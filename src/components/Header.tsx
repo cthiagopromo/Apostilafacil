@@ -1,23 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Download, Save, Settings, ChevronsLeft, ChevronsRight, FileJson, Loader } from 'lucide-react';
+import { FileText, Eye, Download, Save, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
-  const { activeProject, projects, saveProject, isDirty } = useProjectStore();
+  const { activeProject, saveProjects, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
-    // Directly get the latest state from the store at the moment of export
+    // Get the latest state directly from the store at the moment of export
     const currentProjects = useProjectStore.getState().projects;
 
     if (!currentProjects || currentProjects.length === 0) {
@@ -52,9 +52,8 @@ export default function Header() {
     if (!activeProject || !isDirty) return;
 
     setIsSaving(true);
-    // Simulate async save
     setTimeout(() => {
-        saveProject(activeProject.id);
+        saveProjects();
         setIsSaving(false);
         toast({
             title: "Projeto salvo com sucesso!",
@@ -128,3 +127,5 @@ export default function Header() {
     </header>
   );
 }
+
+    

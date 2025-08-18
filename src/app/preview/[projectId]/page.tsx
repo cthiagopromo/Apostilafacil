@@ -13,7 +13,6 @@ import {
     Download, 
     ZoomIn, 
     ZoomOut, 
-    Contrast, 
     Moon, 
     Volume2 
 } from 'lucide-react';
@@ -23,18 +22,25 @@ import { Separator } from '@/components/ui/separator';
 export default function PreviewPage() {
   const router = useRouter();
   const params = useParams();
-  const { projects } = useProjectStore();
   const [project, setProject] = useState<Project | null | undefined>(undefined);
   const projectId = params.projectId as string;
   
   useEffect(() => {
-    // This component can read from localStorage-persisted state.
-    // We use a check to ensure we are on the client side.
+    // This component now reads from localStorage to reflect the SAVED state.
     if (typeof window !== 'undefined') {
-      const foundProject = projects.find(p => p.id === projectId);
-      setProject(foundProject || null);
+      const storedProjects = localStorage.getItem('apostila-facil-projects');
+      if (storedProjects) {
+        const projects: Project[] = JSON.parse(storedProjects);
+        const foundProject = projects.find(p => p.id === projectId);
+        setProject(foundProject || null);
+      } else {
+        // Fallback to store if localStorage is empty, though this is less likely
+        const { getProjectById } = useProjectStore.getState();
+        const foundProject = getProjectById(projectId);
+        setProject(foundProject || null);
+      }
     }
-  }, [projectId, projects]);
+  }, [projectId]);
 
   if (project === undefined) {
     return (
@@ -47,7 +53,8 @@ export default function PreviewPage() {
   if (project === null) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-secondary">
-        <p className="text-xl mb-4">Projeto não encontrado.</p>
+        <p className="text-xl mb-4">Projeto não encontrado ou não salvo.</p>
+        <p className='text-muted-foreground mb-4'>Volte ao editor e salve suas alterações.</p>
         <Button onClick={() => router.push('/')}>Voltar para a lista de projetos</Button>
       </div>
     );
@@ -87,7 +94,6 @@ export default function PreviewPage() {
                 <Separator orientation="vertical" className="h-8" />
                 <Button variant="ghost" size="icon"><ZoomIn /></Button>
                 <Button variant="ghost" size="icon"><ZoomOut /></Button>
-                <Button variant="ghost" size="icon"><Contrast /></Button>
                 <Button variant="ghost" size="icon"><Moon /></Button>
                 <Button variant="ghost" size="icon"><Volume2 /></Button>
             </div>
@@ -104,3 +110,5 @@ export default function PreviewPage() {
       </div>
   );
 }
+
+    

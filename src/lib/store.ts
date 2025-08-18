@@ -5,6 +5,8 @@ import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSetting
 import { initialProjects } from './initial-data';
 import { produce } from 'immer';
 
+const STORE_KEY = 'apostila-facil-projects';
+
 type State = {
   projects: Project[];
   activeProject: Project | null;
@@ -13,12 +15,12 @@ type State = {
 };
 
 type Actions = {
-  setProjects: (projects: Project[]) => void;
+  initializeStore: () => void;
   getProjectById: (projectId: string) => Project | undefined;
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
-  saveProject: (projectId: string) => void;
+  saveProjects: () => void;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
@@ -40,8 +42,39 @@ const useProjectStore = create<State & Actions>()(
     activeBlockId: null,
     isDirty: false,
 
-    setProjects: (projects) => set({ projects }),
-
+    initializeStore: () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const storedProjects = localStorage.getItem(STORE_KEY);
+          let projects: Project[] | null = storedProjects ? JSON.parse(storedProjects) : null;
+          
+          if (Array.isArray(projects)) {
+            const migratedProjects = projects.map(p => {
+              if (!p.layoutSettings) {
+                p.layoutSettings = {
+                  containerWidth: 'large',
+                  sectionSpacing: 'standard',
+                  navigationType: 'sidebar',
+                };
+              }
+              return p;
+            });
+            set({ projects: migratedProjects.length > 0 ? migratedProjects : initialProjects });
+          } else {
+            set({ projects: initialProjects });
+          }
+        } catch (e) {
+          console.error("Failed to parse projects from localStorage", e);
+          set({ projects: initialProjects });
+        }
+        
+        const projects = get().projects;
+        if (projects.length > 0) {
+          set({ activeProject: projects[0] });
+        }
+      }
+    },
+    
     getProjectById: (projectId) => {
         return get().projects.find((p) => p.id === projectId);
     },
@@ -83,16 +116,23 @@ const useProjectStore = create<State & Actions>()(
         return newProject;
     },
 
-    saveProject: (projectId: string) => {
-        // In a real app, this would save to a server. Here we just update the state.
-        // The persistence to localStorage is handled by the subscription middleware.
-        set(state => {
-            const project = state.projects.find(p => p.id === projectId);
-            if (project) {
-                project.updatedAt = new Date().toISOString();
+    saveProjects: () => {
+      set(state => {
+        const updatedProjects = state.projects.map(p => {
+            if(state.activeProject && p.id === state.activeProject.id) {
+                const updatedActiveProject = { ...state.activeProject, updatedAt: new Date().toISOString() };
+                state.activeProject = updatedActiveProject;
+                return updatedActiveProject;
             }
-            state.isDirty = false;
+            return p;
         });
+        state.projects = updatedProjects;
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORE_KEY, JSON.stringify(updatedProjects));
+        }
+        state.isDirty = false;
+      });
     },
 
     updateProjectTitle: (projectId, title) => {
@@ -181,9 +221,6 @@ const useProjectStore = create<State & Actions>()(
                 project.blocks.push(newBlock);
 
                 if (state.activeProject?.id === projectId) {
-                    if (!state.activeProject.blocks) {
-                        state.activeProject.blocks = [];
-                    }
                     state.activeProject.blocks.push(newBlock);
                     state.activeBlockId = newBlock.id;
                 }
@@ -258,20 +295,21 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-        const projectIndex = state.projects.findIndex(p => p.id === state.activeProject?.id);
-        if (projectIndex === -1) return;
+        if (!state.activeProject) return;
 
-        const blockIndex = state.projects[projectIndex].blocks.findIndex(b => b.id === blockId);
-        if (blockIndex === -1) return;
+        const block = state.activeProject.blocks.find(b => b.id === blockId);
+        if(!block) return;
         
-        state.projects[projectIndex].blocks[blockIndex].content = {
-            ...state.projects[projectIndex].blocks[blockIndex].content,
-            ...newContent
-        };
+        block.content = {...block.content, ...newContent};
 
-        if (state.activeProject) {
-            state.activeProject = {...state.projects[projectIndex]};
+        const project = state.projects.find(p => p.id === state.activeProject?.id);
+        if(project) {
+            const blockInProjects = project.blocks.find(b => b.id === blockId);
+            if (blockInProjects) {
+                 blockInProjects.content = {...blockInProjects.content, ...newContent};
+            }
         }
+        
         state.isDirty = true;
       });
     },
@@ -319,20 +357,11 @@ const useProjectStore = create<State & Actions>()(
     
     resetQuiz: (blockId) => {
         set(state => {
-            const projectsToUpdate = [
-                state.activeProject,
-                ...state.projects.filter(p => p.id === state.activeProject?.id)
-            ];
-            
-            projectsToUpdate.forEach(proj => {
-                if (proj) {
-                    const block = proj.blocks.find(b => b.id === blockId);
-                    if (block && block.type === 'quiz') {
-                        block.content.userAnswerId = null;
-                    }
-                }
-            });
-            // This is arguably not a "dirty" action, so we don't set isDirty = true
+            if (!state.activeProject) return;
+            const block = state.activeProject.blocks.find(b => b.id === blockId);
+            if (block && block.type === 'quiz') {
+                block.content.userAnswerId = null;
+            }
         })
     }
 
@@ -340,56 +369,10 @@ const useProjectStore = create<State & Actions>()(
 );
 
 if (typeof window !== 'undefined') {
-    const KEY = 'apostila-facil-projects';
-    
-    const loadState = () => {
-        try {
-            const storedProjects = localStorage.getItem(KEY);
-            let projects: Project[] | null = null;
-            if (storedProjects) {
-                projects = JSON.parse(storedProjects);
-            }
-            
-            if (Array.isArray(projects)) {
-                // This is the migration logic.
-                // It ensures all loaded projects have a layoutSettings object.
-                const migratedProjects = projects.map(p => {
-                    if (!p.layoutSettings) {
-                        p.layoutSettings = {
-                            containerWidth: 'large',
-                            sectionSpacing: 'standard',
-                            navigationType: 'sidebar',
-                        };
-                    }
-                    return p;
-                });
-                return migratedProjects.length > 0 ? migratedProjects : initialProjects;
-            }
-        } catch (e) {
-            console.error("Failed to parse projects from localStorage", e);
-        }
-        return initialProjects;
-    };
-    
-    const projects = loadState();
-    useProjectStore.setState({ projects });
-    if(projects.length > 0) {
-        useProjectStore.setState({ activeProject: projects[0] });
-    }
-
-    useProjectStore.subscribe((state) => {
-        const stateToPersist = { ...state };
-        // Don't persist activeProject, activeBlockId, or isDirty in localStorage
-        // @ts-ignore
-        delete stateToPersist.activeProject;
-        // @ts-ignore
-        delete stateToPersist.activeBlockId;
-        // @ts-ignore
-        delete stateToPersist.isDirty;
-
-        localStorage.setItem(KEY, JSON.stringify(stateToPersist.projects));
-    });
+  // Initialize the store with data from localStorage or initial data
+  useProjectStore.getState().initializeStore();
 }
 
-
 export default useProjectStore;
+
+    
