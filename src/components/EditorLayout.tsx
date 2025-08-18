@@ -13,11 +13,15 @@ interface EditorLayoutProps {
 }
 
 export function EditorLayout({ project }: EditorLayoutProps) {
-  const { setActiveProject } = useProjectStore();
+  const { setActiveProject, activeProject } = useProjectStore();
 
   useEffect(() => {
-    setActiveProject(project.id);
-  }, [project, setActiveProject]);
+    // Apenas define o projeto ativo se ele for diferente do que já está no store
+    // ou se nenhum projeto estiver ativo. Evita re-renderizações desnecessárias.
+    if (!activeProject || activeProject.id !== project.id) {
+       setActiveProject(project.id);
+    }
+  }, [project, setActiveProject, activeProject]);
   
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">

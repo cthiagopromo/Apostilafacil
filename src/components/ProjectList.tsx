@@ -7,24 +7,36 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowRight, PlusCircle } from 'lucide-react';
 import { initialProjects } from '@/lib/initial-data';
+import { useRouter } from 'next/navigation';
 
 export function ProjectList() {
-  const { projects, setProjects } = useProjectStore();
+  const { projects, setProjects, addProject } = useProjectStore();
+  const router = useRouter();
   
   useEffect(() => {
-    const storedProjects = localStorage.getItem('apostila-facil-projects');
-    if (storedProjects) {
-      setProjects(JSON.parse(storedProjects));
-    } else {
-      setProjects(initialProjects);
+    // A inicialização agora é feita no próprio store, 
+    // então podemos remover a lógica daqui se ela estiver duplicada.
+    // Mas vamos garantir que os projetos sejam carregados se o array estiver vazio.
+    if (projects.length === 0) {
+        const storedProjects = localStorage.getItem('apostila-facil-projects');
+        if (storedProjects) {
+          setProjects(JSON.parse(storedProjects));
+        } else {
+          setProjects(initialProjects);
+        }
     }
-  }, [setProjects]);
+  }, [projects.length, setProjects]);
+
+  const handleNewProject = () => {
+    const newProject = addProject();
+    router.push(`/editor/${newProject.id}`);
+  };
 
 
   return (
     <div className="space-y-4">
        <div className="flex justify-end">
-         <Button>
+         <Button onClick={handleNewProject}>
            <PlusCircle className="mr-2" />
            Novo Projeto
          </Button>
