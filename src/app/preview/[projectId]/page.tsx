@@ -16,7 +16,7 @@ import {
     ZoomOut, 
     Moon, 
     Volume2,
-    FilePdf,
+    FileText,
     Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -112,7 +112,7 @@ export default function PreviewPage() {
             
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" onClick={handleExportPdf} disabled={isExportingPdf}>
-                    {isExportingPdf ? <Loader2 className="animate-spin" /> : <FilePdf />}
+                    {isExportingPdf ? <Loader2 className="animate-spin" /> : <FileText />}
                 </Button>
                 <Button variant="ghost" size="icon"><Download /></Button>
                 <Separator orientation="vertical" className="h-8" />
