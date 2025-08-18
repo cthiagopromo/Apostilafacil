@@ -20,7 +20,7 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'quote':
-            return `
+             return `
                 <div class="block block-quote">
                     <div class="quote-icon">❞</div>
                     <p>${block.content.text || ''}</p>
@@ -209,6 +209,9 @@ body.dark-mode {
     font-size: 1.25rem;
     margin: 0;
     color: var(--primary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .accessibility-toolbar {
@@ -229,6 +232,7 @@ body.dark-mode {
     font-size: 1rem;
     color: var(--text-color);
     transition: background-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -256,7 +260,7 @@ main {
     padding-bottom: 1rem;
 }
 
-.block { margin-bottom: 2.5rem; }
+.block { margin-bottom: 2rem; }
 .block:last-child { margin-bottom: 0; }
 .block-image figure { margin: 0; }
 .block-image img { max-width: 100%; height: auto; display: block; border-radius: 6px; }
@@ -270,7 +274,7 @@ main {
     padding: 1.5rem;
     background-color: #f0f4ff;
     border-left: 5px solid var(--primary-color);
-    border-radius: 8px;
+    border-radius: 0 8px 8px 0;
 }
 .block-quote .quote-icon {
     position: absolute;
@@ -373,17 +377,19 @@ body.dark-mode .quiz-feedback.incorrect { background-color: #991b1b; color: #fee
     background-color: var(--card-bg-color);
     border-radius: 8px;
     box-shadow: 0 8px 16px var(--shadow-color);
-    transform: translateY(10px);
+    transform: translateY(10px) scale(0.95);
+    transform-origin: bottom right;
     opacity: 0;
     visibility: hidden;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s;
     z-index: -1;
     max-height: 400px;
     overflow-y: auto;
+    border: 1px solid var(--border-color);
 }
 
 .module-menu.open {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
     visibility: visible;
 }
@@ -401,7 +407,9 @@ body.dark-mode .quiz-feedback.incorrect { background-color: #991b1b; color: #fee
     color: var(--text-color);
     font-size: 0.9rem;
     transition: background-color 0.2s;
-    border-left: 4px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .module-menu-item:hover {
@@ -415,10 +423,72 @@ body.dark-mode .module-menu-item:hover {
     background-color: var(--primary-color);
     color: white;
     font-weight: 600;
-    border-left-color: darkblue;
 }
 body.dark-mode .module-menu-item.active {
-    border-left-color: lightblue;
+    background-color: var(--primary-color);
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px;
+    }
+
+    .main-header {
+        padding: 0.5rem;
+    }
+    
+    .header-content {
+        gap: 0.5rem;
+    }
+
+    #main-title {
+        font-size: 1rem;
+    }
+
+    .accessibility-toolbar {
+        gap: 0.25rem;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    main {
+        margin: 1rem auto;
+        padding: 0 0.5rem;
+    }
+    
+    .modulo {
+        padding: 1rem;
+    }
+
+    .fab-container {
+        bottom: 15px;
+        right: 15px;
+    }
+
+    .floating-action-button {
+        width: 50px;
+        height: 50px;
+    }
+
+    .module-menu {
+        width: 240px;
+        bottom: 60px;
+    }
+    
+    .module-navigation {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nav-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
     `;
 }
@@ -497,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.fontSize = savedFontSize;
     }
 
-    // --- New Menu Logic ---
+    // --- Menu Logic ---
     const fab = document.getElementById('fab-open-panel');
     const moduleMenu = document.getElementById('module-menu');
     
