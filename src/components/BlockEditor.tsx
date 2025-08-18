@@ -28,6 +28,7 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
     const { activeProject, activeBlockId, setActiveBlockId, deleteBlock, moveBlock, duplicateBlock } = useProjectStore();
 
     const isActive = block.id === activeBlockId;
+    const totalBlocks = activeProject?.blocks?.length ?? 0;
 
     const handleAction = (action: (projectId: string, blockId: string) => void) => (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -43,25 +44,19 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
                     <BlockRenderer block={block} />
                 </CardContent>
             </Card>
-
-            <div className="absolute top-1/2 -translate-y-1/2 -left-12 h-full flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex flex-col items-center bg-card p-1 rounded-md border shadow-sm space-y-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" onMouseDown={e => e.preventDefault()}>
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <div className="w-4 h-px bg-border"></div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'up'))} disabled={index === 0}>
-                        <ArrowUp className="h-4 w-4" />
-                    </Button>
-                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'down'))} disabled={index === (activeProject?.blocks?.length ?? 0) - 1}>
-                        <ArrowDown className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
             
             <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="flex items-center bg-card p-1 rounded-md border shadow-sm">
-                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction(duplicateBlock)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" onMouseDown={e => e.preventDefault()}>
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'up'))} disabled={index === 0}>
+                        <ArrowUp className="h-4 w-4" />
+                    </Button>
+                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'down'))} disabled={index === totalBlocks - 1}>
+                        <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction(duplicateBlock)}>
                         <Copy className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
