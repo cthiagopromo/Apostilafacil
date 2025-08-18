@@ -20,6 +20,7 @@ type Actions = {
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
+  deleteProject: (projectId: string) => Project | null;
   saveProjects: () => void;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
@@ -118,17 +119,42 @@ const useProjectStore = create<State & Actions>()(
             state.projects.push(newProject);
             state.isDirty = true;
         });
+        get().saveProjects();
         return newProject;
+    },
+
+    deleteProject: (projectId: string) => {
+      let nextActiveProject: Project | null = null;
+      set(state => {
+        const projectIndex = state.projects.findIndex(p => p.id === projectId);
+        if (projectIndex === -1) return;
+
+        state.projects.splice(projectIndex, 1);
+
+        if (state.activeProject?.id === projectId) {
+          if (state.projects.length > 0) {
+            const newActiveIndex = Math.max(0, projectIndex - 1);
+            nextActiveProject = state.projects[newActiveIndex];
+            state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
+          } else {
+            state.activeProject = null;
+            nextActiveProject = null;
+          }
+        }
+        state.isDirty = true;
+      });
+      get().saveProjects();
+      return nextActiveProject;
     },
 
     saveProjects: () => {
       set(state => {
-        if (!state.activeProject) return;
-
-        const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
-        if (projectIndex !== -1) {
-            state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
-            state.projects[projectIndex].updatedAt = new Date().toISOString();
+        if (state.activeProject) {
+            const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
+            if (projectIndex !== -1) {
+                state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
+                state.projects[projectIndex].updatedAt = new Date().toISOString();
+            }
         }
         
         if (typeof window !== 'undefined') {
@@ -287,7 +313,13 @@ const useProjectStore = create<State & Actions>()(
     addQuizOption: (blockId) => {
         set(state => {
             if (!state.activeProject) return;
-            const block = state.activeProject.blocks.find(b => b.id === blockId);
+            const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
+            if (projectIndex === -1) return;
+
+            const blockIndex = state.projects[projectIndex].blocks.findIndex(b => b.id === blockId);
+            if (blockIndex === -1) return;
+
+            const block = state.projects[projectIndex].blocks[blockIndex];
 
             if (block && block.type === 'quiz') {
                 if (!block.content.options) {
@@ -300,6 +332,15 @@ const useProjectStore = create<State & Actions>()(
                 };
                 block.content.options.push(newOption);
                 state.isDirty = true;
+                if(state.activeProject){
+                  const activeBlock = state.activeProject.blocks.find(b => b.id === blockId);
+                  if (activeBlock && activeBlock.type === 'quiz') {
+                     if (!activeBlock.content.options) {
+                        activeBlock.content.options = [];
+                     }
+                     activeBlock.content.options.push(newOption);
+                  }
+                }
             }
         });
     },
