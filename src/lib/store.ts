@@ -20,7 +20,7 @@ type Actions = {
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
-  deleteProject: (projectId: string) => Project | null;
+  deleteProject: (projectId: string) => string | null;
   saveProjects: () => void;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
@@ -124,7 +124,7 @@ const useProjectStore = create<State & Actions>()(
     },
 
     deleteProject: (projectId: string) => {
-      let nextActiveProject: Project | null = null;
+      let nextActiveProjectId: string | null = null;
       set(state => {
         const projectIndex = state.projects.findIndex(p => p.id === projectId);
         if (projectIndex === -1) return;
@@ -134,17 +134,23 @@ const useProjectStore = create<State & Actions>()(
         if (state.activeProject?.id === projectId) {
           if (state.projects.length > 0) {
             const newActiveIndex = Math.max(0, projectIndex - 1);
-            nextActiveProject = state.projects[newActiveIndex];
+            const nextActiveProject = state.projects[newActiveIndex];
             state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
+            nextActiveProjectId = nextActiveProject.id;
           } else {
             state.activeProject = null;
-            nextActiveProject = null;
+            nextActiveProjectId = null;
           }
+        } else if (state.projects.length > 0 && !state.activeProject) {
+            // If for some reason active project was null, set to first one
+            const nextActiveProject = state.projects[0];
+            state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
+            nextActiveProjectId = nextActiveProject.id;
         }
         state.isDirty = true;
       });
       get().saveProjects();
-      return nextActiveProject;
+      return nextActiveProjectId;
     },
 
     saveProjects: () => {

@@ -43,9 +43,9 @@ export default function LeftSidebar() {
 
   const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
-    const nextProject = deleteProject(projectId);
-    if (nextProject) {
-      router.push(`/editor/${nextProject.id}`);
+    const nextProjectId = deleteProject(projectId);
+    if (nextProjectId) {
+      router.push(`/editor/${nextProjectId}`);
     } else {
       router.push('/');
     }
