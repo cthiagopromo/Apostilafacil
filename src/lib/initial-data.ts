@@ -11,26 +11,19 @@ export const initialProjects: Project[] = [
       colorAccent: '#60A5FA',
       fontBody: 'Inter',
     },
-    pages: [
+    blocks: [
       {
-        id: `page_${new Date().getTime()}`,
-        title: 'Capa',
-        template: 'cover',
+        id: `block_${new Date().getTime()}`,
+        type: 'text',
         content: {
-          title: 'Biologia Celular',
-          subtitle: 'Uma Viagem ao Centro da Vida',
-          backgroundImageUrl: 'https://placehold.co/1200x800.png',
-          alt: 'ilustracao de celulas',
+          text: '<h1>O que é uma Célula?</h1><p>A célula é a menor unidade estrutural e funcional dos seres vivos. Todos os organismos, desde as bactérias mais simples até os seres humanos, são compostos por células.</p>',
         },
       },
       {
-        id: `page_${new Date().getTime() + 1}`,
-        title: 'Introdução',
-        template: 'text_image',
+        id: `block_${new Date().getTime() + 1}`,
+        type: 'image',
         content: {
-          title: 'O que é uma Célula?',
-          text: 'A célula é a menor unidade estrutural e funcional dos seres vivos. Todos os organismos, desde as bactérias mais simples até os seres humanos, são compostos por células.',
-          imageUrl: 'https://placehold.co/600x400.png',
+          url: 'https://placehold.co/600x400.png',
           alt: 'diagrama de uma celula eucarionte',
         },
       },

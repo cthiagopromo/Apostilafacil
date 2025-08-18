@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 
 export default function EditorPage({ params }: { params: { projectId: string } }) {
   const router = useRouter();
-  const getProjectById = useProjectStore((s) => s.getProjectById);
+  const { getProjectById, setActiveProject } = useProjectStore();
   const [project, setProject] = useState<Project | null | undefined>(undefined);
 
   useEffect(() => {
@@ -17,11 +17,14 @@ export default function EditorPage({ params }: { params: { projectId: string } }
     setTimeout(() => {
       const foundProject = getProjectById(params.projectId);
       setProject(foundProject);
+      if (foundProject) {
+        setActiveProject(foundProject.id);
+      }
     }, 100);
-  }, [params.projectId, getProjectById]);
+  }, [params.projectId, getProjectById, setActiveProject]);
   
   if (project === undefined) {
-    return <div>Carregando...</div>;
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
   }
 
   if (!project) {

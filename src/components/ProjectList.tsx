@@ -20,7 +20,16 @@ export function ProjectList() {
     if (projects.length === 0) {
         const storedProjects = localStorage.getItem('apostila-facil-projects');
         if (storedProjects) {
-          setProjects(JSON.parse(storedProjects));
+          try {
+            const parsedProjects = JSON.parse(storedProjects);
+            if (Array.isArray(parsedProjects)) {
+              setProjects(parsedProjects);
+            } else {
+               setProjects(initialProjects);
+            }
+          } catch {
+            setProjects(initialProjects);
+          }
         } else {
           setProjects(initialProjects);
         }
@@ -46,12 +55,12 @@ export function ProjectList() {
           <Card key={project.id}>
             <CardHeader>
               <CardTitle>{project.title}</CardTitle>
-              <CardDescription>{project.description}</CardDescription>
+              <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
             <CardFooter>
               <Link href={`/editor/${project.id}`} passHref>
                 <Button className="w-full">
-                  Editar Projeto <ArrowRight className="ml-2" />
+                  Editar Apostila <ArrowRight className="ml-2" />
                 </Button>
               </Link>
             </CardFooter>

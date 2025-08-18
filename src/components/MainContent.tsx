@@ -1,33 +1,30 @@
 'use client';
 
 import useProjectStore from '@/lib/store';
-import { Skeleton } from './ui/skeleton';
-import EditorView from './EditorView';
+import BlockEditor from './BlockEditor';
+import { ScrollArea } from './ui/scroll-area';
 
 export default function MainContent() {
-  const { activeProject, activePageId } = useProjectStore();
-  
-  const activePage = activeProject?.pages.find(p => p.id === activePageId);
+  const { activeProject } = useProjectStore();
 
-  if (!activePage) {
+  if (!activeProject || !activeProject.blocks || activeProject.blocks.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground p-8">
         <div className="text-center space-y-4">
-            <h2 className="text-2xl font-semibold">Nenhuma página selecionada</h2>
-            <p>Selecione uma página na barra lateral para começar a editar.</p>
-            <div className="pt-8 w-full max-w-md mx-auto">
-                <Skeleton className="h-8 w-3/4 mb-4"/>
-                <Skeleton className="h-4 w-full mb-2"/>
-                <Skeleton className="h-4 w-5/6"/>
-            </div>
+            <h2 className="text-2xl font-semibold">Apostila Vazia</h2>
+            <p>Adicione um bloco de conteúdo usando o menu à esquerda para começar.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto">
-        <EditorView page={activePage} />
-    </div>
+    <ScrollArea className="flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        {activeProject.blocks.map((block) => (
+           <BlockEditor key={block.id} block={block} />
+        ))}
+      </div>
+    </ScrollArea>
   );
 }

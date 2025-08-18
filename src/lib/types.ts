@@ -1,30 +1,30 @@
-export type TemplateType = 
-  | 'cover' 
-  | 'text_image' 
-  | 'columns' 
-  | 'list' 
-  | 'highlight_box'
-  | 'timeline'
-  | 'text_media';
+export type BlockType = 
+  | 'text' 
+  | 'image' 
+  | 'video'
+  | 'button'
+  | 'quiz';
 
-export interface PageContent {
-  title?: string;
-  subtitle?: string;
-  backgroundImageUrl?: string;
-  alt?: string;
+export interface BlockContent {
+  // Common fields
   text?: string;
-  imageUrl?: string;
-  columns?: string[];
-  items?: string[];
+  // Image
+  url?: string;
+  alt?: string;
+  // Video
   videoUrl?: string;
-  events?: { year: string; description: string }[];
+  // Button
+  buttonText?: string;
+  buttonUrl?: string;
+  // Quiz
+  question?: string;
+  options?: { text: string; isCorrect: boolean }[];
 }
 
-export interface Page {
+export interface Block {
   id: string;
-  title: string;
-  template: TemplateType;
-  content: PageContent;
+  type: BlockType;
+  content: BlockContent;
 }
 
 export interface Theme {
@@ -39,7 +39,7 @@ export interface Project {
   title: string;
   description: string;
   theme: Theme;
-  pages: Page[];
+  blocks: Block[];
   version: string;
   createdAt: string;
   updatedAt: string;

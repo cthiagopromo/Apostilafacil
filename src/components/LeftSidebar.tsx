@@ -1,73 +1,47 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import useProjectStore from '@/lib/store';
-import PageList from './PageList';
-import { Input } from './ui/input';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-    DialogTrigger,
-    DialogClose,
-} from "@/components/ui/dialog"
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Type, Image, Video, Link2, HelpCircle } from 'lucide-react';
+import type { BlockType } from '@/lib/types';
 
+const blockTypes: { name: BlockType, label: string, icon: React.ReactNode }[] = [
+    { name: 'text', label: 'Texto', icon: <Type /> },
+    { name: 'image', label: 'Imagem', icon: <Image /> },
+    { name: 'video', label: 'Vídeo/Embed', icon: <Video /> },
+    { name: 'button', label: 'Botão', icon: <Link2 /> },
+    { name: 'quiz', label: 'Quiz', icon: <HelpCircle /> },
+]
 
 export default function LeftSidebar() {
-  const { addPage, activeProject } = useProjectStore();
-  const [newPageTitle, setNewPageTitle] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { addBlock, activeProject } = useProjectStore();
 
-  const handleAddPage = () => {
-    if (newPageTitle.trim() && activeProject) {
-      // Para simplificar, adicionaremos um template padrão.
-      // Uma implementação mais robusta permitiria ao usuário escolher o template.
-      addPage(activeProject.id, newPageTitle.trim(), 'text_image');
-      setNewPageTitle('');
-      setIsDialogOpen(false);
+  const handleAddBlock = (type: BlockType) => {
+    if (activeProject) {
+        addBlock(activeProject.id, type);
     }
   };
 
   return (
     <aside className="w-72 bg-card/60 border-r flex flex-col">
-      <div className="p-2 border-b flex items-center justify-between">
-        <h2 className="text-md font-semibold px-2">Páginas</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={!activeProject}>
-              <PlusCircle className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Nova Página</DialogTitle>
-              <DialogDescription>
-                Digite um título para a sua nova página.
-              </DialogDescription>
-            </DialogHeader>
-            <Input
-              placeholder="Ex: A Membrana Plasmática"
-              value={newPageTitle}
-              onChange={(e) => setNewPageTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddPage()}
-              autoFocus
-            />
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline">Cancelar</Button>
-                </DialogClose>
-                <Button onClick={handleAddPage}>Adicionar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      <div className="p-2 border-b">
+        <h2 className="text-md font-semibold px-2">Adicionar Blocos</h2>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        <PageList />
+      <div className="flex-1 overflow-y-auto p-2">
+        <div className='grid grid-cols-2 gap-2'>
+            {blockTypes.map(block => (
+                <Button 
+                    key={block.name}
+                    variant="outline" 
+                    className="h-24 flex flex-col gap-2"
+                    onClick={() => handleAddBlock(block.name)}
+                    disabled={!activeProject}
+                >
+                    {block.icon}
+                    <span className='text-sm'>{block.label}</span>
+                </Button>
+            ))}
+        </div>
       </div>
     </aside>
   );

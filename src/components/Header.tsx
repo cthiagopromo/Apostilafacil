@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Book, PlusCircle, Eye, Download, Check, X, Home, ArrowLeft } from 'lucide-react';
+import { Book, Eye, Download, Check, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Header() {
-  const activeProject = useProjectStore((s) => s.activeProject);
+  const { activeProject, updateProjectTitle } = useProjectStore((s) => ({
+    activeProject: s.activeProject,
+    updateProjectTitle: s.updateProjectTitle,
+  }));
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(activeProject?.title || '');
 
@@ -17,8 +20,8 @@ export default function Header() {
   }, [activeProject]);
 
   const handleTitleSave = () => {
-    if (title.trim()) {
-      // Lógica para atualizar o título do projeto no Zustand
+    if (title.trim() && activeProject) {
+      updateProjectTitle(activeProject.id, title.trim());
       setIsEditing(false);
     }
   };
@@ -55,6 +58,7 @@ export default function Header() {
                   onKeyDown={handleKeyDown}
                   className="h-9"
                   autoFocus
+                  onBlur={handleTitleSave}
                 />
                 <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleTitleSave}>
                   <Check className="h-4 w-4" />
