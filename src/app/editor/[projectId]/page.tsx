@@ -41,5 +41,5 @@ export default function EditorPage() {
     );
   }
 
-  return <EditorLayout project={project} />;
+  return <EditorLayout />;
 }

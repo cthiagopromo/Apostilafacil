@@ -2,23 +2,21 @@
 
 import { useEffect } from 'react';
 import useProjectStore from '@/lib/store';
-import type { Project } from '@/lib/types';
 import Header from './Header';
 import LeftSidebar from './LeftSidebar';
 import MainContent from './MainContent';
+import RightSidebar from './RightSidebar';
 
-interface EditorLayoutProps {
-  project: Project;
-}
+export function EditorLayout() {
+  const { activeProject } = useProjectStore();
 
-export function EditorLayout({ project }: EditorLayoutProps) {
-  const { setActiveProject, activeProject } = useProjectStore();
-
-  useEffect(() => {
-    if (!activeProject || activeProject.id !== project.id) {
-       setActiveProject(project.id);
-    }
-  }, [project, setActiveProject, activeProject]);
+  if (!activeProject) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-secondary">
+        <p>Nenhum projeto selecionado. Selecione um na barra lateral.</p>
+      </div>
+    );
+  }
   
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
@@ -28,6 +26,7 @@ export function EditorLayout({ project }: EditorLayoutProps) {
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
           <MainContent />
         </main>
+        <RightSidebar />
       </div>
     </div>
   );
