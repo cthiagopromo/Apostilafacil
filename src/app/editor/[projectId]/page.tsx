@@ -20,7 +20,7 @@ export default function EditorPage() {
     if (foundProject) {
       setActiveProject(foundProject.id);
     }
-  }, [projectId, getProjectById]);
+  }, [projectId, getProjectById, setActiveProject]);
   
   if (project === undefined) {
     return (
