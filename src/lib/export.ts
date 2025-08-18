@@ -11,13 +11,12 @@ function generatePdfHtmlForProject(project: Project): string {
             case 'text':
                 return `<div class="block block-text" style="margin-bottom: 20px;">${block.content.text || ''}</div>`;
             case 'image':
-                 const width = block.content.width ?? 100;
                 return `
-                    <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                        <p><strong>Imagem:</strong></p>
-                        <p><strong>URL:</strong> <a href="${block.content.url || ''}">${block.content.url || ''}</a></p>
-                        <p><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
-                        ${block.content.caption ? `<p><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
+                    <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
+                        <p style="margin: 0 0 5px 0; font-weight: bold;">Imagem:</p>
+                        <p style="margin: 0 0 5px 0;"><strong>URL:</strong> <a href="${block.content.url || ''}">${block.content.url || ''}</a></p>
+                        <p style="margin: 0 0 5px 0;"><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
+                        ${block.content.caption ? `<p style="margin: 0 0 10px 0;"><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
                         <div style="display: flex; justify-content: center; padding-top: 10px;">
                            <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 80%; height: auto; display: block; border-radius: 6px;" />
                         </div>
@@ -26,28 +25,28 @@ function generatePdfHtmlForProject(project: Project): string {
             case 'video':
                 if (!block.content.videoUrl) return '';
                 return `
-                    <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                        <p><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo</a></p>
+                    <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
+                        <p style="margin:0;"><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo</a></p>
                     </div>
                 `;
             case 'button':
                  if (!block.content.buttonText || !block.content.buttonUrl) return '';
                  return `
-                    <div class="block block-button-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                        <p><strong>Botão:</strong> ${block.content.buttonText} <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
+                    <div class="block block-button-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
+                        <p style="margin:0;"><strong>Botão:</strong> ${block.content.buttonText} <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
                     </div>
                  `;
             case 'quote':
-                 return `<blockquote class="block block-quote" style="margin-bottom: 20px; border-left: 4px solid #ccc; padding-left: 15px; font-style: italic;"><p>${block.content.text || ''}</p></blockquote>`;
+                 return `<blockquote class="block block-quote" style="margin-bottom: 20px; border-left: 4px solid #ccc; padding-left: 15px; font-style: italic; page-break-inside: avoid;"><p>${block.content.text || ''}</p></blockquote>`;
             case 'quiz':
                 const optionsHtml = block.content.options?.map(option => {
                     const isCorrect = option.isCorrect ? '<span style="color: green; font-weight: bold;"> (Correta ✔)</span>' : '';
-                    return `<li>- ${option.text}${isCorrect}</li>`;
+                    return `<li style="list-style-type: none; margin-bottom: 5px;">- ${option.text}${isCorrect}</li>`;
                 }).join('') || '';
                 return `
-                  <div class="block block-quiz-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                    <p><strong>Quiz: ${block.content.question || ''}</strong></p>
-                    <ul>${optionsHtml}</ul>
+                  <div class="block block-quiz-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
+                    <p style="margin:0 0 10px 0;"><strong>Quiz: ${block.content.question || ''}</strong></p>
+                    <ul style="margin:0; padding-left: 10px;">${optionsHtml}</ul>
                   </div>`;
             default:
                 return '';
@@ -62,15 +61,15 @@ function generatePdfHtmlForProject(project: Project): string {
           <style>
               body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; }
               h1 { color: #000; }
-              ul { list-style-type: none; padding-left: 10px; }
+              p { margin-bottom: 10px; }
               a { color: #007bff; text-decoration: none; }
+              .pdf-content { padding: 20px; }
           </style>
       </head>
       <body>
-          <div id="pdf-content">
-              <h1>${project.title}</h1>
-              <p>${project.description}</p>
-              <hr />
+          <div class="pdf-content">
+              <h1 style="font-size: 24px; margin-bottom: 10px;">${project.title}</h1>
+              <p style="font-size: 14px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px;">${project.description}</p>
               ${blocksHtml}
           </div>
       </body>
@@ -101,35 +100,47 @@ export async function exportToPdf(projects: Project[]) {
     tempDiv.innerHTML = htmlContent;
     document.body.appendChild(tempDiv);
     
-    const canvas = await html2canvas(tempDiv.querySelector('#pdf-content')!, {
-        scale: 2, 
-        useCORS: true,
-        logging: true,
-    });
-
-    document.body.removeChild(tempDiv);
-
-    const imgData = canvas.toDataURL('image/png');
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    let heightLeft = pdfHeight;
-    let position = 0;
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    doc.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, pdfHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-        position -= pageHeight;
-        doc.addPage();
-        doc.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, pdfHeight);
-        heightLeft -= pageHeight;
+    const contentElement = tempDiv.querySelector('.pdf-content');
+    if (!contentElement) {
+        document.body.removeChild(tempDiv);
+        alert("Erro ao encontrar conteúdo para gerar o PDF.");
+        return;
     }
     
-    const mainTitle = projects.length > 0 ? projects[0].title : 'apostila';
-    doc.save(`${mainTitle}.pdf`);
+    try {
+        const canvas = await html2canvas(contentElement as HTMLElement, {
+            scale: 2, 
+            useCORS: true,
+            logging: true,
+        });
+    
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = doc.internal.pageSize.getHeight();
+    
+        doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
+        heightLeft -= pageHeight;
+    
+        while (heightLeft > 0) {
+            position -= pageHeight -30; // Adjust for margins
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 15, position + 15, pdfWidth - 30, pdfHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        const mainTitle = project.title;
+        doc.save(`${mainTitle}.pdf`);
+    } catch(e) {
+        console.error("Erro ao gerar canvas para PDF", e);
+        alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.")
+    } finally {
+        document.body.removeChild(tempDiv);
+    }
 }
 
 
@@ -1002,5 +1013,3 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
-
-    
