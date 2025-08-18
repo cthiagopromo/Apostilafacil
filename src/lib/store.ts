@@ -231,23 +231,20 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-          const project = state.projects.find(p => p.id === state.activeProject?.id);
-          if (!project) return;
-          
-          const block = project.blocks.find((b) => b.id === blockId);
-          if (!block) return;
-          
-          block.content = { ...block.content, ...newContent };
-          
-          // Ensure activeProject reflects the change
-          state.activeProject = produce(state.activeProject, draft => {
-              if (draft) {
-                const activeBlock = draft.blocks.find(b => b.id === blockId);
-                if (activeBlock) {
-                    activeBlock.content = { ...activeBlock.content, ...newContent };
-                }
-              }
-          });
+        const projectIndex = state.projects.findIndex(p => p.id === state.activeProject?.id);
+        if (projectIndex === -1) return;
+
+        const blockIndex = state.projects[projectIndex].blocks.findIndex(b => b.id === blockId);
+        if (blockIndex === -1) return;
+        
+        state.projects[projectIndex].blocks[blockIndex].content = {
+            ...state.projects[projectIndex].blocks[blockIndex].content,
+            ...newContent
+        };
+
+        if (state.activeProject) {
+            state.activeProject = state.projects[projectIndex];
+        }
       });
     },
 

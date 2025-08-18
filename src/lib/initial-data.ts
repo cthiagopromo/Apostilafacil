@@ -30,7 +30,8 @@ export const initialProjects: Project[] = [
         content: {
           url: 'https://placehold.co/600x400.png',
           alt: 'diagrama de uma celula eucarionte',
-          caption: 'Figura 1: Representação de uma célula eucariótica.'
+          caption: 'Figura 1: Representação de uma célula eucariótica.',
+          width: 100,
         },
       },
     ],
