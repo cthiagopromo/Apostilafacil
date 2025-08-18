@@ -1,5 +1,4 @@
 
-
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
@@ -112,19 +111,22 @@ function generateHtml(projects: Project[]): string {
     <header class="main-header">
         <div class="header-content">
             <h1 id="main-title">${mainTitle}</h1>
-            <nav class="accessibility-toolbar">
-                <button title="Imprimir" onclick="window.print()">📄</button>
-                <button title="Aumentar fonte" onclick="changeFontSize('increase')">A+</button>
-                <button title="Diminuir fonte" onclick="changeFontSize('decrease')">A-</button>
-                <button title="Alto contraste" onclick="toggleHighContrast()">🌗</button>
-                <button title="Modo escuro" onclick="toggleDarkMode()">🌙</button>
-            </nav>
         </div>
     </header>
     <main>
         ${modulesHtml}
     </main>
-    <button class="floating-action-button">+</button>
+
+    <div class="fab-container">
+        <div class="fab-options">
+            <button class="fab-option" title="Imprimir" onclick="window.print()">📄</button>
+            <button class="fab-option" title="Aumentar fonte" onclick="changeFontSize('increase')">A+</button>
+            <button class="fab-option" title="Diminuir fonte" onclick="changeFontSize('decrease')">A-</button>
+            <button class="fab-option" title="Modo escuro" onclick="toggleDarkMode()">🌙</button>
+        </div>
+        <button class="floating-action-button" id="fab-main">+</button>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
@@ -161,21 +163,6 @@ body.dark-mode {
     --border-color: #444;
 }
 
-/* High Contrast Mode */
-body.high-contrast {
-    --bg-color: #000;
-    --text-color: #fff;
-    --primary-color: #ffff00;
-    --card-bg-color: #000;
-    --border-color: #fff;
-}
-body.high-contrast .btn {
-    background-color: #000;
-    color: #ffff00;
-    border: 2px solid #ffff00;
-}
-
-
 .main-header {
     background-color: var(--primary-color);
     color: white;
@@ -197,16 +184,6 @@ body.high-contrast .btn {
 #main-title {
     font-size: 1.5rem;
     margin: 0;
-}
-
-.accessibility-toolbar button {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 1.5rem;
-    margin-left: 0.5rem;
-    padding: 0.25rem;
 }
 
 main {
@@ -335,7 +312,7 @@ main {
 }
 
 .quiz-feedback.correct {
-    background-color: #dbeafe; /* Cor primária com transparência */
+    background-color: #dbeafe;
     color: #1e40af;
     display: block;
 }
@@ -367,28 +344,76 @@ main {
   margin-left: auto;
 }
 
-.floating-action-button {
+/* Floating Action Button */
+.fab-container {
     position: fixed;
     bottom: 25px;
     right: 25px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+}
+
+.floating-action-button {
     background-color: #1D4ED8;
     color: white;
     width: 60px;
     height: 60px;
     border-radius: 50%;
     border: none;
-    font-size: 24px;
+    font-size: 28px;
+    font-weight: 300;
     line-height: 60px;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    z-index: 1000;
-    transition: transform 0.2s ease-in-out, background-color 0.2s;
+    transition: transform 0.2s ease-in-out, background-color 0.2s, rotate 0.2s ease-in-out;
 }
 
 .floating-action-button:hover {
-    background-color: #2563EB; /* um pouco mais claro que o primário */
+    background-color: #2563EB;
     transform: scale(1.05);
+}
+
+.floating-action-button.active {
+    rotate: 45deg;
+}
+
+
+.fab-options {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.fab-option {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background-color: #3B82F6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Animation */
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+
+.fab-container.active .fab-option {
+    transform: scale(1);
+}
+
+.fab-option:hover {
+    background-color: #60A5FA;
 }
     `;
 }
@@ -423,22 +448,11 @@ function toggleDarkMode() {
     localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
 }
 
-function toggleHighContrast() {
-    document.body.classList.toggle('high-contrast');
-    localStorage.setItem('contrast', document.body.classList.contains('high-contrast') ? 'high' : 'normal');
-}
-
-
 document.addEventListener('DOMContentLoaded', () => {
     // Restore preferences
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-    }
-
-    const savedContrast = localStorage.getItem('contrast');
-    if (savedContrast === 'high') {
-        document.body.classList.add('high-contrast');
     }
 
     const savedFontSize = localStorage.getItem('fontSize');
@@ -478,6 +492,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if(firstModule) {
         firstModule.style.display = 'block';
     }
+
+    // FAB logic
+    const fabMain = document.getElementById('fab-main');
+    const fabContainer = document.querySelector('.fab-container');
+    if (fabMain && fabContainer) {
+        fabMain.addEventListener('click', () => {
+            fabContainer.classList.toggle('active');
+            fabMain.classList.toggle('active');
+            if (fabMain.classList.contains('active')) {
+                fabMain.innerHTML = '&#x2715;'; // Close icon (X)
+            } else {
+                fabMain.innerHTML = '+';
+            }
+        });
+    }
 });
     `;
 }
@@ -494,3 +523,5 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
+
+    
