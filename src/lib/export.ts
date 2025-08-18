@@ -93,13 +93,16 @@ export async function exportToPdf(projects: Project[]) {
         format: 'a4'
     });
 
+    // We only export the first project for now, as jsPDF handles one doc at a time.
     const project = projects[0]; 
     const htmlContent = generatePdfHtmlForProject(project);
 
+    // To handle images, we need to create a temporary element in the DOM
+    // for html2canvas to render, as jsPDF's html method has limitations with external images.
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = '600px'; 
+    tempDiv.style.left = '-9999px'; // Render off-screen
+    tempDiv.style.width = '600px'; // A reasonable width for rendering
     tempDiv.innerHTML = htmlContent;
     document.body.appendChild(tempDiv);
     
@@ -126,6 +129,7 @@ export async function exportToPdf(projects: Project[]) {
         console.error("Erro ao gerar PDF", e);
         alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.")
     } finally {
+        // Clean up the temporary div
         document.body.removeChild(tempDiv);
     }
 }
