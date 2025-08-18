@@ -1,4 +1,3 @@
-// This is a new file
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -10,7 +9,7 @@ import { Textarea } from './ui/textarea';
 const BlockSettings = () => {
     const { activeProject, activeBlockId, updateBlockContent } = useProjectStore();
 
-    const activeBlock = activeProject?.blocks.find(b => b.id === activeBlockId);
+    const activeBlock = activeProject?.blocks?.find(b => b.id === activeBlockId);
 
     if (!activeBlock) {
         return (
