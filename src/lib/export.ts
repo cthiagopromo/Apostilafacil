@@ -20,6 +20,20 @@ function generatePdfHtmlForProject(project: Project): string {
                         </figure>
                     </div>
                 `;
+            case 'video':
+                if (!block.content.videoUrl) return '';
+                return `
+                    <div class="block block-video-pdf">
+                        <p><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo</a></p>
+                    </div>
+                `;
+            case 'button':
+                 if (!block.content.buttonText || !block.content.buttonUrl) return '';
+                 return `
+                    <div class="block block-button-pdf">
+                        <p><strong>Botão:</strong> ${block.content.buttonText} <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
+                    </div>
+                 `;
             case 'quote':
                  return `<div class="block block-quote"><p>${block.content.text || ''}</p></div>`;
             case 'quiz':
