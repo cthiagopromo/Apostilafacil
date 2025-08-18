@@ -1,3 +1,4 @@
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
@@ -114,7 +115,7 @@ function generateHtml(projects: Project[]): string {
                 <button title="Imprimir" onclick="window.print()">📄</button>
                 <button title="Aumentar fonte" onclick="changeFontSize('increase')">A+</button>
                 <button title="Diminuir fonte" onclick="changeFontSize('decrease')">A-</button>
-                <button title="Alto contraste" onclick="toggleHighContrast()"> контраст</button>
+                <button title="Alto contraste" onclick="toggleHighContrast()">🌗</button>
                 <button title="Modo escuro" onclick="toggleDarkMode()">🌙</button>
             </nav>
         </div>
@@ -332,8 +333,8 @@ main {
 }
 
 .quiz-feedback.correct {
-    background-color: #dcfce7;
-    color: #166534;
+    background-color: #dbeafe;
+    color: #1e40af;
     display: block;
 }
 

@@ -59,12 +59,12 @@ const QuizBlock = ({ block }: { block: Block }) => {
                         return (
                             <div key={option.id} className={cn(
                                 "flex items-center space-x-3 p-3 rounded-md transition-all",
-                                isAnswered && option.isCorrect && 'bg-green-100 dark:bg-green-900/50 border-green-500 border',
+                                isAnswered && option.isCorrect && 'bg-primary/10 dark:bg-primary/20 border-primary/50 border',
                                 showResult && !option.isCorrect && 'bg-red-100 dark:bg-red-900/50 border-red-500 border'
                             )}>
                                 <RadioGroupItem value={option.id} id={option.id} />
                                 <Label htmlFor={option.id} className="flex-1 cursor-pointer">{option.text}</Label>
-                                {showResult && option.isCorrect && <CheckCircle className="text-green-600" />}
+                                {showResult && option.isCorrect && <CheckCircle className="text-primary" />}
                                 {showResult && !option.isCorrect && <XCircle className="text-red-600" />}
                             </div>
                         )

@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -67,7 +68,7 @@ export default function LeftSidebar() {
       </ScrollArea>
       <div className='p-3 border-t text-xs text-center text-muted-foreground'>
           <p>Última atualização: {new Date().toLocaleTimeString()}</p>
-          <p className='text-green-600 font-semibold'>Salvo automaticamente</p>
+          <p className='text-primary font-semibold'>Salvo automaticamente</p>
       </div>
     </aside>
   );
