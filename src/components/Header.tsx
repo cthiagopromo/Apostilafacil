@@ -1,17 +1,20 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Eye, Download, Save, Settings, ChevronsLeft, ChevronsRight, FileJson, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { exportToZip } from '@/lib/export';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
-  const { activeProject, projects } = useProjectStore();
+  const { activeProject, projects, saveProject, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   const handleExport = async () => {
     if (!projects || projects.length === 0) {
@@ -25,7 +28,6 @@ export default function Header() {
 
     setIsExporting(true);
     try {
-      // Pass all projects to the export function
       await exportToZip(projects);
       toast({
         title: "Exportação Concluída",
@@ -42,6 +44,20 @@ export default function Header() {
       setIsExporting(false);
     }
   };
+
+  const handleSave = () => {
+    if (!activeProject || !isDirty) return;
+
+    setIsSaving(true);
+    // Simulate async save
+    setTimeout(() => {
+        saveProject(activeProject.id);
+        setIsSaving(false);
+        toast({
+            title: "Projeto salvo com sucesso!",
+        });
+    }, 500);
+  }
 
   return (
     <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
@@ -62,7 +78,13 @@ export default function Header() {
                 {activeProject.title}
               </h1>
               <Badge variant="secondary">1 módulo</Badge>
-              <Badge variant="outline">Salvo</Badge>
+              {isSaving ? (
+                <Badge variant="outline">Salvando...</Badge>
+              ) : isDirty ? (
+                 <Badge variant="destructive">Alterações não salvas</Badge>
+              ) : (
+                <Badge variant="outline">Salvo</Badge>
+              )}
             </div>
           )}
       </div>
@@ -78,9 +100,13 @@ export default function Header() {
             Pré-visualizar
           </Link>
         </Button>
-        <Button variant="outline">
-          <Save className="mr-2 h-4 w-4" />
-          Salvar
+        <Button onClick={handleSave} disabled={isSaving || !isDirty}>
+          {isSaving ? (
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {isSaving ? 'Salvando...' : 'Salvar'}
         </Button>
         <Button onClick={handleExport} disabled={isExporting}>
             {isExporting ? (

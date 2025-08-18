@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings } from './types';
@@ -8,6 +9,7 @@ type State = {
   projects: Project[];
   activeProject: Project | null;
   activeBlockId: string | null;
+  isDirty: boolean; // To track unsaved changes
 };
 
 type Actions = {
@@ -16,6 +18,7 @@ type Actions = {
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   addProject: () => Project;
+  saveProject: (projectId: string) => void;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
@@ -35,6 +38,7 @@ const useProjectStore = create<State & Actions>()(
     projects: [],
     activeProject: null,
     activeBlockId: null,
+    isDirty: false,
 
     setProjects: (projects) => set({ projects }),
 
@@ -45,7 +49,7 @@ const useProjectStore = create<State & Actions>()(
     setActiveProject: (projectId) => {
       const project = get().projects.find((p) => p.id === projectId);
       if (project) {
-        set({ activeProject: project, activeBlockId: null });
+        set({ activeProject: project, activeBlockId: null, isDirty: false });
       }
     },
     
@@ -74,8 +78,21 @@ const useProjectStore = create<State & Actions>()(
         };
         set(state => {
             state.projects.push(newProject);
+            state.isDirty = true;
         });
         return newProject;
+    },
+
+    saveProject: (projectId: string) => {
+        // In a real app, this would save to a server. Here we just update the state.
+        // The persistence to localStorage is handled by the subscription middleware.
+        set(state => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                project.updatedAt = new Date().toISOString();
+            }
+            state.isDirty = false;
+        });
     },
 
     updateProjectTitle: (projectId, title) => {
@@ -86,6 +103,7 @@ const useProjectStore = create<State & Actions>()(
           if (state.activeProject?.id === projectId) {
             state.activeProject.title = title;
           }
+          state.isDirty = true;
         }
       })
     },
@@ -98,6 +116,7 @@ const useProjectStore = create<State & Actions>()(
           if (state.activeProject?.id === projectId) {
             state.activeProject.description = description;
           }
+          state.isDirty = true;
         }
       })
     },
@@ -112,6 +131,7 @@ const useProjectStore = create<State & Actions>()(
                     // @ts-ignore
                     state.activeProject.layoutSettings[setting] = value;
                 }
+                state.isDirty = true;
             }
         });
     },
@@ -164,6 +184,7 @@ const useProjectStore = create<State & Actions>()(
                     state.activeProject.blocks.push(newBlock);
                     state.activeBlockId = newBlock.id;
                 }
+                state.isDirty = true;
             }
         });
     },
@@ -179,6 +200,7 @@ const useProjectStore = create<State & Actions>()(
                 state.activeBlockId = null;
             }
           }
+          state.isDirty = true;
         }
       });
     },
@@ -200,6 +222,7 @@ const useProjectStore = create<State & Actions>()(
               if (state.activeProject?.id === projectId) {
                   state.activeProject.blocks = [...project.blocks];
               }
+              state.isDirty = true;
           }
       });
     },
@@ -225,6 +248,7 @@ const useProjectStore = create<State & Actions>()(
                 if (state.activeProject?.id === projectId) {
                     state.activeProject.blocks = [...project.blocks];
                 }
+                state.isDirty = true;
             }
         });
     },
@@ -245,6 +269,7 @@ const useProjectStore = create<State & Actions>()(
         if (state.activeProject) {
             state.activeProject = {...state.projects[projectIndex]};
         }
+        state.isDirty = true;
       });
     },
 
@@ -261,6 +286,7 @@ const useProjectStore = create<State & Actions>()(
                     isCorrect: false,
                 };
                 block.content.options.push(newOption);
+                state.isDirty = true;
             }
         });
     },
@@ -272,6 +298,7 @@ const useProjectStore = create<State & Actions>()(
                 const option = block.content.options.find(o => o.id === optionId);
                 if (option) {
                     Object.assign(option, updates);
+                    state.isDirty = true;
                 }
             }
         });
@@ -282,6 +309,7 @@ const useProjectStore = create<State & Actions>()(
             const block = state.activeProject?.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz' && block.content.options) {
                 block.content.options = block.content.options.filter(o => o.id !== optionId);
+                state.isDirty = true;
             }
         });
     },
@@ -301,6 +329,7 @@ const useProjectStore = create<State & Actions>()(
                     }
                 }
             });
+            // This is arguably not a "dirty" action, so we don't set isDirty = true
         })
     }
 
@@ -339,10 +368,23 @@ if (typeof window !== 'undefined') {
         return initialProjects;
     };
     
-    useProjectStore.setState({ projects: loadState() });
+    const projects = loadState();
+    useProjectStore.setState({ projects });
+    if(projects.length > 0) {
+        useProjectStore.setState({ activeProject: projects[0] });
+    }
 
     useProjectStore.subscribe((state) => {
-        localStorage.setItem(KEY, JSON.stringify(state.projects));
+        const stateToPersist = { ...state };
+        // Don't persist activeProject, activeBlockId, or isDirty in localStorage
+        // @ts-ignore
+        delete stateToPersist.activeProject;
+        // @ts-ignore
+        delete stateToPersist.activeBlockId;
+        // @ts-ignore
+        delete stateToPersist.isDirty;
+
+        localStorage.setItem(KEY, JSON.stringify(stateToPersist.projects));
     });
 }
 
