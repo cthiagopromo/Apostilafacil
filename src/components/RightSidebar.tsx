@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { Settings, Info, Palette, Type, Layout } from 'lucide-react';
 import ModuleSettings from './ModuleSettings';
+import LayoutSettings from './LayoutSettings';
 
 export default function RightSidebar() {
   return (
@@ -61,7 +62,7 @@ export default function RightSidebar() {
                 </div>
             </AccordionTrigger>
             <AccordionContent>
-              Em breve...
+              <LayoutSettings />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

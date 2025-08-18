@@ -43,11 +43,18 @@ export interface Theme {
   fontBody: string;
 }
 
+export interface LayoutSettings {
+  containerWidth: 'standard' | 'large' | 'full';
+  sectionSpacing: 'compact' | 'standard' | 'comfortable';
+  navigationType: 'top' | 'sidebar' | 'bottom';
+}
+
 export interface Project {
   id:string;
   title: string;
   description: string;
   theme: Theme;
+  layoutSettings: LayoutSettings;
   blocks: Block[];
   version: string;
   createdAt: string;

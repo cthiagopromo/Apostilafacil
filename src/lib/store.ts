@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { Project, Block, BlockType, BlockContent, QuizOption } from './types';
+import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings } from './types';
 import { initialProjects } from './initial-data';
 import { produce } from 'immer';
 
@@ -18,6 +18,7 @@ type Actions = {
   addProject: () => Project;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
+  updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
   addBlock: (projectId: string, type: BlockType) => void;
   deleteBlock: (projectId: string, blockId: string) => void;
   moveBlock: (projectId: string, blockId: string, direction: 'up' | 'down') => void;
@@ -61,6 +62,11 @@ const useProjectStore = create<State & Actions>()(
               colorAccent: '#60A5FA',
               fontBody: 'Inter',
             },
+            layoutSettings: {
+                containerWidth: 'large',
+                sectionSpacing: 'standard',
+                navigationType: 'sidebar',
+            },
             blocks: [],
             version: '1.0.0',
             createdAt: new Date().toISOString(),
@@ -94,6 +100,20 @@ const useProjectStore = create<State & Actions>()(
           }
         }
       })
+    },
+
+    updateLayoutSetting: (projectId, setting, value) => {
+        set(state => {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
+                // @ts-ignore
+                project.layoutSettings[setting] = value;
+                if (state.activeProject?.id === projectId) {
+                    // @ts-ignore
+                    state.activeProject.layoutSettings[setting] = value;
+                }
+            }
+        });
     },
 
     addBlock: (projectId, type) => {
@@ -211,18 +231,23 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-          const projectIndex = state.projects.findIndex(p => p.id === state.activeProject?.id);
-          if (projectIndex === -1) return;
-
-          const project = state.projects[projectIndex];
-          const blockIndex = project.blocks.findIndex((b) => b.id === blockId);
-          if (blockIndex === -1) return;
+          const project = state.projects.find(p => p.id === state.activeProject?.id);
+          if (!project) return;
           
-          const block = project.blocks[blockIndex];
+          const block = project.blocks.find((b) => b.id === blockId);
+          if (!block) return;
+          
           block.content = { ...block.content, ...newContent };
           
           // Ensure activeProject reflects the change
-          state.activeProject = state.projects[projectIndex];
+          state.activeProject = produce(state.activeProject, draft => {
+              if (draft) {
+                const activeBlock = draft.blocks.find(b => b.id === blockId);
+                if (activeBlock) {
+                    activeBlock.content = { ...activeBlock.content, ...newContent };
+                }
+              }
+          });
       });
     },
 

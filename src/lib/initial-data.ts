@@ -11,6 +11,11 @@ export const initialProjects: Project[] = [
       colorAccent: '#60A5FA',
       fontBody: 'Inter',
     },
+    layoutSettings: {
+      containerWidth: 'large',
+      sectionSpacing: 'standard',
+      navigationType: 'sidebar',
+    },
     blocks: [
       {
         id: `block_${new Date().getTime()}`,
