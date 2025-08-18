@@ -124,17 +124,51 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video':
-            // Videos are interactive and won't be included in PDF/ZIP
-            return '';
+             if (!block.content.videoUrl) return '';
+                try {
+                    const urlObj = new URL(block.content.videoUrl);
+                    let videoId = urlObj.searchParams.get('v');
+                    if (urlObj.hostname === 'youtu.be') {
+                        videoId = urlObj.pathname.substring(1);
+                    }
+                    if (!videoId) return `<div class="block-video-invalid">URL do YouTube inválida.</div>`;
+
+                    return `
+                        <div class="block block-video">
+                            <iframe
+                                src="https://www.youtube.com/embed/${videoId}"
+                                title="YouTube video player"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen
+                            ></iframe>
+                        </div>
+                    `;
+                } catch (e) {
+                    return `<div class="block-video-invalid">URL do vídeo inválida.</div>`;
+                }
         case 'button':
-            // Buttons are interactive and won't be included in PDF/ZIP
-            return '';
+             return `
+                <div class="block block-button">
+                    <a href="${block.content.buttonUrl || '#'}" class="btn-block" target="_blank" rel="noopener noreferrer">
+                        ${block.content.buttonText || 'Botão'}
+                    </a>
+                </div>
+            `;
         case 'quiz':
-            const optionsHtml = block.content.options?.map(option => {
-                const isCorrect = option.isCorrect ? ' (Correta)' : '';
-                return `<div>- ${option.text}${isCorrect}</div>`;
-            }).join('') || '';
-            return `<div class="block block-quiz"><p><strong>${block.content.question || ''}</strong></p>${optionsHtml}</div>`;
+            const optionsHtml = block.content.options?.map(option => `
+                <div class="quiz-option" data-correct="${option.isCorrect}">
+                    <div class="radio-button"></div>
+                    <span>${option.text}</span>
+                </div>
+            `).join('') || '';
+            return `
+                <div class="block block-quiz">
+                    <p class="quiz-question">${block.content.question || ''}</p>
+                    <div class="quiz-options-container">${optionsHtml}</div>
+                    <div class="quiz-feedback"></div>
+                    <button class="btn quiz-retry-btn" style="display:none;">Tentar Novamente</button>
+                </div>`;
         default:
             return '';
     }
@@ -177,6 +211,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // --- Quiz Logic ---
+    document.querySelectorAll('.block-quiz').forEach(quizContainer => {
+        const options = quizContainer.querySelectorAll('.quiz-option');
+        const feedbackEl = quizContainer.querySelector('.quiz-feedback');
+        const retryBtn = quizContainer.querySelector('.quiz-retry-btn');
+        let answered = false;
+
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                if (answered) return;
+                answered = true;
+                
+                const isCorrect = option.getAttribute('data-correct') === 'true';
+                options.forEach(opt => opt.classList.add('answered'));
+
+                if (isCorrect) {
+                    option.classList.add('correct');
+                    feedbackEl.textContent = 'Resposta Correta!';
+                    feedbackEl.className = 'quiz-feedback correct';
+                } else {
+                    option.classList.add('incorrect');
+                    feedbackEl.textContent = 'Resposta Incorreta.';
+                    feedbackEl.className = 'quiz-feedback incorrect';
+                    
+                    // Highlight the correct answer
+                    const correctOption = quizContainer.querySelector('[data-correct="true"]');
+                    if(correctOption) correctOption.classList.add('correct');
+                }
+                
+                feedbackEl.style.display = 'block';
+                if(retryBtn) retryBtn.style.display = 'inline-block';
+            });
+        });
+
+        if(retryBtn) {
+            retryBtn.addEventListener('click', () => {
+                answered = false;
+                options.forEach(opt => {
+                    opt.classList.remove('answered', 'correct', 'incorrect');
+                });
+                feedbackEl.style.display = 'none';
+                retryBtn.style.display = 'none';
+            });
+        }
+    });
 
     document.querySelectorAll('.nav-proximo').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -497,16 +577,19 @@ body {
     background-color: transparent;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 6px;
-    padding: 6px 12px;
+    border-radius: 8px;
+    padding: 8px 14px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    transition: background-color 0.3s, color 0.3s;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .btn-acessibilidade:hover {
     background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-acessibilidade:focus-visible {
@@ -518,7 +601,6 @@ body {
     font-size: 20px;
 }
 
-
 main {
     max-width: 800px;
     margin: 2rem auto;
@@ -527,9 +609,10 @@ main {
 .modulo { 
     display: none; 
     background-color: var(--card-background);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     padding: 2rem 3rem;
+    border: 1px solid var(--border-color);
 }
 body.modo-escuro .modulo {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -550,15 +633,14 @@ body.modo-escuro .modulo {
     margin: 0.25rem 0 0 0;
 }
 .divider {
-    height: 2px;
+    height: 1px;
     background-color: var(--border-color);
     margin: 1.5rem 0;
 }
 
-
 .block { margin-bottom: 2.5rem; }
 
-img { max-width: 100%; height: auto; border-radius: 6px; }
+img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
 .block-image { text-align: center; }
 .block-image figcaption {
@@ -581,6 +663,112 @@ body.modo-escuro .block-quote {
     background-color: rgba(96, 165, 250, 0.1);
     border-left-color: var(--primary-color);
 }
+.block-video {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.block-video iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.block-button {
+    text-align: center;
+}
+.btn-block {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.btn-block:hover {
+    background-color: var(--primary-color-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Quiz Styles */
+.block-quiz {
+    padding: 1.5rem;
+    background: var(--background-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.quiz-question {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 0;
+}
+.quiz-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.quiz-option:not(.answered):hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+.quiz-option .radio-button {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    transition: all 0.2s ease-in-out;
+}
+.quiz-option:hover .radio-button {
+    border-color: white;
+}
+.quiz-option.correct .radio-button, .quiz-option.incorrect .radio-button {
+    border-width: 6px;
+}
+.quiz-option.answered {
+    cursor: default;
+    opacity: 0.8;
+}
+.quiz-option.correct {
+    border-color: #16A34A;
+    background: #F0FDF4;
+    opacity: 1;
+}
+.quiz-option.correct .radio-button { border-color: #16A34A; }
+.quiz-option.incorrect {
+    border-color: #DC2626;
+    background: #FEF2F2;
+    opacity: 1;
+}
+.quiz-option.incorrect .radio-button { border-color: #DC2626; }
+.quiz-feedback {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-weight: bold;
+    display: none;
+}
+.quiz-feedback.correct { color: #15803D; background: #DCFCE7; }
+.quiz-feedback.incorrect { color: #B91C1C; background: #FEE2E2; }
+.quiz-retry-btn { margin-top: 1rem; }
 
 .module-navigation {
     text-align: center;
@@ -597,17 +785,19 @@ body.modo-escuro .module-navigation {
     color: white;
     padding: 0.8rem 1.5rem;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
     margin: 0 0.5rem;
-    transition: background-color 0.2s, transform 0.2s;
+    transition: all 0.2s ease-in-out;
     font-size: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .btn:hover {
     background-color: var(--primary-color-dark);
     transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 .btn.nav-anterior {
     background-color: transparent;
@@ -617,6 +807,7 @@ body.modo-escuro .module-navigation {
 .btn.nav-anterior:hover {
     background-color: var(--background-color);
     border-color: var(--text-color);
+    color: var(--text-color);
 }
 body.alto-contraste .btn.nav-anterior {
     color: #FFFF00;
@@ -781,3 +972,5 @@ export async function exportToZip(projects: Project[]) {
     
     saveAs(content, fileName);
 }
+
+    
