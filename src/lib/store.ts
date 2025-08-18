@@ -96,8 +96,15 @@ const useProjectStore = create<State & Actions>()(
       set((state) => {
         const project = state.projects.find((p) => p.id === projectId);
         if (project) {
+          if (!project.blocks) {
+            project.blocks = [];
+          }
           project.blocks.push(newBlock);
+
           if (state.activeProject?.id === projectId) {
+              if (!state.activeProject.blocks) {
+                state.activeProject.blocks = [];
+              }
               state.activeProject.blocks.push(newBlock);
               state.activeBlockId = newBlock.id;
           }
