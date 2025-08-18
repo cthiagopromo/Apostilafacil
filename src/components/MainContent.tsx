@@ -5,18 +5,17 @@ import BlockEditor from './BlockEditor';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { PlusCircle } from 'lucide-react';
+import { useState } from 'react';
+import { AddBlockModal } from './AddBlockModal';
 
 export default function MainContent() {
-  const { activeProject, addBlock } = useProjectStore();
+  const { activeProject } = useProjectStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddBlock = (type: any) => {
-    if (activeProject) {
-      addBlock(activeProject.id, type);
-    }
-  };
 
   return (
     <div className="flex flex-col h-full">
+       <AddBlockModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       <div className="p-4 border-b bg-card">
         {activeProject && (
           <h2 className="text-lg font-semibold">{activeProject.title}</h2>
@@ -41,7 +40,7 @@ export default function MainContent() {
           )}
 
           <div className="text-center mt-4">
-            <Button variant="outline" onClick={() => handleAddBlock('text')}>
+            <Button variant="outline" onClick={() => setIsModalOpen(true)}>
               <PlusCircle className="mr-2" />
               Adicionar Bloco
             </Button>

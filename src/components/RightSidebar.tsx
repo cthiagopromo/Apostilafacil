@@ -11,6 +11,7 @@ import useProjectStore from '@/lib/store';
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import BlockSettings from "./BlockSettings";
 
 export default function RightSidebar() {
   const { activeProject, updateProjectTitle, updateProjectDescription } = useProjectStore();
@@ -26,7 +27,9 @@ export default function RightSidebar() {
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold flex items-center gap-2"><Settings className="h-5 w-5"/> Configurações</h2>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <BlockSettings />
+
         <Accordion type="multiple" defaultValue={['general']} className="w-full">
           <AccordionItem value="general">
             <AccordionTrigger>
