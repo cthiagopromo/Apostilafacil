@@ -1,19 +1,38 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowRight, PlusCircle } from 'lucide-react';
+import { ArrowRight, PlusCircle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useState } from 'react';
 
 export function ProjectList() {
-  const { projects, addProject } = useProjectStore();
+  const { projects, addProject, deleteProject } = useProjectStore();
   const router = useRouter();
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   
   const handleNewProject = () => {
     const newProject = addProject();
     router.push(`/editor/${newProject.id}`);
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    deleteProject(projectId);
+    setProjectToDelete(null); // Close dialog
   };
 
   return (
@@ -26,17 +45,41 @@ export function ProjectList() {
        </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
         {projects.map((project) => (
-          <Card key={project.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
+          <Card key={project.id} className="hover:shadow-lg transition-shadow flex flex-col">
+            <CardHeader className="flex-grow">
               <CardTitle>{project.title}</CardTitle>
               <CardDescription>{project.blocks?.length || 0} blocos</CardDescription>
             </CardHeader>
-            <CardFooter>
-              <Link href={`/editor/${project.id}`} passHref>
+            <CardFooter className="flex gap-2">
+              <Link href={`/editor/${project.id}`} passHref className="flex-grow">
                 <Button className="w-full" variant="outline">
-                  Editar Apostila <ArrowRight className="ml-2" />
+                  Editar <ArrowRight className="ml-2" />
                 </Button>
               </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="icon">
+                    <Trash2 />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isto irá deletar a apostila permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteProject(project.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardFooter>
           </Card>
         ))}
