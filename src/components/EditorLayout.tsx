@@ -6,7 +6,6 @@ import type { Project } from '@/lib/types';
 import Header from './Header';
 import LeftSidebar from './LeftSidebar';
 import MainContent from './MainContent';
-import RightSidebar from './RightSidebar';
 
 interface EditorLayoutProps {
   project: Project;
@@ -29,7 +28,6 @@ export function EditorLayout({ project }: EditorLayoutProps) {
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
           <MainContent />
         </main>
-        <RightSidebar />
       </div>
     </div>
   );
