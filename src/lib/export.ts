@@ -112,28 +112,23 @@ export async function exportToPdf(projects: Project[]) {
         format: 'a4'
     });
     
-    for (let i = 0; i < projects.length; i++) {
-        const project = projects[i];
+    for (const project of projects) {
         const htmlContent = generatePdfHtmlForProject(project);
 
-        if (i > 0) {
-            doc.addPage();
-        }
-
-        try {
-            await doc.html(htmlContent, {
-                callback: function (doc) {
-                    // This callback is called after each page is rendered.
-                },
-                x: 15,
-                y: 15,
-                width: 565, 
-                windowWidth: 600,
-                autoPaging: 'text'
-            });
-        } catch(e) {
-            console.error("Erro ao gerar PDF para o projeto:", project.title, e);
-        }
+        await doc.html(htmlContent, {
+            callback: function (doc) {
+                // This callback is called for each project, but we only want to add a new page if it's not the last project
+                const isLastProject = projects.indexOf(project) === projects.length - 1;
+                if (!isLastProject) {
+                   doc.addPage();
+                }
+            },
+            x: 15,
+            y: 15,
+            width: 565, 
+            windowWidth: 600,
+            autoPaging: 'text'
+        });
     }
     
     doc.save('apostila.pdf');
@@ -375,6 +370,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // PDF Generation
     document.getElementById('btn-pdf').addEventListener('click', async () => {
         pdfLoadingModal.style.display = 'flex';
+        const contentToPrint = document.getElementById('apostila-completa');
+
+        if (!contentToPrint) {
+            alert('Não foi possível encontrar o conteúdo para gerar o PDF.');
+            pdfLoadingModal.style.display = 'none';
+            return;
+        }
 
         try {
             const { jsPDF } = window.jspdf;
@@ -383,21 +385,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 unit: 'pt',
                 format: 'a4'
             });
+            
+            // Show all modules for PDF generation
+            modules.forEach(module => {
+                module.style.display = 'block';
+            });
 
-            const allModulesHtml = Array.from(modules).map(module => module.innerHTML).join('<div style="page-break-after: always;"></div>');
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.width = '800px'; 
-            tempDiv.innerHTML = allModulesHtml;
-            document.body.appendChild(tempDiv);
-            
-            await doc.html(tempDiv, {
+            await doc.html(contentToPrint, {
                 callback: function (doc) {
                     doc.output('dataurlnewwindow');
                     pdfLoadingModal.style.display = 'none';
-                    document.body.removeChild(tempDiv);
+                    // Restore original view
+                    showModule(currentModuleIndex);
                 },
                 x: 15,
                 y: 15,
@@ -409,6 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro ao gerar PDF:', error);
             pdfLoadingModal.style.display = 'none';
             alert('Ocorreu um erro ao gerar o PDF. Tente novamente.');
+            // Restore original view
+            showModule(currentModuleIndex);
         }
     });
 
@@ -493,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 function generateModulesHtml(projects: Project[], mainTitle: string): string {
-    return projects.map((project, index) => `
+    const modulesContent = projects.map((project, index) => `
         <section id="modulo-${index}" class="modulo">
             <div class="module-content">
                 <h2 class="module-main-title animatable">${mainTitle}</h2>
@@ -507,7 +508,10 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
             </div>
         </section>
     `).join('');
+    
+    return `<div id="apostila-completa">${modulesContent}</div>`;
 }
+
 
 function generateFloatingNav(projects: Project[]): string {
     const moduleList = projects.map((project, index) => 
@@ -1047,14 +1051,18 @@ body.modo-escuro #floating-nav-menu li a:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
+    background-color: white;
+    color: #333;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     font-size: 1.2rem;
     text-align: center;
 }
 #pdf-loading-modal .spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
+    border: 4px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
-    border-top: 4px solid #fff;
+    border-top: 4px solid var(--primary-color);
     width: 40px;
     height: 40px;
     animation: spin 1s linear infinite;
@@ -1116,9 +1124,6 @@ body.modo-escuro #floating-nav-menu li a:hover {
         background-color: #fff;
         color: #000;
     }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #pdf-loading-modal {
-        display: none !important;
-    }
     main {
         margin: 0;
         padding: 0;
@@ -1130,9 +1135,17 @@ body.modo-escuro #floating-nav-menu li a:hover {
         page-break-after: always;
         box-shadow: none;
         border-radius: 0;
+        border: none;
+    }
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #pdf-loading-modal, .animatable {
+        display: none !important;
     }
     .block-quote {
         background-color: #f0f4ff;
+    }
+    .animatable {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
     }
 }
     `;
