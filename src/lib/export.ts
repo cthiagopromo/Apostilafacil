@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const allModules = content.querySelectorAll('.modulo');
         let processedModules = 0;
 
-        function addModuleToPdf(index) {
+        async function addModuleToPdf(index) {
             if (index >= allModules.length) {
                 pdf.output('dataurlnewwindow');
                 modal.style.display = 'none';
@@ -242,41 +242,54 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index > 0) {
                 pdf.addPage();
             }
+            
+            try {
+                const canvas = await html2canvas(allModules[index], {
+                    scale: 2, // Higher scale for better quality
+                    useCORS: true,
+                    logging: false,
+                    width: allModules[index].scrollWidth,
+                    height: allModules[index].scrollHeight,
+                    windowWidth: allModules[index].scrollWidth,
+                    windowHeight: allModules[index].scrollHeight,
+                });
 
-            html2canvas(allModules[index], {
-                scale: 2, // Higher scale for better quality
-                useCORS: true,
-                logging: false,
-                width: allModules[index].scrollWidth,
-                height: allModules[index].scrollHeight,
-                windowWidth: allModules[index].scrollWidth,
-                windowHeight: allModules[index].scrollHeight,
-            }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgProps = pdf.getImageProperties(imgData);
-                const aspectRatio = imgProps.height / imgProps.width;
-                const imgHeight = pdfWidth * aspectRatio;
-                
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
+                 if (!imgData || imgData === 'data:,') {
+                    console.error('html2canvas returned an empty canvas. Skipping module ' + index);
+                    // Add a placeholder page in the PDF indicating an error
+                    pdf.text("Error rendering this module.", 20, 20);
+                } else {
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const aspectRatio = imgProps.height / imgProps.width;
+                    const imgHeight = pdfWidth * aspectRatio;
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
 
-                while (heightLeft > 0) {
-                  position = heightLeft - imgHeight;
-                  pdf.addPage();
-                  pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                  heightLeft -= pdfHeight;
+                    while (heightLeft > 0) {
+                      position = heightLeft - imgHeight;
+                      pdf.addPage();
+                      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                      heightLeft -= pdfHeight;
+                    }
                 }
 
                 addModuleToPdf(index + 1);
-            }).catch(err => {
-                 console.error("Error generating PDF part:", err);
-                 modal.style.display = 'none';
-            });
+
+            } catch(err) {
+                 console.error("Error generating PDF part for module " + index + ":", err);
+                 // Optionally add an error page to the PDF
+                 if (index > 0) pdf.addPage();
+                 pdf.text("Error rendering this module.", 20, 20);
+                 // Continue with the next module
+                 addModuleToPdf(index + 1);
+            }
         }
         
         addModuleToPdf(0);
@@ -601,7 +614,8 @@ body {
 main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
 .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
 body.modo-escuro .modulo { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-#apostila-completa .modulo { display: block; } /* Show all for PDF generation */
+#apostila-completa .modulo { page-break-before: always; }
+#apostila-completa .modulo:first-child { page-break-before: auto; }
 
 h1, h2, h3, h4, h5, h6 { text-align: center; }
 .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
@@ -670,6 +684,24 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animatable.revealed { opacity: 1; transform: translateY(0); }
 
+.pdf-video-placeholder {
+    padding: 1rem;
+    margin: 1.5rem 0;
+    background-color: #f0f4ff;
+    border: 1px solid #b0c4de;
+    border-radius: 8px;
+    page-break-inside: avoid;
+    text-align: center;
+}
+.pdf-video-placeholder a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+.pdf-video-placeholder p {
+    margin: 0;
+}
+
 @media (max-width: 768px) {
     body { padding-top: 120px; }
     .header-container { flex-direction: column; justify-content: center; gap: 15px; padding: 1rem; }
@@ -680,55 +712,25 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     .modulo { padding: 1.5rem; }
     .module-title-header { font-size: 1.8rem; }
 }
+
 @media print {
     @page { margin: 1.5cm; }
-    body { padding-top: 0; background-color: #fff !important; color: #000 !important; }
+    body, #apostila-completa { padding-top: 0; background-color: #fff !important; color: #000 !important; }
     main { margin: 0; padding: 0; box-shadow: none; max-width: 100%; }
-    .modulo { display: block !important; page-break-before: always; box-shadow: none !important; border-radius: 0 !important; border: none !important; }
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
+    .block-video { display: none; } /* Hide interactive video player */
+    .pdf-video-placeholder { display: block !important; } /* Show placeholder */
+    .animatable { opacity: 1 !important; transform: translateY(0) !important; }
+    .modulo { 
+        display: block !important; 
+        page-break-before: always; 
+        box-shadow: none !important; 
+        border-radius: 0 !important; 
+        border: none !important; 
+    }
     .modulo:first-of-type { page-break-before: auto; }
     .modulo:last-of-type { page-break-after: avoid; }
-
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
-    .block-quote { background-color: #f0f4ff !important; border-color: #b0c4de !important; }
-    .animatable { opacity: 1 !important; transform: translateY(0) !important; }
-    
-    .block-video { 
-        padding: 1rem; 
-        border: 1px solid #ccc;
-        background-color: #f9f9f9; 
-        border-radius: 8px;
-        page-break-inside: avoid;
-    }
-    .block-video iframe { display: none; }
-    .block-video::before {
-        content: 'Vídeo: ' attr(data-title);
-        font-weight: bold;
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-    .block-video::after {
-        content: 'Assista em: ' attr(data-url);
-        display: block;
-        word-break: break-all;
-    }
-    
-    a { color: #007bff !important; text-decoration: none !important; }
 }
-
-/* This is a special class for the PDF generation */
-.pdf-video-placeholder {
-    padding: 1rem;
-    background-color: #f0f4ff;
-    border: 1px solid #b0c4de;
-    border-radius: 8px;
-    page-break-inside: avoid;
-}
-.pdf-video-placeholder .material-icons {
-    font-size: 1.2em;
-    vertical-align: middle;
-    margin-right: 0.5em;
-}
-
     `;
 }
 
@@ -752,14 +754,14 @@ function generatePdfHtmlForProject(projects: Project[], mainTitle: string): stri
                 return `
                     <div class="pdf-video-placeholder">
                         <p style="margin: 0; font-weight: bold;">
-                           <span class="material-icons">play_circle_outline</span> ${videoTitle}
+                           ▶️ ${videoTitle}
                         </p>
                         <p style="margin: 0.5em 0 0 0; font-size: 0.9em;">
                             Assista ao vídeo em: <a href="${videoUrl}" target="_blank">${videoUrl}</a>
                         </p>
                     </div>`;
             case 'quiz':
-                 return `<div class="block-quiz-pdf"><strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)</div>`;
+                 return `<div class="block-quiz-pdf" style="padding: 1rem; background-color: #f3f4f6; border-radius: 8px; text-align: center;"><strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)</div>`;
             default:
                 return renderBlockToHtml(block).replace(/class="animatable"/g, '');
         }
@@ -768,10 +770,10 @@ function generatePdfHtmlForProject(projects: Project[], mainTitle: string): stri
     return `
       <div id="pdf-content-wrapper">
         ${projects.map(project => `
-            <div class="pdf-module-page">
-                <h2>${mainTitle}</h2>
-                <h1>${project.title}</h1>
-                <hr/>
+            <div class="pdf-module-page modulo">
+                <h2 class="module-main-title">${mainTitle}</h2>
+                <h1 class="module-title-header">${project.title}</h1>
+                <div class="divider"></div>
                 ${project.blocks.map(renderBlockForPdf).join('\n')}
             </div>
         `).join('')}
@@ -783,7 +785,18 @@ function generatePdfHtmlForProject(projects: Project[], mainTitle: string): stri
 export async function exportToZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
 
-    zip.file('index.html', generateHtml(projects, handbookTitle));
+    // Generate a separate HTML for PDF generation with video placeholders
+    const pdfHtmlContent = generatePdfHtmlForProject(projects, handbookTitle);
+
+    // Embed this specialized HTML into the main index.html in a hidden div
+    const mainHtmlContent = generateHtml(projects, handbookTitle)
+      .replace(
+        '</body>',
+        `<div id="pdf-source" style="display: none;">${pdfHtmlContent}</div></body>`
+      );
+
+
+    zip.file('index.html', mainHtmlContent);
     zip.file('style.css', generateCss());
     zip.file('script.js', generateZipScript());
     
@@ -792,5 +805,3 @@ export async function exportToZip(projects: Project[], handbookTitle: string) {
     
     saveAs(content, fileName);
 }
-
-    
