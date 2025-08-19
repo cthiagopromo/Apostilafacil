@@ -2,7 +2,6 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
-import jsPDF from 'jspdf';
 import DOMPurify from 'dompurify';
 
 function sanitizeHtml(html: string): string {
@@ -10,134 +9,6 @@ function sanitizeHtml(html: string): string {
         return DOMPurify.sanitize(html);
     }
     return html;
-}
-
-const videoPlaceholderBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAC0CAMAAAB4i0UAAAAAA1BMVEW9vb2ORsPJAAAAR0lEQVR4nO3BAQEAAACCIP+vbkhAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO8GxYgAAbj0LDAAAAAASUVORK5CYII=';
-
-function generatePdfHtmlForProject(project: Project): string {
-    const blocksHtml = project.blocks.map(block => {
-        switch (block.type) {
-            case 'text':
-                return `<div class="block block-text" style="margin-bottom: 20px; page-break-inside: avoid;">${sanitizeHtml(block.content.text || '')}</div>`;
-            case 'image':
-                const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
-                    ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`
-                    : block.content.url;
-                return `
-                    <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">Imagem</p>
-                        <div style="display: flex; justify-content: center; padding: 10px 0;">
-                           <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 90%; height: auto; display: block; border-radius: 6px;" />
-                        </div>
-                        ${block.content.caption ? `<p style="margin: 5px 0 0 0; text-align: center; font-style: italic; color: #555;"><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
-                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Fonte (URL):</strong> <a href="${imageUrl || '#'}">${imageUrl || 'N/A'}</a></p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
-                    </div>
-                `;
-            case 'video':
-                 const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
-                 let videoLink = '#';
-                 let videoHost = '';
-                 if (videoType === 'cloudflare' && cloudflareVideoId) {
-                    videoLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
-                    videoHost = 'Cloudflare';
-                 } else if (videoType === 'youtube' && videoUrl) {
-                    videoLink = videoUrl;
-                    videoHost = 'YouTube';
-                 }
-                 if (videoLink === '#') return '';
-                return `
-                    <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Vídeo: ${videoTitle || 'Vídeo sem título'}</strong></p>
-                        <a href="${videoLink}" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; margin-top: 10px;">
-                            <img src="${videoPlaceholderBase64}" alt="Assistir ao vídeo" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 6px;" />
-                        </a>
-                        <p style="text-align: center; margin-top: 5px;"><a href="${videoLink}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${videoHost}</a></p>
-                    </div>
-                `;
-            case 'button':
-                 if (!block.content.buttonText || !block.content.buttonUrl) return '';
-                 return `
-                    <div class="block block-button-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Botão:</strong> "${block.content.buttonText}" <br/> <strong>Link:</strong> <a href="${block.content.buttonUrl}" target="_blank" rel="noopener noreferrer">${block.content.buttonUrl}</a></p>
-                    </div>
-                 `;
-            case 'quote':
-                 return `<blockquote class="block block-quote" style="margin-bottom: 20px; border-left: 4px solid #ccc; padding-left: 15px; font-style: italic; page-break-inside: avoid;"><p>${block.content.text || ''}</p></blockquote>`;
-            case 'quiz':
-                const optionsHtml = block.content.options?.map(option => {
-                    const isCorrect = option.isCorrect ? '<span style="color: green; font-weight: bold;"> (Correta ✔)</span>' : '';
-                    return `<li style="list-style-type: none; margin-bottom: 5px;">- ${option.text}${isCorrect}</li>`;
-                }).join('') || '';
-                return `
-                  <div class="block block-quiz-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                    <p style="margin:0 0 10px 0;"><strong>Quiz: ${block.content.question || ''}</strong></p>
-                    <ul style="margin:0; padding-left: 10px;">${optionsHtml}</ul>
-                  </div>`;
-            default:
-                return '';
-        }
-    }).join('');
-
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <style>
-              body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.6; }
-              .pdf-content { padding: 20px; }
-              h1 { color: #000; font-size: 28px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;}
-              p { margin-bottom: 10px; color: #333; }
-              a { color: #007bff; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-              .prose { max-width: none; }
-              .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 0.5em; }
-          </style>
-      </head>
-      <body>
-          <div class="pdf-content prose">
-              <h1>${project.title}</h1>
-              <p style="font-size: 14px; margin-bottom: 20px; color: #555;">${project.description}</p>
-              ${blocksHtml}
-          </div>
-      </body>
-      </html>
-    `;
-}
-
-export async function exportToPdf(projects: Project[]) {
-    if (!projects || projects.length === 0) {
-        alert("Nenhum projeto para exportar para PDF.");
-        return;
-    }
-
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'pt',
-        format: 'a4'
-    });
-    
-    for (const project of projects) {
-        const htmlContent = generatePdfHtmlForProject(project);
-
-        await doc.html(htmlContent, {
-            callback: function (doc) {
-                // This callback is called for each project, but we only want to add a new page if it's not the last project
-                const isLastProject = projects.indexOf(project) === projects.length - 1;
-                if (!isLastProject) {
-                   doc.addPage();
-                }
-            },
-            x: 15,
-            y: 15,
-            width: 565, 
-            windowWidth: 600,
-            autoPaging: 'text'
-        });
-    }
-    
-    doc.save('apostila.pdf');
 }
 
 function renderBlockToHtml(block: Block): string {
@@ -253,7 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavButton = document.getElementById('floating-nav-button');
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
-    const pdfLoadingModal = document.getElementById('pdf-loading-modal');
+    const pdfButton = document.getElementById('btn-pdf');
+
 
     function showModule(index) {
         modules.forEach((module, i) => {
@@ -374,49 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // PDF Generation
-    document.getElementById('btn-pdf').addEventListener('click', async () => {
-        pdfLoadingModal.style.display = 'flex';
-        const contentToPrint = document.getElementById('apostila-completa');
-
-        if (!contentToPrint) {
-            alert('Não foi possível encontrar o conteúdo para gerar o PDF.');
-            pdfLoadingModal.style.display = 'none';
-            return;
-        }
-
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'p',
-                unit: 'pt',
-                format: 'a4'
-            });
-            
-            // Show all modules for PDF generation
-            modules.forEach(module => {
-                module.style.display = 'block';
-            });
-
-            await doc.html(contentToPrint, {
-                callback: function (doc) {
-                    doc.output('dataurlnewwindow');
-                    pdfLoadingModal.style.display = 'none';
-                    // Restore original view
-                    showModule(currentModuleIndex);
-                },
-                x: 15,
-                y: 15,
-                width: 565,
-                windowWidth: 800,
-                autoPaging: 'text'
-            });
-        } catch (error) {
-            console.error('Erro ao gerar PDF:', error);
-            pdfLoadingModal.style.display = 'none';
-            alert('Ocorreu um erro ao gerar o PDF. Tente novamente.');
-            // Restore original view
-            showModule(currentModuleIndex);
-        }
+    pdfButton.addEventListener('click', () => {
+        window.print();
     });
 
     // Font Size
@@ -500,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 function generateModulesHtml(projects: Project[], mainTitle: string): string {
-    const modulesContent = projects.map((project, index) => `
+    return projects.map((project, index) => `
         <section id="modulo-${index}" class="modulo">
             <div class="module-content">
                 <h2 class="module-main-title animatable">${mainTitle}</h2>
@@ -514,8 +345,6 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
             </div>
         </section>
     `).join('');
-    
-    return `<div id="apostila-completa">${modulesContent}</div>`;
 }
 
 
@@ -584,17 +413,9 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="pdf-loading-modal">
-        <div class="modal-content">
-            <div class="spinner"></div>
-            <p>Gerando PDF, por favor aguarde...</p>
-        </div>
-    </div>
     <header class="main-header">
         <div class="header-container">
             <h1 class="main-title">${handbookTitle}</h1>
@@ -612,6 +433,8 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
 }
 
 function generateCss(): string {
+    const videoPlaceholderBase64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMjAwIDEyMCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2VlZSIvPgogIDxwb2x5Z29uIHBvaW50cz0iODAsNDAgODAsODAgMTMwLDYwIiBmaWxsPSIjOTk5Ii8+CiAgPHRleHQgeD0iMTAwIiB5PSIxMTUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNzc3Ij5Bc3Npc3RpciBvIHbDrWRlbzwvdGV4dD4KPC9zdmc+';
+
     return `
 :root {
     --primary-color: #2563EB;
@@ -1038,48 +861,6 @@ body.modo-escuro #floating-nav-menu li a:hover {
     font-weight: bold;
 }
 
-/* PDF Loading Modal */
-#pdf-loading-modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.6);
-    justify-content: center;
-    align-items: center;
-}
-#pdf-loading-modal .modal-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: white;
-    color: #333;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    font-size: 1.2rem;
-    text-align: center;
-}
-#pdf-loading-modal .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-radius: 50%;
-    border-top: 4px solid var(--primary-color);
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 20px;
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-
 /* Animation Styles */
 .animatable {
     opacity: 0;
@@ -1125,10 +906,14 @@ body.modo-escuro #floating-nav-menu li a:hover {
     }
 }
 @media print {
+    @page {
+        margin: 1.5cm;
+    }
+
     body {
         padding-top: 0;
-        background-color: #fff;
-        color: #000;
+        background-color: #fff !important;
+        color: #000 !important;
     }
     main {
         margin: 0;
@@ -1139,19 +924,54 @@ body.modo-escuro #floating-nav-menu li a:hover {
     .modulo {
         display: block !important; /* Show all modules for printing */
         page-break-after: always;
-        box-shadow: none;
-        border-radius: 0;
-        border: none;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        border: none !important;
     }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #pdf-loading-modal, .animatable {
+    .modulo:last-of-type {
+        page-break-after: avoid;
+    }
+
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-acessibilidade {
         display: none !important;
     }
     .block-quote {
-        background-color: #f0f4ff;
+        background-color: #f0f4ff !important;
+        border-color: #b0c4de !important;
     }
     .animatable {
         opacity: 1 !important;
         transform: translateY(0) !important;
+    }
+
+    .block-video {
+        padding: 0 !important;
+        height: auto !important;
+        text-align: center;
+        page-break-inside: avoid;
+        border: 1px solid #ccc;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .block-video iframe {
+        display: none;
+    }
+
+    .block-video::after {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 150px;
+        background-image: url('${videoPlaceholderBase64}');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+    }
+
+    a {
+        color: #007bff !important;
+        text-decoration: none !important;
     }
 }
     `;
