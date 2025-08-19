@@ -3,22 +3,32 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import DOMPurify from 'dompurify';
+
+function sanitizeHtml(html: string): string {
+    if (typeof window !== 'undefined') {
+        return DOMPurify.sanitize(html);
+    }
+    return html;
+}
 
 function generatePdfHtmlForProject(project: Project): string {
     const blocksHtml = project.blocks.map(block => {
         switch (block.type) {
             case 'text':
-                return `<div class="block block-text" style="margin-bottom: 20px; page-break-inside: avoid;">${block.content.text || ''}</div>`;
+                return `<div class="block block-text" style="margin-bottom: 20px; page-break-inside: avoid;">${sanitizeHtml(block.content.text || '')}</div>`;
             case 'image':
+                const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
+                    ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`
+                    : block.content.url;
                 return `
                     <div class="block block-image-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
                         <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">Imagem</p>
                         <div style="display: flex; justify-content: center; padding: 10px 0;">
-                           <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 90%; height: auto; display: block; border-radius: 6px;" />
+                           <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 90%; height: auto; display: block; border-radius: 6px;" />
                         </div>
                         ${block.content.caption ? `<p style="margin: 5px 0 0 0; text-align: center; font-style: italic; color: #555;"><strong>Legenda:</strong> ${block.content.caption}</p>` : ''}
-                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Fonte (URL):</strong> <a href="${block.content.url || '#'}">${block.content.url || 'N/A'}</a></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Fonte (URL):</strong> <a href="${imageUrl || '#'}">${imageUrl || 'N/A'}</a></p>
                         <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #777;"><strong>Texto Alternativo:</strong> ${block.content.alt || 'N/A'}</p>
                     </div>
                 `;
@@ -80,7 +90,6 @@ function generatePdfHtmlForProject(project: Project): string {
     `;
 }
 
-
 export async function exportToPdf(projects: Project[]) {
     if (!projects || projects.length === 0) {
         alert("Nenhum projeto para exportar para PDF.");
@@ -92,61 +101,65 @@ export async function exportToPdf(projects: Project[]) {
         unit: 'pt',
         format: 'a4'
     });
-
-    // We only export the first project for now, as jsPDF handles one doc at a time.
-    const project = projects[0]; 
-    const htmlContent = generatePdfHtmlForProject(project);
-
-    // To handle images, we need to create a temporary element in the DOM
-    // for html2canvas to render, as jsPDF's html method has limitations with external images.
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px'; // Render off-screen
-    tempDiv.style.width = '600px'; // A reasonable width for rendering
-    tempDiv.innerHTML = htmlContent;
-    document.body.appendChild(tempDiv);
     
-    const contentElement = tempDiv.querySelector('.pdf-content');
-    if (!contentElement) {
-        document.body.removeChild(tempDiv);
-        alert("Erro ao encontrar conteúdo para gerar o PDF.");
-        return;
+    for (let i = 0; i < projects.length; i++) {
+        const project = projects[i];
+        const htmlContent = generatePdfHtmlForProject(project);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '600px';
+        tempDiv.innerHTML = htmlContent;
+        document.body.appendChild(tempDiv);
+        
+        const contentElement = tempDiv.querySelector('.pdf-content');
+        if (!contentElement) {
+            document.body.removeChild(tempDiv);
+            console.error("Erro ao encontrar conteúdo para gerar o PDF para o projeto:", project.title);
+            continue; 
+        }
+        
+        if (i > 0) {
+            doc.addPage();
+        }
+
+        try {
+            await doc.html(contentElement as HTMLElement, {
+                callback: function (doc) {
+                    // This callback is called after each page is rendered.
+                },
+                x: 15,
+                y: 15,
+                width: 565, 
+                windowWidth: 600,
+                autoPaging: 'text'
+            });
+        } catch(e) {
+            console.error("Erro ao gerar PDF para o projeto:", project.title, e);
+        } finally {
+            document.body.removeChild(tempDiv);
+        }
     }
     
-    try {
-        await doc.html(contentElement as HTMLElement, {
-            callback: function (doc) {
-                const mainTitle = project.title || 'apostila';
-                doc.save(`${mainTitle}.pdf`);
-            },
-            x: 15,
-            y: 15,
-            width: 565, // A4 width in points (595) minus margins
-            windowWidth: 600,
-            autoPaging: 'text'
-        });
-    } catch(e) {
-        console.error("Erro ao gerar PDF", e);
-        alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.")
-    } finally {
-        // Clean up the temporary div
-        document.body.removeChild(tempDiv);
-    }
+    doc.save('apostila.pdf');
 }
-
 
 function renderBlockToHtml(block: Block): string {
     const animationClass = 'class="animatable"';
     switch (block.type) {
         case 'text':
-            return `<div ${animationClass}><div class="block block-text">${block.content.text || ''}</div></div>`;
+            return `<div ${animationClass}><div class="block block-text">${sanitizeHtml(block.content.text || '')}</div></div>`;
         case 'image':
+             const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
+                ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`
+                : block.content.url;
             const width = block.content.width ?? 100;
             return `
                 <div ${animationClass}>
                     <div class="block block-image" style="display: flex; justify-content: center;">
                         <figure style="width: ${width}%;">
-                            <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                            <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
                             ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
                         </figure>
                     </div>

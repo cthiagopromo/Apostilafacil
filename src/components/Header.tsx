@@ -5,7 +5,7 @@ import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Download, Save, Loader, ArrowLeft } from 'lucide-react';
+import { Eye, Download, Save, Loader, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,6 @@ export default function Header() {
   const { toast } = useToast();
 
   const handleExport = async () => {
-    // Get the latest state directly from the store at the moment of export
     const currentProjects = useProjectStore.getState().projects;
 
     if (!currentProjects || currentProjects.length === 0) {
@@ -49,7 +48,7 @@ export default function Header() {
   };
 
   const handleSave = () => {
-    if (!activeProject || !isDirty) return;
+    if (!isDirty) return;
 
     setIsSaving(true);
     setTimeout(() => {
@@ -124,5 +123,3 @@ export default function Header() {
     </header>
   );
 }
-
-    

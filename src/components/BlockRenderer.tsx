@@ -9,6 +9,7 @@ import { Label } from './ui/label';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { CheckCircle, Quote, XCircle } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 const YoutubeEmbed = ({ url }: { url: string }) => {
     try {
@@ -82,16 +83,26 @@ const QuizBlock = ({ block }: { block: Block }) => {
 
 
 const BlockRenderer = ({ block }: { block: Block }) => {
+    const createSanitizedHtml = (html: string) => {
+        if (typeof window !== 'undefined') {
+            return { __html: DOMPurify.sanitize(html) };
+        }
+        return { __html: html }; // Or a server-side equivalent
+    };
+
     switch(block.type) {
         case 'text':
-            return <div dangerouslySetInnerHTML={{ __html: block.content.text || '' }} className="prose dark:prose-invert max-w-none" />;
+            return <div dangerouslySetInnerHTML={createSanitizedHtml(block.content.text || '')} className="prose dark:prose-invert max-w-none" />;
         case 'image':
+            const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
+                ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`
+                : block.content.url;
             const width = block.content.width ?? 100;
             return (
                 <div className='flex justify-center'>
                     <figure className='flex flex-col items-center gap-2' style={{ width: `${width}%` }}>
                         <img 
-                          src={block.content.url || 'https://placehold.co/600x400.png'} 
+                          src={imageUrl || 'https://placehold.co/600x400.png'} 
                           alt={block.content.alt || 'Placeholder image'} 
                           className="rounded-md shadow-md max-w-full h-auto" 
                         />

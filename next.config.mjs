@@ -1,11 +1,13 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   typescript: {
-    ignoreBuildErrors: true,
+    // Set ignoreBuildErrors to true only in development
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    // Set ignoreDuringBuilds to true only in development
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
   images: {
     remotePatterns: [
@@ -14,6 +16,10 @@ const nextConfig = {
         hostname: 'placehold.co',
         port: '',
         pathname: '/**',
+      },
+       {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_IMAGE_HOST || 'imagedelivery.net',
       },
     ],
   },

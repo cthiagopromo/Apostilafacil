@@ -7,6 +7,16 @@ import { produce } from 'immer';
 
 const STORE_KEY = 'apostila-facil-projects';
 
+// Helper for unique IDs
+const getUniqueId = (prefix: 'proj' | 'block' | 'opt') => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  return `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 9)}`;
+};
+
+
 type State = {
   projects: Project[];
   activeProject: Project | null;
@@ -28,6 +38,7 @@ type Actions = {
   deleteBlock: (projectId: string, blockId: string) => void;
   moveBlock: (projectId: string, blockId: string, direction: 'up' | 'down') => void;
   duplicateBlock: (projectId: string, blockId: string) => void;
+  reorderBlocks: (projectId: string, startIndex: number, endIndex: number) => void;
   updateBlockContent: (blockId: string, newContent: Partial<BlockContent>) => void;
   addQuizOption: (blockId: string) => void;
   updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
@@ -48,7 +59,7 @@ const useProjectStore = create<State & Actions>()(
           const storedProjects = localStorage.getItem(STORE_KEY);
           let projects: Project[] | null = storedProjects ? JSON.parse(storedProjects) : null;
           
-          if (Array.isArray(projects)) {
+          if (Array.isArray(projects) && projects.length > 0) {
             const migratedProjects = projects.map(p => {
               if (!p.layoutSettings) {
                 p.layoutSettings = {
@@ -59,7 +70,7 @@ const useProjectStore = create<State & Actions>()(
               }
               return p;
             });
-            set({ projects: migratedProjects.length > 0 ? migratedProjects : initialProjects });
+            set({ projects: migratedProjects });
           } else {
             set({ projects: initialProjects });
           }
@@ -78,6 +89,7 @@ const useProjectStore = create<State & Actions>()(
     },
     
     setActiveProject: (projectId) => {
+      get().saveProjects(); // Autosave when switching
       set(state => {
         const projectToActivate = state.projects.find((p) => p.id === projectId);
         if (projectToActivate) {
@@ -91,7 +103,7 @@ const useProjectStore = create<State & Actions>()(
     
     addProject: () => {
         const newProject: Project = {
-            id: `proj_${new Date().getTime()}`,
+            id: getUniqueId('proj'),
             title: 'Novo Módulo',
             description: 'Uma nova apostila com blocos editáveis.',
             theme: {
@@ -150,6 +162,7 @@ const useProjectStore = create<State & Actions>()(
 
     saveProjects: () => {
       set(state => {
+        if (!state.isDirty && state.activeProject) return; // Only save if dirty
         if (state.activeProject) {
             const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
             if (projectIndex !== -1) {
@@ -218,8 +231,8 @@ const useProjectStore = create<State & Actions>()(
                 content = { 
                     question: 'Qual é a pergunta?', 
                     options: [
-                        { id: `opt_${new Date().getTime()}`, text: 'Opção 1', isCorrect: true },
-                        { id: `opt_${new Date().getTime() + 1}`, text: 'Opção 2', isCorrect: false }
+                        { id: getUniqueId('opt'), text: 'Opção 1', isCorrect: true },
+                        { id: getUniqueId('opt'), text: 'Opção 2', isCorrect: false }
                     ],
                     userAnswerId: null
                 };
@@ -227,7 +240,7 @@ const useProjectStore = create<State & Actions>()(
         }
 
         const newBlock: Block = {
-            id: `block_${new Date().getTime()}`,
+            id: getUniqueId('block'),
             type,
             content,
         };
@@ -253,6 +266,17 @@ const useProjectStore = create<State & Actions>()(
           if (state.activeBlockId === blockId) {
               state.activeBlockId = null;
           }
+          state.isDirty = true;
+        }
+      });
+    },
+
+    reorderBlocks: (projectId, startIndex, endIndex) => {
+      set(state => {
+        const project = state.activeProject;
+        if (project && project.id === projectId) {
+          const [removed] = project.blocks.splice(startIndex, 1);
+          project.blocks.splice(endIndex, 0, removed);
           state.isDirty = true;
         }
       });
@@ -284,13 +308,10 @@ const useProjectStore = create<State & Actions>()(
                 if (!blockToDuplicate) return;
 
                 const newBlock = produce(blockToDuplicate, draft => {
-                    draft.id = `block_${new Date().getTime()}`;
-                    // Reset quiz answers on duplication
-                    if(draft.type === 'quiz') {
+                    draft.id = getUniqueId('block');
+                    if(draft.type === 'quiz' && draft.content.options) {
                         draft.content.userAnswerId = null;
-                        if(draft.content.options) {
-                           draft.content.options = draft.content.options.map(o => ({...o, id: `opt_${new Date().getTime()}`}))
-                        }
+                        draft.content.options = draft.content.options.map(o => ({...o, id: getUniqueId('opt')}))
                     }
                 });
 
@@ -320,7 +341,7 @@ const useProjectStore = create<State & Actions>()(
                     block.content.options = [];
                 }
                 const newOption: QuizOption = {
-                    id: `opt_${new Date().getTime()}`,
+                    id: getUniqueId('opt'),
                     text: 'Nova Opção',
                     isCorrect: false,
                 };
@@ -337,7 +358,6 @@ const useProjectStore = create<State & Actions>()(
                 const option = block.content.options.find(o => o.id === optionId);
                 if (option) {
                     Object.assign(option, updates);
-                    // If setting this option to correct, set others to false
                     if (updates.isCorrect) {
                         block.content.options.forEach(o => {
                             if(o.id !== optionId) {
@@ -377,12 +397,18 @@ const useProjectStore = create<State & Actions>()(
 if (typeof window !== 'undefined') {
   useProjectStore.getState().initializeStore();
   
-  // Optional: Listen for storage changes from other tabs.
-  // window.addEventListener('storage', (event) => {
-  //   if (event.key === STORE_KEY) {
-  //     useProjectStore.getState().initializeStore();
-  //   }
-  // });
+  window.addEventListener('beforeunload', (event) => {
+    if (useProjectStore.getState().isDirty) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  });
+
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      useProjectStore.getState().saveProjects();
+    }
+  });
 }
 
 export default useProjectStore;

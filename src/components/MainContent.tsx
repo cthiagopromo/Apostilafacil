@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -7,10 +8,22 @@ import { Button } from './ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { AddBlockModal } from './AddBlockModal';
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
 
 export default function MainContent() {
-  const { activeProject } = useProjectStore();
+  const { activeProject, reorderBlocks } = useProjectStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (activeProject && over && active.id !== over.id) {
+        const oldIndex = activeProject.blocks.findIndex(b => b.id === active.id);
+        const newIndex = activeProject.blocks.findIndex(b => b.id === over.id);
+        reorderBlocks(activeProject.id, oldIndex, newIndex);
+    }
+  }
 
 
   return (
@@ -24,11 +37,19 @@ export default function MainContent() {
       <ScrollArea className="flex-1 bg-secondary/40">
         <div className="p-6 sm:p-8 lg:p-12 max-w-4xl mx-auto">
           {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
-            <>
-              {activeProject.blocks.map((block, index) => (
-                <BlockEditor key={block.id} block={block} index={index}/>
-              ))}
-            </>
+            <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext
+                    items={activeProject.blocks.map(b => b.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {activeProject.blocks.map((block, index) => (
+                      <BlockEditor key={block.id} block={block} index={index}/>
+                    ))}
+                </SortableContext>
+            </DndContext>
           ) : (
             <div className="text-center text-muted-foreground py-16">
               <div className="inline-flex items-center justify-center bg-primary/10 text-primary rounded-full h-16 w-16 mb-4">

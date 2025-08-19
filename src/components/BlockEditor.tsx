@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Block, QuizOption } from '@/lib/types';
@@ -24,6 +25,8 @@ import { Switch } from './ui/switch';
 import RichTextEditor from './RichTextEditor';
 import { Textarea } from './ui/textarea';
 import { Slider } from './ui/slider';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
@@ -208,10 +211,15 @@ interface BlockEditorProps {
 }
 
 const BlockEditor = ({ block, index }: BlockEditorProps) => {
-    const { activeProject, activeBlockId, setActiveBlockId, deleteBlock, moveBlock, duplicateBlock } = useProjectStore();
+    const { activeProject, activeBlockId, setActiveBlockId, deleteBlock, duplicateBlock } = useProjectStore();
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
 
     const isActive = block.id === activeBlockId;
-    const totalBlocks = activeProject?.blocks?.length ?? 0;
 
     const handleAction = (action: (projectId: string, blockId: string) => void) => (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -226,7 +234,7 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
     }
     
     return (
-        <div className="relative group" onClick={() => setActiveBlockId(block.id)}>
+        <div ref={setNodeRef} style={style} className="relative group" onClick={() => setActiveBlockId(block.id)}>
             <div className={cn("transition-all mb-4", isActive ? 'border-primary ring-2 ring-primary/50 rounded-lg' : 'hover:border-primary/50 rounded-lg')}>
                  {isActive ? (
                     <BlockSettingsEditor block={block} onSave={handleSave} />
@@ -241,14 +249,8 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
             
             <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="flex items-center bg-card p-1 rounded-md border shadow-sm">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" onMouseDown={e => e.preventDefault()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" {...attributes} {...listeners}>
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'up'))} disabled={index === 0}>
-                        <ArrowUp className="h-4 w-4" />
-                    </Button>
-                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction( (pId, bId) => moveBlock(pId, bId, 'down'))} disabled={index === totalBlocks - 1}>
-                        <ArrowDown className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction(duplicateBlock)}>
                         <Copy className="h-4 w-4" />
