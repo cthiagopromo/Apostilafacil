@@ -42,6 +42,17 @@ export const initialHandbookData: HandbookData = {
             width: 100,
           },
         },
+        {
+          id: `block_${new Date().getTime() + 2}`,
+          type: 'video',
+          content: {
+            videoType: 'cloudflare',
+            cloudflareVideoId: '8d6s5f4g',
+            videoTitle: 'Teste de Vídeo Cloudflare',
+            autoplay: false,
+            showControls: true
+          }
+        }
       ],
       version: '1.0.0',
       createdAt: new Date().toISOString(),
