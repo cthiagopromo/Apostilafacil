@@ -5,7 +5,7 @@ import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, Save, Loader, ArrowLeft } from 'lucide-react';
+import { Download, Save, Loader, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
@@ -92,12 +92,6 @@ export default function Header() {
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="outline" asChild>
-          <Link href={`/preview/${activeProject?.id}`} target="_blank">
-            <Eye className="mr-2 h-4 w-4" />
-            Pré-visualizar
-          </Link>
-        </Button>
         <Button onClick={handleSave} disabled={isSaving || !isDirty}>
           {isSaving ? (
             <Loader className="mr-2 h-4 w-4 animate-spin" />
