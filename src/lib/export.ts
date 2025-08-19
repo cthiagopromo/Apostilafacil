@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- PDF Generation ---
-    pdfButton.addEventListener('click', () => {
+    pdfButton.addEventListener('click', async () => {
         modal.style.display = 'flex';
 
         const { jsPDF } = window.jspdf;
@@ -229,7 +229,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const content = document.getElementById('pdf-source');
-        const allModules = content.querySelectorAll('.pdf-module-page');
+        const allModules = Array.from(content.querySelectorAll('.pdf-module-page'));
+
+        // Pre-process all images to convert them to base64
+        const imagePromises = [];
+        allModules.forEach(moduleEl => {
+            moduleEl.querySelectorAll('img').forEach(img => {
+                const promise = fetch(img.src)
+                    .then(response => response.blob())
+                    .then(blob => new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            img.src = reader.result;
+                            resolve();
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    }))
+                    .catch(error => {
+                        console.error('Error converting image to base64:', img.src, error);
+                        // Replace failing image with a placeholder text to avoid breaking the canvas
+                        const p = document.createElement('p');
+                        p.innerText = '[Image not available]';
+                        img.parentNode.replaceChild(p, img);
+                    });
+                imagePromises.push(promise);
+            });
+        });
+        
+        await Promise.all(imagePromises);
         
         async function addModuleToPdf(index) {
             if (index >= allModules.length) {
@@ -238,19 +266,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            const moduleEl = allModules[index];
+
             if (index > 0) {
               pdf.addPage();
             }
 
             try {
-                const canvas = await html2canvas(allModules[index], {
+                const canvas = await html2canvas(moduleEl, {
                     scale: 2,
-                    useCORS: true,
+                    useCORS: false,
+                    allowTaint: true,
                     logging: false,
-                    width: allModules[index].scrollWidth,
-                    height: allModules[index].scrollHeight,
-                    windowWidth: allModules[index].scrollWidth,
-                    windowHeight: allModules[index].scrollHeight,
+                    width: moduleEl.scrollWidth,
+                    height: moduleEl.scrollHeight,
+                    windowWidth: moduleEl.scrollWidth,
+                    windowHeight: moduleEl.scrollHeight,
                 });
                 
                 const imgData = canvas.toDataURL('image/png', 0.95);
@@ -284,10 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Process next module
-            addModuleToPdf(index + 1);
+            await addModuleToPdf(index + 1);
         }
         
-        addModuleToPdf(0);
+        await addModuleToPdf(0);
     });
 
     // --- Accessibility Buttons ---
@@ -609,12 +640,12 @@ body {
 main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
 .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
 body.modo-escuro .modulo { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-#apostila-completa .modulo { page-break-before: always; }
-#apostila-completa .modulo:first-child { page-break-before: auto; }
+#apostila-completa .pdf-module-page { page-break-before: always; }
+#apostila-completa .pdf-module-page:first-child { page-break-before: auto; }
 
 h1, h2, h3, h4, h5, h6 { text-align: center; }
-.module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-.module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; }
+.module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
+.module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
 .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
 .block { margin-bottom: 2.5rem; }
 img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -727,7 +758,7 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     main { margin: 0; padding: 0; box-shadow: none; max-width: 100%; }
     .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
     .block-video { display: none; } /* Hide interactive video player */
-    .pdf-video-placeholder { display: block !important; } /* Show placeholder */
+    .pdf-video-placeholder { display: flex !important; } /* Show placeholder */
     .animatable { opacity: 1 !important; transform: translateY(0) !important; }
     .modulo { 
         display: block !important; 
@@ -778,7 +809,7 @@ function generatePdfHtmlForProject(projects: Project[], mainTitle: string): stri
 
     return `
         ${projects.map(project => `
-            <div class="pdf-module-page">
+            <div class="pdf-module-page" style="background-color: white; color: black;">
                 <h2 class="module-main-title">${mainTitle}</h2>
                 <h1 class="module-title-header">${project.title}</h1>
                 <div class="divider"></div>
@@ -797,7 +828,7 @@ export async function exportToZip(projects: Project[], handbookTitle: string) {
     const mainHtmlContent = generateHtml(projects, handbookTitle)
       .replace(
         '</body>',
-        `<div id="pdf-source" style="display: none;">${pdfHtmlContent}</div></body>`
+        `<div id="pdf-source" style="position: absolute; left: -9999px; top: -9999px;">${pdfHtmlContent}</div></body>`
       );
 
 
@@ -810,3 +841,5 @@ export async function exportToZip(projects: Project[], handbookTitle: string) {
     
     saveAs(content, fileName);
 }
+
+    
