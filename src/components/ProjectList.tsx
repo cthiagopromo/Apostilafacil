@@ -36,17 +36,25 @@ import {
 import { format } from 'date-fns';
 
 export function ProjectList() {
-  const { projects, addProject, deleteProject } = useProjectStore();
+  const { handbookTitle, handbookUpdatedAt, projects, createNewHandbook, activeProject } = useProjectStore();
   const router = useRouter();
 
-  const handleNewProject = () => {
-    const newProject = addProject();
-    router.push(`/editor/${newProject.id}`);
+  const handleNewHandbook = () => {
+    createNewHandbook();
+    if(activeProject) {
+        router.push(`/editor/${activeProject.id}`);
+    }
   };
 
-  const handleDeleteProject = (projectId: string) => {
-    deleteProject(projectId);
+  const handleDeleteHandbook = () => {
+    // For now, we just create a new one, effectively deleting the old one from view
+    // In a real multi-document app, you'd have a proper delete mechanism.
+    handleNewHandbook();
   };
+
+  const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);
+  const firstProjectId = projects.length > 0 ? projects[0].id : null;
+
 
   if (projects.length === 0) {
     return (
@@ -59,7 +67,7 @@ export function ProjectList() {
           <p className="text-muted-foreground my-4">
             Comece a criar sua primeira apostila interativa agora mesmo.
           </p>
-          <Button onClick={handleNewProject} size="lg">
+          <Button onClick={handleNewHandbook} size="lg">
             <PlusCircle className="mr-2" />
             Criar minha primeira apostila
           </Button>
@@ -70,8 +78,8 @@ export function ProjectList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-center">
-        <Button onClick={handleNewProject} size="lg">
+       <div className="flex justify-center">
+        <Button onClick={handleNewHandbook} size="lg">
           <PlusCircle className="mr-2" />
           Nova Apostila
         </Button>
@@ -81,27 +89,34 @@ export function ProjectList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Título</TableHead>
+                <TableHead>Título da Apostila</TableHead>
+                <TableHead className="text-center w-[120px]">Módulos</TableHead>
                 <TableHead className="text-center w-[120px]">Blocos</TableHead>
                 <TableHead className="w-[200px]">Última Atualização</TableHead>
                 <TableHead className="text-right w-[200px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell className="font-medium">{project.title}</TableCell>
+                <TableRow>
+                  <TableCell className="font-medium">{handbookTitle}</TableCell>
+                   <TableCell className="text-center">
+                    {projects.length}
+                  </TableCell>
                   <TableCell className="text-center">
-                    {project.blocks?.length || 0}
+                    {totalBlocks}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(project.updatedAt), "dd/MM/yyyy 'às' HH:mm")}
+                    {format(new Date(handbookUpdatedAt), "dd/MM/yyyy 'às' HH:mm")}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/editor/${project.id}`}>
-                        Editar <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
+                    <Button asChild variant="outline" size="sm" disabled={!firstProjectId}>
+                      {firstProjectId ? (
+                        <Link href={`/editor/${firstProjectId}`}>
+                          Editar <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      ) : (
+                        <span>Editar <ArrowRight className="ml-2 h-4 w-4" /></span>
+                      )}
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -114,23 +129,22 @@ export function ProjectList() {
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Esta ação não pode ser desfeita. Isto irá deletar a
-                            apostila permanentemente.
+                            apostila e todos os seus módulos permanentemente.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => handleDeleteProject(project.id)}
+                            onClick={handleDeleteHandbook}
                             className="bg-destructive hover:bg-destructive/90"
                           >
-                            Excluir
+                            Excluir e Começar de Novo
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </TableCell>
                 </TableRow>
-              ))}
             </TableBody>
           </Table>
         </CardContent>

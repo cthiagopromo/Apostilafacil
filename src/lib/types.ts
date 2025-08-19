@@ -71,8 +71,11 @@ export interface Project {
 }
 
 export interface HandbookData {
+  id: string;
   title: string;
   description: string;
   projects: Project[];
+  updatedAt: string;
 }
+
 

@@ -8,7 +8,7 @@ import { produce } from 'immer';
 const STORE_KEY = 'apostila-facil-data';
 
 // Helper for unique IDs
-const getUniqueId = (prefix: 'proj' | 'block' | 'opt') => {
+const getUniqueId = (prefix: 'proj' | 'block' | 'opt' | 'handbook') => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
@@ -18,8 +18,10 @@ const getUniqueId = (prefix: 'proj' | 'block' | 'opt') => {
 
 
 type State = {
+  handbookId: string;
   handbookTitle: string;
   handbookDescription: string;
+  handbookUpdatedAt: string;
   projects: Project[];
   activeProject: Project | null;
   activeBlockId: string | null;
@@ -32,9 +34,10 @@ type Actions = {
   setActiveBlockId: (blockId: string | null) => void;
   updateHandbookTitle: (title: string) => void;
   updateHandbookDescription: (description: string) => void;
+  createNewHandbook: () => void;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
-  saveProjects: () => void;
+  saveData: () => void;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
@@ -51,8 +54,10 @@ type Actions = {
 
 const useProjectStore = create<State & Actions>()(
   immer((set, get) => ({
+    handbookId: '',
     handbookTitle: '',
     handbookDescription: '',
+    handbookUpdatedAt: new Date().toISOString(),
     projects: [],
     activeProject: null,
     activeBlockId: null,
@@ -76,23 +81,29 @@ const useProjectStore = create<State & Actions>()(
               return p;
             });
             set({ 
+                handbookId: data.id || getUniqueId('handbook'),
                 projects: migratedProjects,
                 handbookTitle: data.title,
                 handbookDescription: data.description,
+                handbookUpdatedAt: data.updatedAt || new Date().toISOString(),
             });
           } else {
             set({ 
+                handbookId: initialHandbookData.id,
                 projects: initialHandbookData.projects,
                 handbookTitle: initialHandbookData.title,
                 handbookDescription: initialHandbookData.description,
+                handbookUpdatedAt: initialHandbookData.updatedAt,
             });
           }
         } catch (e) {
           console.error("Failed to parse projects from localStorage", e);
           set({ 
+            handbookId: initialHandbookData.id,
             projects: initialHandbookData.projects,
             handbookTitle: initialHandbookData.title,
             handbookDescription: initialHandbookData.description,
+            handbookUpdatedAt: initialHandbookData.updatedAt,
           });
         }
         
@@ -106,7 +117,7 @@ const useProjectStore = create<State & Actions>()(
     },
     
     setActiveProject: (projectId) => {
-      get().saveProjects(); // Autosave when switching
+      get().saveData(); // Autosave when switching
       set(state => {
         const projectToActivate = state.projects.find((p) => p.id === projectId);
         if (projectToActivate) {
@@ -130,6 +141,44 @@ const useProjectStore = create<State & Actions>()(
             state.handbookDescription = description;
             state.isDirty = true;
         });
+    },
+
+    createNewHandbook: () => {
+        const newHandbook = initialHandbookData;
+        set({
+            handbookId: getUniqueId('handbook'),
+            handbookTitle: 'Nova Apostila',
+            handbookDescription: 'Comece a criar sua nova apostila.',
+            handbookUpdatedAt: new Date().toISOString(),
+            projects: [
+                {
+                    id: getUniqueId('proj'),
+                    title: 'Novo Módulo',
+                    description: 'Uma nova apostila com blocos editáveis.',
+                    theme: {
+                      colorPrimary: '#2563EB',
+                      colorBackground: '#F9FAFB',
+                      colorAccent: '#60A5FA',
+                      fontBody: 'Inter',
+                    },
+                    layoutSettings: {
+                        containerWidth: 'large',
+                        sectionSpacing: 'standard',
+                        navigationType: 'sidebar',
+                    },
+                    blocks: [],
+                    version: '1.0.0',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                }
+            ],
+            activeProject: null,
+            activeBlockId: null,
+            isDirty: true,
+        });
+        const newActiveProject = get().projects[0];
+        set({ activeProject: JSON.parse(JSON.stringify(newActiveProject)) });
+        get().saveData();
     },
 
     addProject: () => {
@@ -157,7 +206,7 @@ const useProjectStore = create<State & Actions>()(
             state.projects.push(newProject);
             state.isDirty = true;
         });
-        get().saveProjects();
+        get().saveData();
         return newProject;
     },
 
@@ -166,6 +215,13 @@ const useProjectStore = create<State & Actions>()(
       set(state => {
         const projectIndex = state.projects.findIndex(p => p.id === projectId);
         if (projectIndex === -1) return;
+
+        // Prevent deleting the last module
+        if (state.projects.length === 1) {
+            console.warn("Cannot delete the last module.");
+            // Optionally, show a toast or alert to the user
+            return;
+        }
 
         state.projects.splice(projectIndex, 1);
 
@@ -187,11 +243,11 @@ const useProjectStore = create<State & Actions>()(
         }
         state.isDirty = true;
       });
-      get().saveProjects();
+      get().saveData();
       return nextActiveProjectId;
     },
 
-    saveProjects: () => {
+    saveData: () => {
       set(state => {
         if (!state.isDirty) return; 
 
@@ -203,11 +259,15 @@ const useProjectStore = create<State & Actions>()(
             }
         }
         
+        state.handbookUpdatedAt = new Date().toISOString();
+
         if (typeof window !== 'undefined') {
           const dataToSave: HandbookData = {
+            id: state.handbookId,
             title: state.handbookTitle,
             description: state.handbookDescription,
-            projects: state.projects
+            projects: state.projects,
+            updatedAt: state.handbookUpdatedAt,
           };
           localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
         }
@@ -425,7 +485,7 @@ if (typeof window !== 'undefined') {
   
   window.addEventListener('beforeunload', (event) => {
     if (useProjectStore.getState().isDirty) {
-      useProjectStore.getState().saveProjects();
+      useProjectStore.getState().saveData();
       event.preventDefault();
       event.returnValue = '';
     }
@@ -433,7 +493,7 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
-      useProjectStore.getState().saveProjects();
+      useProjectStore.getState().saveData();
     }
   });
 }

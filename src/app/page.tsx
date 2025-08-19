@@ -10,7 +10,7 @@ export default function Home() {
           <div className="inline-block p-4 bg-primary/10 rounded-2xl mb-4">
             <FileText className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="text-5xl font-bold text-primary">Editor de Apostilas</h1>
+          <h1 className="text-5xl font-bold text-primary">Gerenciador de Apostilas</h1>
           <p className="text-xl text-muted-foreground mt-2">Crie, edite e exporte suas apostilas interativas com facilidade.</p>
         </header>
         <main>

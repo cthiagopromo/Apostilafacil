@@ -26,10 +26,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LeftSidebar() {
   const { projects, activeProject, addProject, setActiveProject, deleteProject } = useProjectStore();
   const router = useRouter();
+  const { toast } = useToast();
   
   const handleNewProject = () => {
     const newProject = addProject();
@@ -43,6 +45,16 @@ export default function LeftSidebar() {
 
   const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
+
+    if (projects.length <= 1) {
+        toast({
+            variant: "destructive",
+            title: "Ação não permitida",
+            description: "Não é possível excluir o último módulo da apostila.",
+        });
+        return;
+    }
+
     const nextProjectId = deleteProject(projectId);
     if (nextProjectId) {
       router.push(`/editor/${nextProjectId}`);

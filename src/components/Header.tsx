@@ -11,7 +11,7 @@ import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
-  const { handbookTitle, activeProject, saveProjects, isDirty } = useProjectStore();
+  const { handbookTitle, activeProject, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -52,7 +52,7 @@ export default function Header() {
 
     setIsSaving(true);
     setTimeout(() => {
-        saveProjects();
+        saveData();
         setIsSaving(false);
         toast({
             title: "Projeto salvo com sucesso!",
@@ -66,7 +66,7 @@ export default function Header() {
           <Button variant="outline" asChild>
             <Link href="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Ver todos
+                Início
             </Link>
           </Button>
           <div className="w-px h-8 bg-border"></div>

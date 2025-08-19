@@ -1,12 +1,16 @@
 
 import type { HandbookData, Project } from './types';
 
+const firstProjectId = `proj_${new Date().getTime()}`;
+
 export const initialHandbookData: HandbookData = {
+  id: `handbook_${new Date().getTime()}`,
   title: 'Apostila Interativa',
   description: 'Um curso completo sobre um tópico fascinante.',
+  updatedAt: new Date().toISOString(),
   projects: [
     {
-      id: `proj_${new Date().getTime()}`,
+      id: firstProjectId,
       title: 'Módulo de Biologia Celular',
       description: 'Uma introdução à fascinante jornada dentro da célula.',
       theme: {
