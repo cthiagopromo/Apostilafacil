@@ -116,26 +116,12 @@ export async function exportToPdf(projects: Project[]) {
         const project = projects[i];
         const htmlContent = generatePdfHtmlForProject(project);
 
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.width = '600px';
-        tempDiv.innerHTML = htmlContent;
-        document.body.appendChild(tempDiv);
-        
-        const contentElement = tempDiv.querySelector('.pdf-content');
-        if (!contentElement) {
-            document.body.removeChild(tempDiv);
-            console.error("Erro ao encontrar conteúdo para gerar o PDF para o projeto:", project.title);
-            continue; 
-        }
-        
         if (i > 0) {
             doc.addPage();
         }
 
         try {
-            await doc.html(contentElement as HTMLElement, {
+            await doc.html(htmlContent, {
                 callback: function (doc) {
                     // This callback is called after each page is rendered.
                 },
@@ -147,8 +133,6 @@ export async function exportToPdf(projects: Project[]) {
             });
         } catch(e) {
             console.error("Erro ao gerar PDF para o projeto:", project.title, e);
-        } finally {
-            document.body.removeChild(tempDiv);
         }
     }
     
@@ -268,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavButton = document.getElementById('floating-nav-button');
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
+    const pdfLoadingModal = document.getElementById('pdf-loading-modal');
 
     function showModule(index) {
         modules.forEach((module, i) => {
@@ -276,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentModuleIndex = index;
         updateNavButtons();
         updateActiveModuleLink();
+        window.scrollTo(0, 0);
     }
 
     function updateNavButtons() {
@@ -386,9 +372,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     };
 
+    // PDF Generation
+    document.getElementById('btn-pdf').addEventListener('click', async () => {
+        pdfLoadingModal.style.display = 'flex';
 
-    // PDF
-    document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'p',
+                unit: 'pt',
+                format: 'a4'
+            });
+
+            const allModulesHtml = Array.from(modules).map(module => module.innerHTML).join('<div style="page-break-after: always;"></div>');
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.width = '800px'; 
+            tempDiv.innerHTML = allModulesHtml;
+            document.body.appendChild(tempDiv);
+            
+            await doc.html(tempDiv, {
+                callback: function (doc) {
+                    doc.output('dataurlnewwindow');
+                    pdfLoadingModal.style.display = 'none';
+                    document.body.removeChild(tempDiv);
+                },
+                x: 15,
+                y: 15,
+                width: 565,
+                windowWidth: 800,
+                autoPaging: 'text'
+            });
+        } catch (error) {
+            console.error('Erro ao gerar PDF:', error);
+            pdfLoadingModal.style.display = 'none';
+            alert('Ocorreu um erro ao gerar o PDF. Tente novamente.');
+        }
+    });
 
     // Font Size
     document.getElementById('btn-fonte-mais').addEventListener('click', () => {
@@ -425,7 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         audioAtivo = !audioAtivo;
         localStorage.setItem('audioAtivo', audioAtivo);
         this.querySelector('.material-icons').textContent = audioAtivo ? 'volume_up' : 'volume_off';
-        // You would need to add logic here to actually mute/unmute audio elements if you add any.
     });
 
 
@@ -553,9 +574,17 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="pdf-loading-modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p>Gerando PDF, por favor aguarde...</p>
+        </div>
+    </div>
     <header class="main-header">
         <div class="header-container">
             <h1 class="main-title">${handbookTitle}</h1>
@@ -999,6 +1028,44 @@ body.modo-escuro #floating-nav-menu li a:hover {
     font-weight: bold;
 }
 
+/* PDF Loading Modal */
+#pdf-loading-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+}
+#pdf-loading-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    text-align: center;
+}
+#pdf-loading-modal .spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid #fff;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
 /* Animation Styles */
 .animatable {
     opacity: 0;
@@ -1049,7 +1116,7 @@ body.modo-escuro #floating-nav-menu li a:hover {
         background-color: #fff;
         color: #000;
     }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu {
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #pdf-loading-modal {
         display: none !important;
     }
     main {
