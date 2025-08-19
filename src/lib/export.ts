@@ -12,6 +12,8 @@ function sanitizeHtml(html: string): string {
     return html;
 }
 
+const videoPlaceholderBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAC0CAMAAAB4i0UAAAAAA1BMVEW9vb2ORsPJAAAAR0lEQVR4nO3BAQEAAACCIP+vbkhAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO8GxYgAAbj0LDAAAAAASUVORK5CYII=';
+
 function generatePdfHtmlForProject(project: Project): string {
     const blocksHtml = project.blocks.map(block => {
         switch (block.type) {
@@ -46,7 +48,11 @@ function generatePdfHtmlForProject(project: Project): string {
                  if (videoLink === '#') return '';
                 return `
                     <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Vídeo: ${videoTitle || 'Vídeo sem título'}</strong><br/> <a href="${videoLink}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${videoHost}</a></p>
+                        <p style="margin:0;"><strong>Vídeo: ${videoTitle || 'Vídeo sem título'}</strong></p>
+                        <a href="${videoLink}" target="_blank" rel="noopener noreferrer" style="display: block; text-align: center; margin-top: 10px;">
+                            <img src="${videoPlaceholderBase64}" alt="Assistir ao vídeo" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 6px;" />
+                        </a>
+                        <p style="text-align: center; margin-top: 5px;"><a href="${videoLink}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${videoHost}</a></p>
                     </div>
                 `;
             case 'button':
