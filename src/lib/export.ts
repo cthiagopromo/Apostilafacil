@@ -33,10 +33,20 @@ function generatePdfHtmlForProject(project: Project): string {
                     </div>
                 `;
             case 'video':
-                if (!block.content.videoUrl) return '';
+                 const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
+                 let videoLink = '#';
+                 let videoHost = '';
+                 if (videoType === 'cloudflare' && cloudflareVideoId) {
+                    videoLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
+                    videoHost = 'Cloudflare';
+                 } else if (videoType === 'youtube' && videoUrl) {
+                    videoLink = videoUrl;
+                    videoHost = 'YouTube';
+                 }
+                 if (videoLink === '#') return '';
                 return `
                     <div class="block block-video-pdf" style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px; page-break-inside: avoid;">
-                        <p style="margin:0;"><strong>Vídeo:</strong> <a href="${block.content.videoUrl}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${block.content.videoUrl}</a></p>
+                        <p style="margin:0;"><strong>Vídeo: ${videoTitle || 'Vídeo sem título'}</strong><br/> <a href="${videoLink}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo em ${videoHost}</a></p>
                     </div>
                 `;
             case 'button':
@@ -174,31 +184,50 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video':
-             if (!block.content.videoUrl) return '';
+            const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            let embedHtml = '';
+
+            if (videoType === 'cloudflare') {
+                if (!cloudflareVideoId) return `<div class="block-video-invalid">ID do vídeo do Cloudflare não definido.</div>`;
+                const src = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+                embedHtml = `
+                    <iframe
+                        src="${src}"
+                        title="${videoTitle || 'Cloudflare video player'}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                    ></iframe>`;
+            } else { // Default to YouTube
+                if (!videoUrl) return `<div class="block-video-invalid">URL do YouTube inválida.</div>`;
                 try {
-                    const urlObj = new URL(block.content.videoUrl);
+                    const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') {
                         videoId = urlObj.pathname.substring(1);
                     }
                     if (!videoId) return `<div class="block-video-invalid">URL do YouTube inválida.</div>`;
 
-                    return `
-                        <div ${animationClass}>
-                            <div class="block block-video">
-                                <iframe
-                                    src="https://www.youtube.com/embed/${videoId}"
-                                    title="YouTube video player"
-                                    frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen
-                                ></iframe>
-                            </div>
-                        </div>
-                    `;
+                    const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                    embedHtml = `
+                        <iframe
+                            src="${src}"
+                            title="${videoTitle || 'YouTube video player'}"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                        ></iframe>`;
                 } catch (e) {
                     return `<div class="block-video-invalid">URL do vídeo inválida.</div>`;
                 }
+            }
+             return `
+                <div ${animationClass}>
+                    <div class="block block-video">
+                        ${embedHtml}
+                    </div>
+                </div>
+            `;
         case 'button':
              return `
                 <div ${animationClass}>

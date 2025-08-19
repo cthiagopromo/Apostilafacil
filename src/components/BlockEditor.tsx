@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Block, QuizOption } from '@/lib/types';
+import type { Block, QuizOption, VideoType } from '@/lib/types';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -27,6 +27,7 @@ import { Textarea } from './ui/textarea';
 import { Slider } from './ui/slider';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
@@ -104,15 +105,78 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                     </div>
                 )
             case 'video':
-                return (
-                    <div className="space-y-2">
-                        <Label htmlFor={`video-url-${block.id}`}>URL do Vídeo (YouTube)</Label>
-                        <Input 
-                            id={`video-url-${block.id}`} 
-                            value={block.content.videoUrl || ''} 
-                            onChange={e => updateBlockContent(block.id, { videoUrl: e.target.value })} 
-                            placeholder="https://www.youtube.com/watch?v=..."
-                        />
+                 const videoType = block.content.videoType || 'youtube';
+                 return (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Tipo de Vídeo</Label>
+                            <Select 
+                                value={videoType} 
+                                onValueChange={(value: VideoType) => updateBlockContent(block.id, { videoType: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o tipo de vídeo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="youtube">YouTube</SelectItem>
+                                    <SelectItem value="cloudflare">Cloudflare</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {videoType === 'youtube' && (
+                            <div className="space-y-2">
+                                <Label htmlFor={`video-url-${block.id}`}>URL do Vídeo</Label>
+                                <Input 
+                                    id={`video-url-${block.id}`} 
+                                    value={block.content.videoUrl || ''} 
+                                    onChange={e => updateBlockContent(block.id, { videoUrl: e.target.value })} 
+                                    placeholder="https://www.youtube.com/watch?v=..."
+                                />
+                            </div>
+                        )}
+                        
+                        {videoType === 'cloudflare' && (
+                             <div className="space-y-2">
+                                <Label htmlFor={`video-cloudflare-${block.id}`}>ID do Vídeo no Cloudflare</Label>
+                                <Input 
+                                    id={`video-cloudflare-${block.id}`} 
+                                    value={block.content.cloudflareVideoId || ''} 
+                                    onChange={e => updateBlockContent(block.id, { cloudflareVideoId: e.target.value })} 
+                                    placeholder="Ex: 8d6s5f4g..."
+                                />
+                            </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                            <Label htmlFor={`video-title-${block.id}`}>Título do Vídeo</Label>
+                            <Input 
+                                id={`video-title-${block.id}`} 
+                                value={block.content.videoTitle || ''} 
+                                onChange={e => updateBlockContent(block.id, { videoTitle: e.target.value })} 
+                                placeholder="Digite o título do vídeo..."
+                            />
+                        </div>
+
+                        <div className='flex items-center justify-between'>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id={`autoplay-${block.id}`}
+                                    checked={block.content.autoplay}
+                                    onCheckedChange={(checked) => updateBlockContent(block.id, { autoplay: checked })}
+                                />
+                                <Label htmlFor={`autoplay-${block.id}`}>Reprodução Automática</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id={`controls-${block.id}`}
+                                    checked={block.content.showControls}
+                                    onCheckedChange={(checked) => updateBlockContent(block.id, { showControls: checked })}
+                                />
+                                <Label htmlFor={`controls-${block.id}`}>Exibir Controles</Label>
+                            </div>
+                        </div>
+
                     </div>
                 )
             case 'button':

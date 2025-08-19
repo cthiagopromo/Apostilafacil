@@ -256,7 +256,14 @@ const useProjectStore = create<State & Actions>()(
                 content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '', width: 100 };
                 break;
             case 'video':
-                content = { videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
+                content = { 
+                    videoType: 'youtube',
+                    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    cloudflareVideoId: '',
+                    videoTitle: 'Título do Vídeo',
+                    autoplay: false,
+                    showControls: true,
+                };
                 break;
             case 'button':
                 content = { buttonText: 'Clique Aqui', buttonUrl: '#' };

@@ -13,6 +13,8 @@ export interface QuizOption {
   isCorrect: boolean;
 }
 
+export type VideoType = 'youtube' | 'cloudflare';
+
 export interface BlockContent {
   // Common fields
   text?: string;
@@ -22,7 +24,12 @@ export interface BlockContent {
   caption?: string; // Legenda opcional para a imagem
   width?: number; // Largura da imagem em %
   // Video
-  videoUrl?: string;
+  videoType?: VideoType;
+  videoUrl?: string; // For YouTube
+  cloudflareVideoId?: string; // For Cloudflare
+  videoTitle?: string;
+  autoplay?: boolean;
+  showControls?: boolean;
   // Button
   buttonText?: string;
   buttonUrl?: string;
@@ -68,3 +75,4 @@ export interface HandbookData {
   description: string;
   projects: Project[];
 }
+

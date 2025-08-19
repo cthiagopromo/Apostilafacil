@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { CheckCircle, Quote, XCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
-const YoutubeEmbed = ({ url }: { url: string }) => {
+const YoutubeEmbed = ({ url, title, autoplay, showControls }: { url: string, title?: string, autoplay?: boolean, showControls?: boolean }) => {
     try {
         const urlObj = new URL(url);
         let videoId = urlObj.searchParams.get('v');
@@ -20,11 +20,13 @@ const YoutubeEmbed = ({ url }: { url: string }) => {
         }
         if (!videoId) return <p className="text-destructive">URL do YouTube inválida.</p>;
 
+        const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+
         return (
             <iframe
                 className="w-full aspect-video rounded-md"
-                src={`https://www.youtube.com/embed/${videoId}`}
-                title="YouTube video player"
+                src={src}
+                title={title || "YouTube video player"}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
             ></iframe>
@@ -33,6 +35,23 @@ const YoutubeEmbed = ({ url }: { url: string }) => {
         return <p className="text-destructive">URL do vídeo inválida.</p>;
     }
 };
+
+const CloudflareEmbed = ({ videoId, title, autoplay, showControls }: { videoId: string, title?: string, autoplay?: boolean, showControls?: boolean }) => {
+    if (!videoId) return <p className="text-destructive">ID do vídeo do Cloudflare inválido.</p>;
+
+    const src = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+
+    return (
+        <iframe
+            className="w-full aspect-video rounded-md"
+            src={src}
+            title={title || "Cloudflare video player"}
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+        ></iframe>
+    );
+};
+
 
 const QuizBlock = ({ block }: { block: Block }) => {
     const { updateBlockContent, resetQuiz } = useProjectStore();
@@ -122,8 +141,16 @@ const BlockRenderer = ({ block }: { block: Block }) => {
                  </div>
             )
         case 'video':
-            if (!block.content.videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
-            return <YoutubeEmbed url={block.content.videoUrl} />
+            const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+
+            if (videoType === 'cloudflare') {
+                if (!cloudflareVideoId) return <p className="text-muted-foreground">ID do vídeo do Cloudflare não definido.</p>
+                return <CloudflareEmbed videoId={cloudflareVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+            }
+            
+            // Default to YouTube
+            if (!videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
+            return <YoutubeEmbed url={videoUrl} title={videoTitle} autoplay={autoplay} showControls={showControls} />
         case 'button':
             return (
                 <div className='flex justify-center'>
