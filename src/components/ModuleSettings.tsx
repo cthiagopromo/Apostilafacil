@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -9,7 +10,11 @@ export default function ModuleSettings() {
   const { activeProject, updateProjectTitle, updateProjectDescription } = useProjectStore();
 
   if (!activeProject) {
-    return null;
+    return (
+        <div className='text-sm text-muted-foreground p-4 text-center'>
+            Nenhum módulo selecionado.
+        </div>
+    );
   }
 
   return (

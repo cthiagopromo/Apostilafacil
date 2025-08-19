@@ -1,11 +1,11 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings } from './types';
-import { initialProjects } from './initial-data';
+import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData } from './types';
+import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
 
-const STORE_KEY = 'apostila-facil-projects';
+const STORE_KEY = 'apostila-facil-data';
 
 // Helper for unique IDs
 const getUniqueId = (prefix: 'proj' | 'block' | 'opt') => {
@@ -18,6 +18,8 @@ const getUniqueId = (prefix: 'proj' | 'block' | 'opt') => {
 
 
 type State = {
+  handbookTitle: string;
+  handbookDescription: string;
   projects: Project[];
   activeProject: Project | null;
   activeBlockId: string | null;
@@ -28,6 +30,8 @@ type Actions = {
   initializeStore: () => void;
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
+  updateHandbookTitle: (title: string) => void;
+  updateHandbookDescription: (description: string) => void;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
   saveProjects: () => void;
@@ -36,9 +40,8 @@ type Actions = {
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
   addBlock: (projectId: string, type: BlockType) => void;
   deleteBlock: (projectId: string, blockId: string) => void;
-  moveBlock: (projectId: string, blockId: string, direction: 'up' | 'down') => void;
-  duplicateBlock: (projectId: string, blockId: string) => void;
   reorderBlocks: (projectId: string, startIndex: number, endIndex: number) => void;
+  duplicateBlock: (projectId: string, blockId: string) => void;
   updateBlockContent: (blockId: string, newContent: Partial<BlockContent>) => void;
   addQuizOption: (blockId: string) => void;
   updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
@@ -48,6 +51,8 @@ type Actions = {
 
 const useProjectStore = create<State & Actions>()(
   immer((set, get) => ({
+    handbookTitle: '',
+    handbookDescription: '',
     projects: [],
     activeProject: null,
     activeBlockId: null,
@@ -56,11 +61,11 @@ const useProjectStore = create<State & Actions>()(
     initializeStore: () => {
       if (typeof window !== 'undefined') {
         try {
-          const storedProjects = localStorage.getItem(STORE_KEY);
-          let projects: Project[] | null = storedProjects ? JSON.parse(storedProjects) : null;
+          const storedData = localStorage.getItem(STORE_KEY);
+          let data: HandbookData | null = storedData ? JSON.parse(storedData) : null;
           
-          if (Array.isArray(projects) && projects.length > 0) {
-            const migratedProjects = projects.map(p => {
+          if (data && data.projects) {
+             const migratedProjects = data.projects.map(p => {
               if (!p.layoutSettings) {
                 p.layoutSettings = {
                   containerWidth: 'large',
@@ -70,17 +75,29 @@ const useProjectStore = create<State & Actions>()(
               }
               return p;
             });
-            set({ projects: migratedProjects });
+            set({ 
+                projects: migratedProjects,
+                handbookTitle: data.title,
+                handbookDescription: data.description,
+            });
           } else {
-            set({ projects: initialProjects });
+            set({ 
+                projects: initialHandbookData.projects,
+                handbookTitle: initialHandbookData.title,
+                handbookDescription: initialHandbookData.description,
+            });
           }
         } catch (e) {
           console.error("Failed to parse projects from localStorage", e);
-          set({ projects: initialProjects });
+          set({ 
+            projects: initialHandbookData.projects,
+            handbookTitle: initialHandbookData.title,
+            handbookDescription: initialHandbookData.description,
+          });
         }
         
         const projects = get().projects;
-        if (projects.length > 0) {
+        if (projects.length > 0 && !get().activeProject) {
           set(state => {
             state.activeProject = JSON.parse(JSON.stringify(projects[0]));
           });
@@ -101,6 +118,20 @@ const useProjectStore = create<State & Actions>()(
     
     setActiveBlockId: (blockId) => set({ activeBlockId: blockId }),
     
+    updateHandbookTitle: (title) => {
+        set(state => {
+            state.handbookTitle = title;
+            state.isDirty = true;
+        });
+    },
+
+    updateHandbookDescription: (description) => {
+        set(state => {
+            state.handbookDescription = description;
+            state.isDirty = true;
+        });
+    },
+
     addProject: () => {
         const newProject: Project = {
             id: getUniqueId('proj'),
@@ -162,7 +193,8 @@ const useProjectStore = create<State & Actions>()(
 
     saveProjects: () => {
       set(state => {
-        if (!state.isDirty && state.activeProject) return; // Only save if dirty
+        if (!state.isDirty) return; 
+
         if (state.activeProject) {
             const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
             if (projectIndex !== -1) {
@@ -172,7 +204,12 @@ const useProjectStore = create<State & Actions>()(
         }
         
         if (typeof window !== 'undefined') {
-          localStorage.setItem(STORE_KEY, JSON.stringify(state.projects));
+          const dataToSave: HandbookData = {
+            title: state.handbookTitle,
+            description: state.handbookDescription,
+            projects: state.projects
+          };
+          localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
         }
         state.isDirty = false;
       });
@@ -282,24 +319,6 @@ const useProjectStore = create<State & Actions>()(
       });
     },
 
-    moveBlock: (projectId, blockId, direction) => {
-      set(state => {
-          const project = state.activeProject;
-          if (project && project.id === projectId) {
-              const index = project.blocks.findIndex(b => b.id === blockId);
-              if (index === -1) return;
-
-              const newIndex = direction === 'up' ? index - 1 : index + 1;
-              if (newIndex < 0 || newIndex >= project.blocks.length) return;
-
-              const temp = project.blocks[index];
-              project.blocks[index] = project.blocks[newIndex];
-              project.blocks[newIndex] = temp;
-              state.isDirty = true;
-          }
-      });
-    },
-
     duplicateBlock: (projectId, blockId) => {
         set(state => {
             const project = state.activeProject;
@@ -399,6 +418,7 @@ if (typeof window !== 'undefined') {
   
   window.addEventListener('beforeunload', (event) => {
     if (useProjectStore.getState().isDirty) {
+      useProjectStore.getState().saveProjects();
       event.preventDefault();
       event.returnValue = '';
     }

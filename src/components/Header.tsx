@@ -11,15 +11,15 @@ import { exportToZip } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
-  const { activeProject, saveProjects, isDirty } = useProjectStore();
+  const { handbookTitle, activeProject, saveProjects, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
-    const currentProjects = useProjectStore.getState().projects;
+    const { projects, handbookTitle } = useProjectStore.getState();
 
-    if (!currentProjects || currentProjects.length === 0) {
+    if (!projects || projects.length === 0) {
         toast({
             variant: "destructive",
             title: "Nenhum projeto para exportar",
@@ -30,7 +30,7 @@ export default function Header() {
 
     setIsExporting(true);
     try {
-      await exportToZip(currentProjects);
+      await exportToZip(projects, handbookTitle);
       toast({
         title: "Exportação Concluída",
         description: "Seu projeto foi exportado como um arquivo ZIP.",
@@ -73,9 +73,8 @@ export default function Header() {
           {activeProject && (
             <div className='flex items-center gap-3'>
               <h1 className="text-lg font-semibold">
-                {activeProject.title}
+                {handbookTitle}
               </h1>
-              <Badge variant="secondary">1 módulo</Badge>
               {isSaving ? (
                 <Badge variant="outline">Salvando...</Badge>
               ) : isDirty ? (

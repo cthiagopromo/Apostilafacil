@@ -508,9 +508,8 @@ function generateHeaderNavHtml(): string {
     `;
 }
 
-function generateHtml(projects: Project[]): string {
-    const mainTitle = "Apostila Interativa";
-    const modulesHtml = generateModulesHtml(projects, mainTitle);
+function generateHtml(projects: Project[], handbookTitle: string): string {
+    const modulesHtml = generateModulesHtml(projects, handbookTitle);
     const floatingNavHtml = generateFloatingNav(projects);
     const headerNavHtml = generateHeaderNavHtml();
     
@@ -520,7 +519,7 @@ function generateHtml(projects: Project[]): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${mainTitle}</title>
+    <title>${handbookTitle}</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -530,7 +529,7 @@ function generateHtml(projects: Project[]): string {
 <body>
     <header class="main-header">
         <div class="header-container">
-            <h1 class="main-title">${mainTitle}</h1>
+            <h1 class="main-title">${handbookTitle}</h1>
             ${headerNavHtml}
         </div>
     </header>
@@ -1044,10 +1043,10 @@ body.modo-escuro #floating-nav-menu li a:hover {
 }
 
 
-export async function exportToZip(projects: Project[]) {
+export async function exportToZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
 
-    zip.file('index.html', generateHtml(projects));
+    zip.file('index.html', generateHtml(projects, handbookTitle));
     zip.file('style.css', generateCss());
     zip.file('script.js', generateZipScript(projects));
     

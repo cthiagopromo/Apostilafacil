@@ -1,3 +1,4 @@
+
 export type BlockType = 
   | 'text' 
   | 'image' 
@@ -60,4 +61,10 @@ export interface Project {
   version: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HandbookData {
+  title: string;
+  description: string;
+  projects: Project[];
 }
