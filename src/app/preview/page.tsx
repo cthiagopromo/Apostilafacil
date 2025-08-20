@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import useProjectStore from '@/lib/store';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
@@ -122,44 +122,16 @@ const getInteractiveScript = (handbookData: HandbookData) => {
 };
 
 
-const FullPageHandout = ({ handbookData }: { handbookData: HandbookData }) => {
-    // This component represents the full HTML document structure for export.
-    return (
-        <div id="handbook-root-container">
-            <div className="bg-secondary/40 min-h-screen">
-                <PreviewHeader setIsExporting={() => {}} />
-                <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
-                    <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
-                        {handbookData.projects.map((project) => (
-                            <section key={project.id} className="module-section mb-12 last:mb-0">
-                                <header className='text-center mb-12'>
-                                    <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
-                                    <p className="text-muted-foreground">{project.description}</p>
-                                </header>
-                                <div className="space-y-8">
-                                    {project.blocks.map((block) => (
-                                        <div key={block.id} data-block-id={block.id}>
-                                             <BlockRenderer block={block} />
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        ))}
-                    </div>
-                </main>
-            </div>
-        </div>
-    );
-};
-
-
 export default function PreviewPage() {
   const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
   const router = useRouter();
   const [isClient, setIsClient] = React.useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIsClient(true);
+    // Add a class to the body when the component has mounted and rendered.
+    // This will be used by the export function to know the content is ready.
+    document.body.classList.add('ready-for-export');
   }, []);
 
   if (!isClient) {
@@ -188,7 +160,30 @@ export default function PreviewPage() {
 
   return (
       <>
-        <FullPageHandout handbookData={handbookData} />
+        <div id="handbook-root-container">
+            <div className="bg-secondary/40 min-h-screen">
+                <PreviewHeader setIsExporting={() => {}} />
+                <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                    <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                        {handbookData.projects.map((project) => (
+                            <section key={project.id} className="module-section mb-12 last:mb-0">
+                                <header className='text-center mb-12'>
+                                    <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
+                                    <p className="text-muted-foreground">{project.description}</p>
+                                </header>
+                                <div className="space-y-8">
+                                    {project.blocks.map((block) => (
+                                        <div key={block.id} data-block-id={block.id}>
+                                             <BlockRenderer block={block} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        ))}
+                    </div>
+                </main>
+            </div>
+        </div>
         {getInteractiveScript(handbookData)}
       </>
   );

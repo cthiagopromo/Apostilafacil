@@ -13,35 +13,58 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
 export default function Header() {
-  const { handbookTitle, handbookDescription, activeProject, saveData, isDirty, projects } = useProjectStore();
+  const { handbookTitle, projects, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const { toast } = useToast();
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
-  const getPreviewContentAsHtml = async (): Promise<string | null> => {
-    const iframe = previewIframeRef.current;
-    if (!iframe?.contentWindow?.document?.documentElement) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Acessar Conteúdo',
-        description: 'Não foi possível acessar o conteúdo da pré-visualização. Aguarde o carregamento e tente novamente.',
-      });
-      return null;
-    }
-    
-    const doc = iframe.contentWindow.document;
-    const tempDoc = doc.cloneNode(true) as Document;
+  const getPreviewContentAsHtml = (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const iframe = previewIframeRef.current;
+        if (!iframe?.contentWindow?.document) {
+            return reject(new Error('Não foi possível acessar o conteúdo da pré-visualização.'));
+        }
+        
+        const maxTries = 20; // 20 * 250ms = 5 seconds timeout
+        let tries = 0;
 
-    // Remove elements that should not be in the final export
-    tempDoc.querySelectorAll('.no-export').forEach(el => el.remove());
-    
-    const finalHtml = tempDoc.documentElement.outerHTML;
-    
-    return `<!DOCTYPE html>${finalHtml}`;
-  }
+        const checkForReadyState = () => {
+            const iframeDoc = iframe.contentWindow?.document;
+            if (iframeDoc && iframeDoc.body && iframeDoc.body.classList.contains('ready-for-export')) {
+                const doc = iframeDoc.cloneNode(true) as Document;
+                doc.querySelectorAll('.no-export').forEach(el => el.remove());
+                
+                // Add base tag to ensure relative paths work if any
+                let base = doc.querySelector('base');
+                if (!base) {
+                    base = doc.createElement('base');
+                    base.href = '.'; // Or the actual base URL if needed
+                    doc.head.insertBefore(base, doc.head.firstChild);
+                }
 
+                // Add charset meta tag
+                let meta = doc.querySelector('meta[charset]');
+                if(!meta) {
+                    meta = doc.createElement('meta');
+                    meta.setAttribute('charset', 'UTF-8');
+                    doc.head.insertBefore(meta, doc.head.firstChild);
+                }
+                
+                const finalHtml = doc.documentElement.outerHTML;
+                resolve(`<!DOCTYPE html>${finalHtml}`);
+            } else if (tries < maxTries) {
+                tries++;
+                setTimeout(checkForReadyState, 250);
+            } else {
+                reject(new Error('Tempo de espera excedido para a pré-visualização carregar.'));
+            }
+        };
+        
+        checkForReadyState();
+    });
+  };
 
   const handleExportZip = async () => {
     if (!projects || projects.length === 0) {
@@ -55,48 +78,44 @@ export default function Header() {
 
     setIsExporting(true);
     
-    const openModalAndExport = async () => {
-        setIsPreviewModalOpen(true);
-        // Wait for the iframe to load and React to hydrate. This is a crucial step.
-        await new Promise(resolve => setTimeout(resolve, 2500));
-
-        try {
-            const htmlContent = await getPreviewContentAsHtml();
-
-            if (!htmlContent) {
-                throw new Error("O conteúdo HTML não pôde ser gerado.");
-            }
-
-            const zip = new JSZip();
-            const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
-
-            zip.file('index.html', htmlContent);
-            zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web.');
-
-            const blob = await zip.generateAsync({ type: 'blob' });
-            saveAs(blob, `${cleanTitle}.zip`);
-
-            toast({
-                title: 'Exportação Concluída',
-                description: 'Seu projeto foi exportado como um arquivo ZIP.',
-            });
-
-        } catch (error) {
-            console.error('Falha ao exportar o projeto', error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro na Exportação',
-                description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
-            });
-        } finally {
-            setIsExporting(false);
-            // Keep the modal open for user to review
-            // setIsPreviewModalOpen(false); 
-        }
-    };
+    // Open the modal first, which starts loading the iframe
+    setIsPreviewModalOpen(true);
     
-    openModalAndExport();
+    try {
+        const htmlContent = await getPreviewContentAsHtml();
+
+        if (!htmlContent) {
+            throw new Error("O conteúdo HTML não pôde ser gerado.");
+        }
+
+        const zip = new JSZip();
+        const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
+        
+        zip.file('index.html', htmlContent);
+        zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web, ou abra-o diretamente no navegador.');
+
+        const blob = await zip.generateAsync({ type: 'blob' });
+        saveAs(blob, `${cleanTitle}.zip`);
+
+        toast({
+            title: 'Exportação Concluída',
+            description: 'Seu projeto foi exportado como um arquivo ZIP.',
+        });
+
+    } catch (error) {
+        console.error('Falha ao exportar o projeto', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro na Exportação',
+            description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
+        });
+    } finally {
+        setIsExporting(false);
+        // Do not close the modal, let the user do it.
+        // setIsPreviewModalOpen(false); 
+    }
   };
+
 
   const handleSave = () => {
     if (!isDirty) return;
@@ -139,23 +158,18 @@ export default function Header() {
               </Link>
             </Button>
             <div className="w-px h-8 bg-border"></div>
-            {activeProject && (
               <div className='flex items-center gap-3'>
-                <h1 className="text-lg font-semibold">
+                <h1 className="text-lg font-semibold truncate max-w-xs md:max-w-md">
                   {handbookTitle}
                 </h1>
                 {isSaving ? (
                   <Badge variant="outline">Salvando...</Badge>
                 ) : isDirty ? (
-                  <Badge variant="destructive">Alterações não salvas</Badge>
+                  <Badge variant="destructive">Não Salvo</Badge>
                 ) : (
-                  <Badge variant="outline">Salvo</Badge>
+                  <Badge variant="secondary">Salvo</Badge>
                 )}
               </div>
-            )}
-        </div>
-
-        <div className="flex-1 flex justify-center items-center gap-2">
         </div>
         
         <div className="flex items-center gap-2">
