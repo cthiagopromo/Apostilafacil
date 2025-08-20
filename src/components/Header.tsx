@@ -116,7 +116,12 @@ const getInteractiveScript = (): string => {
 
 const renderBlockToHtml = (block: Block): string => {
     // Sanitize text content
-    const sanitizedText = (text: string | undefined) => DOMPurify.sanitize(text || '');
+    const sanitizedText = (text: string | undefined) => {
+        if (typeof window !== 'undefined') {
+            return DOMPurify.sanitize(text || '');
+        }
+        return text || '';
+    };
 
     switch (block.type) {
         case 'text':
@@ -435,3 +440,5 @@ export default function Header() {
     </>
   );
 }
+
+    
