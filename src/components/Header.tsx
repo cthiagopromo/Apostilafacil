@@ -115,9 +115,13 @@ const getInteractiveScript = (): string => {
 
 
 const renderBlockToHtml = (block: Block): string => {
+    // Sanitize text content
+    const sanitizedText = (text: string | undefined) => DOMPurify.sanitize(text || '');
+
     switch (block.type) {
         case 'text':
-            return `<div class="prose dark:prose-invert max-w-none">${DOMPurify.sanitize(block.content.text || '')}</div>`;
+            return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
+        
         case 'image':
             const width = block.content.width || 100;
             return `
@@ -127,14 +131,16 @@ const renderBlockToHtml = (block: Block): string => {
                         ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
                     </figure>
                 </div>`;
+        
         case 'quote':
              return `
                 <div class="relative">
                     <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2S6 3.75 6 5v6H4c-1 1 0 5 3 5z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2s-2 1.25-2 3v6h-2c-1 1 0 5 3 5z"></path></svg>
-                        ${block.content.text}
+                        ${sanitizedText(block.content.text)}
                     </blockquote>
                  </div>`;
+
         case 'video':
              const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
             let videoEmbedUrl = '';
@@ -155,6 +161,7 @@ const renderBlockToHtml = (block: Block): string => {
 
             if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
             return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
+        
         case 'button':
             return `
                 <div class="flex justify-center">
@@ -162,6 +169,7 @@ const renderBlockToHtml = (block: Block): string => {
                         ${block.content.buttonText || 'Botão'}
                     </a>
                 </div>`;
+        
         case 'quiz':
             const optionsHtml = block.content.options?.map(option => `
                 <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all border" data-correct="${option.isCorrect}">
@@ -204,84 +212,68 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 };
 
 const getGlobalCss = () => {
-    // This is a simplified version of globals.css. In a real scenario, you'd fetch this.
-    // For this environment, we are hardcoding it.
     return `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 240 5% 96%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 98%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214 31.8% 91.4%;
-    --input: 214 31.8% 91.4%;
-    --ring: 221 83% 53%;
-    --radius: 0.75rem;
-  }
- 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 65%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 32.6% 17.5%;
-  }
-
-  body.high-contrast {
-    background-color: black;
-    color: white;
-  }
-  body.high-contrast .bg-card {
-      background-color: black;
-      border: 1px solid white;
-  }
-  body.high-contrast .text-primary { color: yellow; }
-  body.high-contrast .text-muted-foreground { color: lightgray; }
-  body.high-contrast .border-primary { border-color: yellow; }
-}
-
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
-.prose { color: hsl(var(--foreground)); }
-.prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
+      :root {
+        --background: 240 5% 96%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 3.9%;
+        --primary: 221 83% 53%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 210 40% 98%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 214 31.8% 91.4%;
+        --input: 214 31.8% 91.4%;
+        --ring: 221 83% 53%;
+        --radius: 0.75rem;
+      }
+      .dark {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 217 91% 65%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+        --ring: 217.2 32.6% 17.5%;
+      }
+      body.high-contrast {
+        background-color: black !important;
+        color: white !important;
+      }
+      body.high-contrast .bg-card, body.high-contrast .quiz-card {
+        background-color: black !important;
+        border: 1px solid white;
+        color: white;
+      }
+      body.high-contrast .text-primary { color: yellow; }
+      body.high-contrast .text-muted-foreground { color: lightgray; }
+      body.high-contrast .border-primary { border-color: yellow; }
+      .bg-primary-light { background-color: hsla(var(--primary), 0.1); }
+      .border-primary { border-color: hsl(var(--primary)); }
+      .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
+      .border-destructive { border-color: hsl(var(--destructive)); }
+      .prose { color: hsl(var(--foreground)); }
+      .prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
     `;
 };
 
@@ -313,8 +305,7 @@ export default function Header() {
         };
         
         const contentHtml = renderProjectsToHtml(projects);
-        const tailwindCssCdn = '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
-
+        
         const finalHtml = `
             <!DOCTYPE html>
             <html lang="pt-BR">
@@ -323,19 +314,14 @@ export default function Header() {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
                 <script src="https://cdn.tailwindcss.com"></script>
-                 <style type="text/tailwindcss">
+                <style>
                     ${getGlobalCss()}
-                 </style>
+                </style>
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
-            <body class="bg-secondary/40 font-sans antialiased">
+            <body class="bg-secondary font-sans antialiased">
                 <div id="handbook-root-container">
-                    <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
-                      <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
-                        <h1 class="text-xl font-bold">${handbookTitle}</h1>
-                      </div>
-                    </header>
-                    <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                     <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
                         <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                             ${contentHtml}
                         </div>
