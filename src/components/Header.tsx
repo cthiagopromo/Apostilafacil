@@ -8,16 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { generateZip, generateHtmlContent } from '@/lib/export';
-import { PreviewModal } from './PreviewModal';
-
+import { generateZip } from '@/lib/export';
 
 export default function Header() {
   const { handbookTitle, activeProject, saveData, isDirty, projects } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPreviewing, setIsPreviewing] = useState(false);
-  const [previewContent, setPreviewContent] = useState('');
   const { toast } = useToast();
 
   const handleExport = async () => {
@@ -63,7 +59,7 @@ export default function Header() {
   }
 
   const handlePreview = () => {
-    if (!projects || projects.length === 0) {
+     if (!projects || projects.length === 0) {
       toast({
           variant: "destructive",
           title: "Nenhum projeto para visualizar",
@@ -71,18 +67,11 @@ export default function Header() {
       });
       return;
     }
-    const htmlContent = generateHtmlContent(projects, handbookTitle);
-    setPreviewContent(htmlContent);
-    setIsPreviewing(true);
+    window.open('/preview', '_blank');
   }
 
   return (
     <>
-      <PreviewModal
-        isOpen={isPreviewing}
-        onClose={() => setIsPreviewing(false)}
-        htmlContent={previewContent}
-      />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
             <Button variant="outline" asChild>
