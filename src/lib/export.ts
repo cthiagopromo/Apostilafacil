@@ -10,7 +10,7 @@ function sanitizeHtml(html: string): string {
     if (typeof window !== 'undefined') {
         return DOMPurify.sanitize(html, { 
             ADD_TAGS: ["iframe"], 
-            ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'title'] 
+            ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'title', 'style', 'class'] 
         });
     }
     return html;
@@ -34,7 +34,7 @@ function getYoutubeEmbedUrl(url: string, autoplay = false, controls = true): str
 }
 
 function getCloudflareEmbedUrl(videoId: string, autoplay = false, controls = true): string | null {
-    return videoId ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe?autoplay=${autoplay}&controls=${controls}` : null;
+    return videoId ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe?autoplay=${autoplay ? 1 : 0}&controls=${controls ? 1 : 0}` : null;
 }
 
 
@@ -81,7 +81,7 @@ function renderBlockToHtml(block: Block): string {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
-                </div>` : '';
+                </div>` : '<p>Vídeo não configurado.</p>';
             
             const staticContent = `
                  <div class="block-video-placeholder print-only">
@@ -229,14 +229,24 @@ function generateCssContent(): string {
         .high-contrast-mode .toolbar-btn {
             color: #000000;
             background-color: #FFFFFF;
-            border-color: #000000;
+            border: 1px solid #000;
         }
+         .high-contrast-mode .toolbar-btn span {
+            color: #000;
+        }
+        .high-contrast-mode .toolbar-btn svg {
+            stroke: #000;
+        }
+
         .high-contrast-mode .main-title {
              color: #FFFFFF;
         }
          .high-contrast-mode #floating-nav-button {
             background-color: #FFFF00;
             color: #000;
+        }
+        .high-contrast-mode .modulo {
+            border: 2px solid #FFF;
         }
 
 
@@ -252,11 +262,12 @@ function generateCssContent(): string {
         .toolbar-btn { display: flex; align-items: center; gap: 0.5rem; background: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: background-color 0.2s; }
         .toolbar-btn:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
         .toolbar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .toolbar-btn svg { width: 16px; height: 16px; }
+        .toolbar-btn svg { width: 16px; height: 16px; stroke: white;}
+        .toolbar-btn span { color: white; }
         .toolbar-separator { width: 1px; height: 24px; background-color: rgba(255, 255, 255, 0.3); margin: 0 0.5rem; }
         
-        main { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
+        main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+        .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -264,17 +275,18 @@ function generateCssContent(): string {
         h1.module-title-header { font-size: 2.25rem; margin-bottom: 1rem; color: var(--text-color);}
         h2 { font-size: 1.75rem; }
         h3 { font-size: 1.5rem; }
-        h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; }
+        h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; line-height: 1.2; }
+        .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
 
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2rem; }
-        .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
+        
         .block-image figure { margin: 0; }
         .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.75rem; text-align: center; }
         .block-quote { position: relative; padding: 1.5rem; background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
         .dark-mode .block-quote { background-color: rgba(255,255,255,0.05); }
 
-        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: #000; }
         .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;}
 
         .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
@@ -415,7 +427,6 @@ function getScriptContent(): string {
 
             try {
                 let paged = new Paged.Previewer();
-                // Pass a clone of the content to avoid altering the main view
                 let flow = await paged.preview(mainContent.outerHTML, [], document.body);
                 window.print();
             } catch (error) {
@@ -516,7 +527,7 @@ function getScriptContent(): string {
     `;
 }
 
-function generateHtmlContent(projects: Project[], handbookTitle: string): string {
+export function generateHtmlContent(projects: Project[], handbookTitle: string): string {
   const cssContent = generateCssContent();
   const scriptContent = getScriptContent();
   return `
