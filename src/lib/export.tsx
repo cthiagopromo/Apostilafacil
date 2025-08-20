@@ -318,11 +318,11 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
     const handbookData = { title: handbookTitle, description: handbookDescription, projects };
 
-    const dataScript = \`window.apostilaData = \${JSON.stringify(handbookData, null, 2)};\`;
+    const dataScript = `window.apostilaData = ${JSON.stringify(handbookData, null, 2)};`;
     
     zip.file('index.html', getIndexHtml(handbookTitle, dataScript));
     zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP, certifique-se de que todos os arquivos estão na mesma pasta e abra o arquivo index.html em seu navegador.');
     
     const blob = await zip.generateAsync({ type: 'blob' });
-    saveAs(blob, \`\${cleanTitle}.zip\`);
+    saveAs(blob, `${cleanTitle}.zip`);
 }
