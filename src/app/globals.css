@@ -123,11 +123,16 @@
 }
 
 @media print {
+  @page {
+    size: A4;
+    margin: 0; /* Remove default browser headers/footers */
+  }
+
   .no-print, .no-print * {
     display: none !important;
   }
 
-  body, .printable-content {
+  body, #printable-content {
     background: white !important;
     color: black !important;
     font-size: 11pt;
@@ -135,22 +140,40 @@
     margin: 0;
     padding: 0;
     box-shadow: none;
+    -webkit-print-color-adjust: exact; /* Chrome, Safari */
+    print-color-adjust: exact; /* Firefox */
   }
 
   main {
     max-width: 100% !important;
+    padding: 1.5cm !important; /* Add margins back for content */
+  }
+
+  #handbook-root, .bg-card {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
     padding: 0 !important;
   }
 
-  .bg-card {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    page-break-after: always;
+  .module-section {
+    page-break-after: always; /* Each module starts on a new page */
   }
-  
-  @page {
-    size: A4;
-    margin: 2cm;
+
+  .module-section:last-of-type {
+    page-break-after: auto;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  figure, .quiz-card, blockquote, .prose {
+    page-break-inside: avoid; /* Avoid breaking complex elements */
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
   }
 }
