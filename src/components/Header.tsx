@@ -9,11 +9,13 @@ import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { generateZip } from '@/lib/export';
+import { PreviewModal } from './PreviewModal';
 
 export default function Header() {
   const { handbookTitle, activeProject, saveData, isDirty, projects } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
@@ -67,11 +69,12 @@ export default function Header() {
       });
       return;
     }
-    window.open('/preview', '_blank');
+    setIsPreviewModalOpen(true);
   }
 
   return (
     <>
+      <PreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
             <Button variant="outline" asChild>

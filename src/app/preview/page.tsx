@@ -4,14 +4,16 @@
 import useProjectStore from '@/lib/store';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileText, Monitor } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AccessibilityToolbar } from '@/components/AccessibilityToolbar';
 
 export default function PreviewPage() {
   const { handbookTitle, handbookDescription, projects } = useProjectStore();
   const router = useRouter();
 
   if (!projects || projects.length === 0) {
+    // This case might not be hit if we check before opening the preview, but it's good for robustness.
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-secondary">
         <p className="text-xl mb-4">Nenhum conteúdo para visualizar.</p>
@@ -28,13 +30,9 @@ export default function PreviewPage() {
       <header className="bg-card p-4 shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
-                <Monitor className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">Pré-visualização</h1>
+                <h1 className="text-xl font-bold">{handbookTitle}</h1>
             </div>
-            <Button onClick={() => window.close()} variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Fechar Pré-visualização
-            </Button>
+            <AccessibilityToolbar />
         </div>
       </header>
 
