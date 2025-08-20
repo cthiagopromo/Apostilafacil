@@ -11,6 +11,7 @@ import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData, Project } from '@/lib/types';
 import FloatingNav from '@/components/FloatingNav';
+import { cn } from '@/lib/utils';
 
 const getInteractiveScript = (handbookData: HandbookData) => {
     const scriptLogic = `
@@ -28,7 +29,11 @@ const getInteractiveScript = (handbookData: HandbookData) => {
 
             const showModule = (index) => {
                 modules.forEach((module, i) => {
-                    module.style.display = i === index ? 'block' : 'none';
+                    if (i === index) {
+                        module.classList.remove('hidden');
+                    } else {
+                        module.classList.add('hidden');
+                    }
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
@@ -231,8 +236,7 @@ export default function PreviewPage() {
                         {handbookData.projects.map((project, index) => (
                             <section 
                                 key={project.id} 
-                                className="module-section"
-                                style={{ display: index === currentModuleIndex ? 'block' : 'none' }}
+                                className={cn('module-section', { 'hidden': index !== currentModuleIndex })}
                             >
                                 <header className='text-center mb-12'>
                                     <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
