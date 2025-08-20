@@ -39,11 +39,11 @@ function renderBlockToHtml(block: Block): string {
                 ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`
                 : block.content.videoUrl;
             return `
-                <div class="block block-video pagedjs-video-placeholder">
-                    <div class="video-placeholder-content">
-                        <p>Este conteúdo é interativo.</p>
-                        <a href="${videoUrl || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-small">Acessar versão online</a>
-                    </div>
+                <div class="block block-video-placeholder">
+                  <a href="${videoUrl || '#'}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
+                    <span class="video-placeholder-icon">▶️</span>
+                    <span class="video-placeholder-text">Este conteúdo é interativo. Clique para assistir.</span>
+                  </a>
                 </div>
             `;
         case 'button':
@@ -92,7 +92,6 @@ function generateModulesHtml(projects: Project[]): string {
       `).join('');
 }
 
-
 function generateFloatingNav(projects: Project[]): string {
     const moduleList = projects.map((project, index) => 
         `<li><a href="#" class="module-link" data-index="${index}">${project.title}</a></li>`
@@ -126,7 +125,7 @@ function generateHeaderNavHtml(): string {
     `;
 }
 
-function generateCss(): string {
+function generateCssContent(): string {
     return `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root {
@@ -165,9 +164,9 @@ function generateCss(): string {
         .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
         .block-quote { position: relative; padding: 1.5rem; background-color: var(--background-color); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
         
-        .pagedjs-video-placeholder { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-decoration: none; color: inherit; }
-        .video-placeholder-content { text-align: center; }
-        .video-placeholder-content p { font-weight: 500; color: #333; margin: 0 0 1rem 0; }
+        .block-video-placeholder { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; }
+        .video-placeholder-link { text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; gap: 1rem; font-weight: 500; }
+        .video-placeholder-icon { font-size: 2.5rem; line-height: 1; }
 
         .block-button { text-align: center; }
         .btn-block { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -225,22 +224,50 @@ function generateCss(): string {
             .modulo:first-of-type {
                 page-break-before: auto;
             }
-            .pagedjs_page_content {
-                padding-bottom: 2cm;
+            .block-video-placeholder {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: #f0f0f0;
+                border: 2px dashed #ccc;
+                padding: 2rem;
+                border-radius: 8px;
+                min-height: 200px;
+                text-align: center;
             }
-            @page {
-                @bottom-center {
+            .pagedjs_pages { display: block; }
+             @page {
+                size: A4;
+                margin: 15mm;
+
+                @top-center {
+                    content: string(doctitle);
+                    font-size: 9pt;
+                    color: #888;
+                }
+
+                @bottom-right {
                     content: "Página " counter(page);
-                    font-size: 10px;
+                    font-size: 9pt;
                     color: #888;
                 }
             }
         }
+        
+        main {
+            string-set: doctitle content(text);
+        }
+
+        .module-title-header {
+            string-set: moduletitle content(text);
+        }
+
+        .pagedjs_page_content { padding-bottom: 2cm; }
         .pagedjs_pages { display: none; }
     `;
 }
 
-const getScriptContent = () => `
+const generateScriptContent = () => `
 document.addEventListener('DOMContentLoaded', () => {
     let currentModuleIndex = 0;
     const modules = document.querySelectorAll('.modulo');
@@ -248,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
+    const mainTitleElement = document.querySelector('.main-title');
     
     function showModule(index) {
         if(index < 0 || index >= modules.length) return;
@@ -341,7 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (pdfButton) {
         pdfButton.addEventListener('click', () => {
-            generatePdfWithPagedJs().catch(console.error);
+            const docTitle = mainTitleElement ? mainTitleElement.textContent : 'Apostila';
+            generatePdfWithPagedJs(docTitle).catch(console.error);
         });
     }
 
@@ -370,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showModule(0);
 });
 
-async function generatePdfWithPagedJs() {
+async function generatePdfWithPagedJs(docTitle) {
     const modal = document.getElementById('loading-modal');
     const content = document.getElementById('apostila-completa');
     const pdfButton = document.getElementById('btn-pdf');
@@ -387,17 +416,21 @@ async function generatePdfWithPagedJs() {
         class MyHandler extends Paged.Handler {}
         Paged.registerHandlers(MyHandler);
 
+        // Pass the HTML content directly to the previewer
         let paged = new Paged.Previewer();
-        let flow = await paged.preview(content.innerHTML, [], document.body);
+        let flow = await paged.preview(content.outerHTML, ['/style.css'], document.body);
         
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait a moment for rendering to complete
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const pdfBlob = await flow.toBlob();
         if(pdfBlob) {
             const pdfUrl = URL.createObjectURL(pdfBlob);
             window.open(pdfUrl, '_blank');
         } else {
-            throw new Error("A geração do blob de PDF falhou.");
+            // Fallback for some environments
+            console.warn("Paged.js toBlob() failed, falling back to window.print()");
+            window.print();
         }
 
     } catch (error) {
@@ -407,6 +440,7 @@ async function generatePdfWithPagedJs() {
         if (modal) modal.style.display = 'none';
         if (pdfButton) pdfButton.disabled = false;
         
+        // Clean up paged.js artifacts
         const pagedPages = document.querySelectorAll('.pagedjs_pages');
         pagedPages.forEach(p => p.remove());
         const pagedStyles = document.head.querySelectorAll('style[data-pagedjs-inserted-styles]');
@@ -415,52 +449,54 @@ async function generatePdfWithPagedJs() {
 }
 `;
 
+function generateHtmlContent(projects: Project[], handbookTitle: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${handbookTitle}</title>
+        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div id="loading-modal">
+            <div class="modal-content">
+                <div class="spinner"></div>
+                <p>Gerando PDF...</p>
+            </div>
+        </div>
+        <header class="main-header">
+            <div class="header-container">
+                <h1 class="main-title">${handbookTitle}</h1>
+                ${generateHeaderNavHtml()}
+            </div>
+        </header>
+        <main>
+            <div id="apostila-completa">
+                ${generateModulesHtml(projects)}
+            </div>
+        </main>
+        ${generateFloatingNav(projects)}
+        <script src="script.js"></script>
+    </body>
+    </html>
+  `;
+}
 
-export function generateZip(projects: Project[], handbookTitle: string) {
+export async function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
 
-    const cssContent = generateCss();
-    const scriptContent = getScriptContent();
+    const htmlContent = generateHtmlContent(projects, handbookTitle);
+    const cssContent = generateCssContent();
+    const scriptContent = generateScriptContent();
     
-    const mainHtmlContent = `
-        <!DOCTYPE html>
-        <html lang="pt-br">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${handbookTitle}</title>
-            <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
-            <link rel="stylesheet" href="style.css">
-        </head>
-        <body>
-            <div id="loading-modal">
-                <div class="modal-content">
-                    <div class="spinner"></div>
-                    <p>Gerando PDF...</p>
-                </div>
-            </div>
-            <header class="main-header">
-                <div class="header-container">
-                    <h1 class="main-title">${handbookTitle}</h1>
-                    ${generateHeaderNavHtml()}
-                </div>
-            </header>
-            <main>
-                <div id="apostila-completa">
-                    ${generateModulesHtml(projects)}
-                </div>
-            </main>
-            ${generateFloatingNav(projects)}
-            <script src="script.js"></script>
-        </body>
-        </html>
-    `;
-
-    zip.file('index.html', mainHtmlContent);
+    zip.file('index.html', htmlContent);
     zip.file('style.css', cssContent);
     zip.file('script.js', scriptContent);
+    zip.file('README.md', 'Para usar esta apostila offline, abra o arquivo index.html em seu navegador.');
     
-    zip.generateAsync({ type: 'blob' }).then(blob => {
-        saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
-    });
+    const blob = await zip.generateAsync({ type: 'blob' });
+    saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s+/g, '-')}.zip`);
 }
