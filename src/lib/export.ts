@@ -51,7 +51,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -148,7 +148,7 @@ const getInteractiveScript = (): string => {
 };
 
 const renderBlockToHtml = (block: Block): string => {
-    const sanitizedText = (text: string | undefined) => text || '';
+    const sanitizedText = (text: string | undefined) => text ? DOMPurify.sanitize(text) : '';
     switch (block.type) {
         case 'text':
             return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
@@ -253,9 +253,12 @@ const getGlobalCss = () => `
       .border-destructive { border-color: hsl(var(--destructive)); }
       @media print { 
           @page { size: A4; margin: 0; }
-          body, main { padding: 2cm 1.5cm !important; margin: 0 !important; }
+          html, body { height: 100%; }
+          body { display: flex; flex-direction: column; }
+          main { display: flex; flex-direction: column; flex-grow: 1; justify-content: center; padding: 2cm 1.5cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
-          .module-section { display: block !important; page-break-after: always; }
+          .module-section { display: flex !important; flex-direction: column; justify-content: center; flex-grow: 1; page-break-after: always; }
+          .module-section > * { flex-shrink: 0; }
           .module-section:last-of-type { page-break-after: auto; }
           #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
           .module-section header { margin-bottom: 2rem !important; }
@@ -322,7 +325,7 @@ export const handleExportZip = async ({
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
                 <script src="https://cdn.tailwindcss.com"><\/script>
-                <style>${getGlobalCss()}</style>
+                <style>${getGlobalCss()}<\/style>
                 <script>
                     tailwind.config = {
                       theme: { extend: { colors: { border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))', background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))', primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' }, secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } } } }
