@@ -23,7 +23,7 @@ function renderBlockToHtml(block: Block): string {
             return `
                 <div class="block block-image" style="display: flex; justify-content: center;">
                     <figure style="width: ${width}%;">
-                        <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" crossorigin="anonymous" />
+                        <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
                         ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
                     </figure>
                 </div>
@@ -35,27 +35,12 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video':
-             const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
-            let videoPlayerHtml = '';
-            if (videoType === 'cloudflare' && cloudflareVideoId) {
-                const src = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
-                videoPlayerHtml = `<iframe class="w-full aspect-video rounded-md" src="${src}" title="${videoTitle || "Cloudflare video player"}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
-            } else if (videoType === 'youtube' && videoUrl) {
-                let videoId;
-                 try {
-                    const urlObj = new URL(videoUrl);
-                    videoId = urlObj.searchParams.get('v');
-                    if (urlObj.hostname === 'youtu.be') {
-                        videoId = urlObj.pathname.substring(1);
-                    }
-                } catch(e) { /* Invalid URL */ }
-                
-                if (videoId) {
-                    const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
-                    videoPlayerHtml = `<iframe class="w-full aspect-video rounded-md" src="${src}" title="${videoTitle || "YouTube video player"}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
-                }
-            }
-            return `<div class="block block-video">${videoPlayerHtml}</div>`;
+             return `
+                <div class="block block-video pagedjs-video-placeholder">
+                    <p>Este conteúdo é interativo.</p>
+                    <a href="#" onclick="window.location.reload()">Acessar versão online</a>
+                </div>
+            `;
         case 'button':
              return `
                 <div class="block block-button">
@@ -212,25 +197,14 @@ function generateCss(): string {
         #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid #2563EB; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
-        .pdf-video-placeholder a { color: #2563EB; text-decoration: none; font-weight: 500; }
-        .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
-        .pdf-video-placeholder-icon svg { fill: #374151; }
-        .pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
-        .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
+        .pagedjs-video-placeholder { padding: 1em; border: 1px dashed #ccc; background-color: #f9f9f9; text-align: center; }
+        .pagedjs-video-placeholder p { margin: 0 0 0.5em 0; }
+        .pagedjs-video-placeholder a { color: var(--primary-color); font-weight: bold; }
 
-        .pdf-quiz-placeholder { padding: 1rem; background: #f3f4f6; border-radius: 6px; text-align: center; margin-top: 1rem; border: 1px solid #d1d5db; }
-
-
-        @media (max-width: 768px) {
-            body { padding-top: 120px; }
-            .header-container { flex-direction: column; justify-content: center; gap: 15px; padding: 1rem; }
-            .main-header { height: auto; }
-            .main-title { font-size: 1.2rem; }
-            .header-nav { transform: scale(0.9); gap: 5px; }
-            main { margin: 1rem auto; padding: 0 1rem; }
-            .modulo { padding: 1.5rem; }
-            .module-title-header { font-size: 1.8rem; }
+        @media screen {
+            .pagedjs_pages {
+                display: none;
+            }
         }
 
         @media print {
@@ -238,214 +212,97 @@ function generateCss(): string {
             .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #btn-pdf, #btn-zip { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             
-            #apostila-completa { display: block !important; }
+            #apostila-completa { display: none; }
+            .pagedjs_pages { display: block; }
             .modulo { 
                 display: block !important; 
-                page-break-before: always; 
                 box-shadow: none !important; 
                 border: none !important;
                 padding: 1rem;
             }
-            .modulo:first-of-type { page-break-before: auto; }
-
-            h1, h2, h3, h4, h5, h6 { text-align: center !important; }
-            .module-title-header, .module-main-title { text-align: center !important; }
-            .block-text { text-align: left; }
-            
-            .block-video iframe { display: none !important; }
-            
-            .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn { display: none !important; }
-            .block-quiz .pdf-quiz-placeholder { display: block !important; }
-
-            .block-video .pdf-video-placeholder {
-                display: flex !important;
+            .pagedjs_page {
+                page-break-before: always; 
             }
+            .pagedjs_page:first-of-type { page-break-before: auto; }
         }
     `;
     
     return interactiveStyles;
 }
 
-// This function needs to be a string to be injected into the final HTML
-const getPdfGenerationScript = () => `
-async function generatePdfForClient(handbookTitle, projects) {
-  const { jsPDF } = window.jspdf;
-  const html2canvas = window.html2canvas;
 
-  const modal = document.getElementById('loading-modal');
-  if (modal) modal.style.display = 'flex';
-
-  try {
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4',
-      putOnlyUsedFonts: true,
-      floatPrecision: 16
-    });
-
-    // Create a dedicated off-screen container for rendering
-    const renderContainer = document.createElement('div');
-    renderContainer.id = 'pdf-render-container';
-    renderContainer.style.position = 'absolute';
-    renderContainer.style.left = '-9999px';
-    renderContainer.style.top = '0';
-    renderContainer.style.width = '800px'; // A4-like width
-    renderContainer.style.background = 'white';
-    document.body.appendChild(renderContainer);
-
-    const imageToBase64 = async (url) => {
-      try {
-        const response = await fetch(url); // No cors needed if image server allows it
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        console.error(\`Could not convert image to base64: \${url}\`, e);
-        return null; // Return null on error
-      }
-    };
+const getPagedJsScript = () => `
+async function generatePdfWithPagedJs() {
+    const modal = document.getElementById('loading-modal');
+    const content = document.getElementById('apostila-completa');
+    const pdfButton = document.getElementById('btn-pdf');
     
-    let allHtml = '';
-    for (const project of projects) {
-        let projectHtml = '';
-        for (const block of project.blocks) {
-             let blockHtml = '';
-             switch (block.type) {
-                case 'text':
-                    blockHtml = \`<div class="block block-text">\${block.content.text || ''}</div>\`;
-                    break;
-                case 'image':
-                    const base64Url = await imageToBase64(block.content.url);
-                    if (base64Url) {
-                        blockHtml = \`
-                          <div class="block block-image" style="display: flex; justify-content: center;">
-                              <figure style="width: \${block.content.width ?? 100}%;">
-                                  <img src="\${base64Url}" alt="\${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
-                                  \${block.content.caption ? \`<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">\${block.content.caption}</figcaption>\`: ''}
-                              </figure>
-                          </div>\`;
-                    }
-                    break;
-                case 'quote':
-                     blockHtml = \`<div class="block block-quote"><p>\${block.content.text || ''}</p></div>\`;
-                     break;
-                case 'video':
-                    const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
-                    let videoLink = '#';
-                    if (videoType === 'cloudflare' && cloudflareVideoId) {
-                        videoLink = \`https://customer-mhnunnb897evy1sb.cloudflarestream.com/\${cloudflareVideoId}/watch\`;
-                    } else if (videoType === 'youtube' && videoUrl) {
-                        videoLink = videoUrl;
-                    }
-                    blockHtml = \`
-                        <div class="block block-video">
-                             <div class="pdf-video-placeholder">
-                                <div class="pdf-video-placeholder-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                </div>
-                                <div class="pdf-video-placeholder-text">
-                                    <p class="video-title">\${videoTitle || 'Vídeo'}</p>
-                                    <p>Assista ao vídeo em: <a href="\${videoLink}" target="_blank">\${videoLink}</a></p>
-                                </div>
-                            </div>
-                        </div>\`;
-                    break;
-                case 'button':
-                     blockHtml = \`<div class="block block-button"><a href="\${block.content.buttonUrl || '#'}" class="btn-block" target="_blank">\${block.content.buttonText || 'Botão'}</a></div>\`;
-                     break;
-                case 'quiz':
-                     blockHtml = \`<div class="block block-quiz"><p class="quiz-question">\${block.content.question || ''}</p><div class="pdf-quiz-placeholder">Quiz interativo disponível na versão online.</div></div>\`;
-                     break;
-                default:
-                    blockHtml = '';
+    if (modal) modal.style.display = 'flex';
+    if(pdfButton) pdfButton.disabled = true;
+
+    try {
+        // Clone the content to avoid disrupting the main view
+        const printContent = content.cloneNode(true);
+        printContent.id = 'pagedjs-render-source';
+        printContent.style.display = 'block'; 
+        // Ensure all modules are visible for rendering
+        printContent.querySelectorAll('.modulo').forEach(m => m.style.display = 'block');
+        
+        // Hide the original content, show the render source temporarily but out of view
+        content.style.display = 'none';
+        document.body.appendChild(printContent);
+
+        // Define a custom handler for Paged.js
+        class MyHandler extends Paged.Handler {
+            constructor(chunker, polisher, caller) {
+                super(chunker, polisher, caller);
             }
-            projectHtml += blockHtml;
+            
+            afterPageLayout(pageElement, page, breakToken, chunker) {
+                // You can add page numbers or other elements here if needed
+            }
         }
+        Paged.registerHandlers(MyHandler);
 
-        allHtml += \`
-            <section class="pdf-module-page">
-                <h2 class="module-main-title">\${handbookTitle}</h2>
-                <h1 class="module-title-header">\${project.title}</h1>
-                <div class="divider"></div>
-                \${projectHtml}
-            </section>
-        \`;
+        // Run Paged.js previewer
+        let paged = new Paged.Previewer();
+        let flow = await paged.preview(printContent.innerHTML, [], document.body);
+        
+        // The preview method returns a promise that resolves when rendering is complete
+        console.log('Rendered', flow.pageCount, 'pages.');
+        
+        // After rendering, open the print dialog
+        window.print();
+
+    } catch (error) {
+        console.error("Error during Paged.js PDF generation:", error);
+        alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+    } finally {
+        // Cleanup after printing
+        if (modal) modal.style.display = 'none';
+        if(pdfButton) pdfButton.disabled = false;
+        
+        const renderSource = document.getElementById('pagedjs-render-source');
+        if (renderSource) {
+            renderSource.remove();
+        }
+        // Restore original content view
+        content.style.display = 'block';
+
+        // Paged.js adds its own pages, we need to remove them
+        const pagedPages = document.querySelectorAll('.pagedjs_pages');
+        pagedPages.forEach(p => p.remove());
+
+        // This is a bit of a hack, but Paged.js doesn't have a clean "destroy" method.
+        // We reload to get back to the clean interactive state.
+        window.location.reload();
     }
-
-    renderContainer.innerHTML = allHtml;
-    
-    // Allow images and fonts to render
-    await new Promise(r => setTimeout(r, 1000));
-    
-    const canvas = await html2canvas(renderContainer, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: null, // Use transparent background
-      scrollY: -window.scrollY,
-      windowWidth: renderContainer.scrollWidth,
-      windowHeight: renderContainer.scrollHeight
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.output('dataurlnewwindow');
-
-  } catch (error) {
-    console.error("Error during PDF generation process:", error);
-    alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
-  } finally {
-    if (modal) modal.style.display = 'none';
-    const renderContainer = document.getElementById('pdf-render-container');
-    if (renderContainer) {
-        document.body.removeChild(renderContainer);
-    }
-  }
 }
 `;
 
-function generatePdfStyles() {
-    return `
-    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #111827; margin: 0; background: #fff; }
-    #pdf-render-container { padding: 15mm; } /* Corresponds to A4 margins */
-    .pdf-module-page { page-break-before: always; }
-    .pdf-module-page:first-child { page-break-before: auto; }
-    .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-    .module-title-header { color: #111827; font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
-    .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
-    .block { margin-bottom: 2rem; }
-    img { max-width: 100%; height: auto; border-radius: 8px; }
-    .block-text { text-align: left; }
-    .block-image { text-align: center; }
-    .block-image figcaption { font-size: 0.9rem; color: #555; margin-top: 0.5rem; text-align: center; }
-    .block-quote { position: relative; padding: 1.5rem; background-color: #F4F5F7; border-left: 4px solid #2563EB; border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-    .block-button { text-align: center; }
-    .btn-block { display: inline-block; background-color: #2563EB; color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; text-decoration: none; }
-    .pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
-    .pdf-video-placeholder a { color: #2563EB; text-decoration: none; font-weight: 500; }
-    .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
-    .pdf-video-placeholder-icon svg { fill: #374151; }
-    .pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
-    .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
-    .pdf-quiz-placeholder { padding: 1rem; background: #f3f4f6; border-radius: 6px; text-align: center; margin-top: 1rem; border: 1px solid #d1d5db; }
-    .block-quiz .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
-    `;
-}
 
 export function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
-    
-    // Stringify data to be embedded in the final HTML
-    const handbookTitleStr = JSON.stringify(handbookTitle);
-    const projectsStr = JSON.stringify(projects);
     
     const scriptContent = `
 document.addEventListener('DOMContentLoaded', () => {
@@ -455,10 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
-
-    // --- Embedded Data ---
-    const handbookTitle = ${handbookTitleStr};
-    const projects = ${projectsStr};
     
     function showModule(index) {
         modules.forEach((module, i) => {
@@ -550,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (pdfButton) {
-        pdfButton.addEventListener('click', () => generatePdfForClient(handbookTitle, projects));
+        pdfButton.addEventListener('click', () => generatePdfWithPagedJs());
     }
 
     floatingNavButton.addEventListener('click', (event) => {
@@ -572,26 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.1
-    });
-
-    document.querySelectorAll('.animatable').forEach(el => {
-        observer.observe(el);
-    });
-
     showModule(0);
 });
 
-// Inject the PDF generation function as a string
-${getPdfGenerationScript()}
+${getPagedJsScript()}
     `;
 
     const mainHtmlContent = `
@@ -606,17 +443,13 @@ ${getPdfGenerationScript()}
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="style.css">
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-            <style>
-                ${generatePdfStyles()}
-            </style>
+            <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
         </head>
         <body>
             <div id="loading-modal">
                 <div class="modal-content">
                     <div class="spinner"></div>
-                    <p>Gerando PDF, por favor aguarde...</p>
+                    <p>Gerando PDF...</p>
                 </div>
             </div>
             <header class="main-header">
