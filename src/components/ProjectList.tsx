@@ -1,14 +1,11 @@
 
 'use client';
 
+import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -19,8 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ArrowRight, PlusCircle, Trash2, FileText } from 'lucide-react';
+import { ArrowRight, PlusCircle, Trash2, FileText, Loader } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -34,16 +30,34 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
+import { LoadingModal } from './LoadingModal';
 
 export function ProjectList() {
   const { handbookTitle, handbookUpdatedAt, projects, createNewHandbook, activeProject } = useProjectStore();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
+  const handleNavigation = (path: string) => {
+    setIsLoading(true);
+    // O timeout é opcional, mas ajuda a garantir que o estado de loading seja visível
+    // antes que a transição de página bloqueie a thread principal.
+    setTimeout(() => {
+      router.push(path);
+    }, 100);
+  };
+  
   const handleNewHandbook = () => {
-    createNewHandbook();
-    if(activeProject) {
-        router.push(`/editor/${activeProject.id}`);
-    }
+    setIsLoading(true);
+     setTimeout(() => {
+        createNewHandbook();
+        const newActiveProject = useProjectStore.getState().activeProject;
+        if (newActiveProject) {
+            router.push(`/editor/${newActiveProject.id}`);
+        } else {
+            // Fallback
+            setIsLoading(false);
+        }
+    }, 100);
   };
 
   const handleDeleteHandbook = () => {
@@ -55,6 +69,10 @@ export function ProjectList() {
   const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);
   const firstProjectId = projects.length > 0 ? projects[0].id : null;
 
+
+  if (isLoading) {
+    return <LoadingModal isOpen={true} text="Carregando editor..." />;
+  }
 
   if (projects.length === 0) {
     return (
@@ -68,8 +86,8 @@ export function ProjectList() {
             Comece a criar sua primeira apostila interativa agora mesmo.
           </p>
           <Button onClick={handleNewHandbook} size="lg">
-            <PlusCircle className="mr-2" />
-            Criar minha primeira apostila
+            {isLoading ? <Loader className="mr-2 animate-spin" /> : <PlusCircle className="mr-2" />}
+            {isLoading ? 'Criando...' : 'Criar minha primeira apostila'}
           </Button>
         </div>
       </div>
@@ -79,9 +97,9 @@ export function ProjectList() {
   return (
     <div className="space-y-6">
        <div className="flex justify-center">
-        <Button onClick={handleNewHandbook} size="lg">
-          <PlusCircle className="mr-2" />
-          Nova Apostila
+        <Button onClick={handleNewHandbook} size="lg" disabled={isLoading}>
+          {isLoading ? <Loader className="mr-2 animate-spin" /> : <PlusCircle className="mr-2" />}
+          {isLoading ? 'Criando...' : 'Nova Apostila'}
         </Button>
       </div>
       <Card>
@@ -109,14 +127,13 @@ export function ProjectList() {
                     {format(new Date(handbookUpdatedAt), "dd/MM/yyyy 'às' HH:mm")}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button asChild variant="outline" size="sm" disabled={!firstProjectId}>
-                      {firstProjectId ? (
-                        <Link href={`/editor/${firstProjectId}`}>
-                          Editar <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                      ) : (
-                        <span>Editar <ArrowRight className="ml-2 h-4 w-4" /></span>
-                      )}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={!firstProjectId || isLoading}
+                      onClick={() => firstProjectId && handleNavigation(`/editor/${firstProjectId}`)}
+                    >
+                      Editar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
