@@ -280,46 +280,23 @@ async function generatePdfForClient(handbookTitle, projects) {
       orientation: 'p',
       unit: 'mm',
       format: 'a4',
+      putOnlyUsedFonts: true,
+      floatPrecision: 16
     });
-    
-    const generatePdfCss = () => \`
-        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #111827; margin: 0; background: #fff; }
-        #render-me { padding: 15mm; }
-        .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-        .module-title-header { color: #111827; font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
-        .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
-        .block { margin-bottom: 2rem; }
-        img { max-width: 100%; height: auto; border-radius: 8px; }
-        .block-text { text-align: left; }
-        .block-image { text-align: center; }
-        .block-image figcaption { font-size: 0.9rem; color: #555; margin-top: 0.5rem; text-align: center; }
-        .block-quote { position: relative; padding: 1.5rem; background-color: #F4F5F7; border-left: 4px solid #2563EB; border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-        .block-button { text-align: center; }
-        .btn-block { display: inline-block; background-color: #2563EB; color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; text-decoration: none; }
-        
-        .pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
-        .pdf-video-placeholder a { color: #2563EB; text-decoration: none; font-weight: 500; }
-        .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
-        .pdf-video-placeholder-icon svg { fill: #374151; }
-        .pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
-        .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
 
-        .pdf-quiz-placeholder { padding: 1rem; background: #f3f4f6; border-radius: 6px; text-align: center; margin-top: 1rem; border: 1px solid #d1d5db; }
-        .block-quiz .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
-    \`;
-    
-    const css = generatePdfCss();
-
-    const imageUrls = projects
-      .flatMap((p) => p.blocks)
-      .filter((b) => b.type === 'image' && b.content.url)
-      .map((b) => b.content.url);
-
-    const uniqueImageUrls = [...new Set(imageUrls)];
+    // Create a dedicated off-screen container for rendering
+    const renderContainer = document.createElement('div');
+    renderContainer.id = 'pdf-render-container';
+    renderContainer.style.position = 'absolute';
+    renderContainer.style.left = '-9999px';
+    renderContainer.style.top = '0';
+    renderContainer.style.width = '800px'; // A4-like width
+    renderContainer.style.background = 'white';
+    document.body.appendChild(renderContainer);
 
     const imageToBase64 = async (url) => {
       try {
-        const response = await fetch(url, { mode: 'cors' });
+        const response = await fetch(url); // No cors needed if image server allows it
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -328,135 +305,140 @@ async function generatePdfForClient(handbookTitle, projects) {
           reader.readAsDataURL(blob);
         });
       } catch (e) {
-        console.error(\`Failed to fetch and convert image to base64: \${url}\`, e);
-        return 'error';
+        console.error(\`Could not convert image to base64: \${url}\`, e);
+        return null; // Return null on error
       }
     };
-
-    const base64Promises = uniqueImageUrls.map(imageToBase64);
-    const base64Results = await Promise.all(base64Promises);
-
-    const allImagesBase64 = {};
-    uniqueImageUrls.forEach((url, index) => {
-      if (base64Results[index] !== 'error') {
-        allImagesBase64[url] = base64Results[index];
-      }
-    });
-
+    
+    let allHtml = '';
     for (const project of projects) {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '210mm'; 
-        iframe.style.height = '297mm';
-        iframe.style.top = '-9999px';
-        iframe.style.left = '-9999px';
-        document.body.appendChild(iframe);
-
-        const iframeDoc = iframe.contentWindow?.document;
-        if (!iframeDoc) {
-            console.error('Could not access iframe document.');
-            iframe.remove();
-            continue;
-        }
-        
-        const projectHtml = project.blocks.map(block => {
-            if (block.type === 'image' && block.content.url && allImagesBase64[block.content.url]) {
-              return \`
-                  <div class="block block-image" style="display: flex; justify-content: center;">
-                      <figure style="width: \${block.content.width ?? 100}%;">
-                          <img src="\${allImagesBase64[block.content.url]}" alt="\${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
-                          \${block.content.caption ? \`<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">\${block.content.caption}</figcaption>\`: ''}
-                      </figure>
-                  </div>\`;
-            } else if (block.type === 'video') {
-                const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
-                let videoLink = '#';
-                if (videoType === 'cloudflare' && cloudflareVideoId) {
-                    videoLink = \`https://customer-mhnunnb897evy1sb.cloudflarestream.com/\${cloudflareVideoId}/watch\`;
-                } else if (videoType === 'youtube' && videoUrl) {
-                    videoLink = videoUrl;
-                }
-                return \`
-                    <div class="block block-video">
-                         <div class="pdf-video-placeholder">
-                            <div class="pdf-video-placeholder-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                            </div>
-                            <div class="pdf-video-placeholder-text">
-                                <p class="video-title">\${videoTitle || 'Vídeo'}</p>
-                                <p>Assista ao vídeo em: <a href="\${videoLink}" target="_blank">\${videoLink}</a></p>
-                            </div>
-                        </div>
-                    </div>\`;
-            }
+        let projectHtml = '';
+        for (const block of project.blocks) {
+             let blockHtml = '';
              switch (block.type) {
                 case 'text':
-                    return \`<div class="block block-text">\${block.content.text || ''}</div>\`;
+                    blockHtml = \`<div class="block block-text">\${block.content.text || ''}</div>\`;
+                    break;
+                case 'image':
+                    const base64Url = await imageToBase64(block.content.url);
+                    if (base64Url) {
+                        blockHtml = \`
+                          <div class="block block-image" style="display: flex; justify-content: center;">
+                              <figure style="width: \${block.content.width ?? 100}%;">
+                                  <img src="\${base64Url}" alt="\${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                                  \${block.content.caption ? \`<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">\${block.content.caption}</figcaption>\`: ''}
+                              </figure>
+                          </div>\`;
+                    }
+                    break;
                 case 'quote':
-                     return \`<div class="block block-quote"><p>\${block.content.text || ''}</p></div>\`;
+                     blockHtml = \`<div class="block block-quote"><p>\${block.content.text || ''}</p></div>\`;
+                     break;
+                case 'video':
+                    const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
+                    let videoLink = '#';
+                    if (videoType === 'cloudflare' && cloudflareVideoId) {
+                        videoLink = \`https://customer-mhnunnb897evy1sb.cloudflarestream.com/\${cloudflareVideoId}/watch\`;
+                    } else if (videoType === 'youtube' && videoUrl) {
+                        videoLink = videoUrl;
+                    }
+                    blockHtml = \`
+                        <div class="block block-video">
+                             <div class="pdf-video-placeholder">
+                                <div class="pdf-video-placeholder-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                </div>
+                                <div class="pdf-video-placeholder-text">
+                                    <p class="video-title">\${videoTitle || 'Vídeo'}</p>
+                                    <p>Assista ao vídeo em: <a href="\${videoLink}" target="_blank">\${videoLink}</a></p>
+                                </div>
+                            </div>
+                        </div>\`;
+                    break;
                 case 'button':
-                     return \`<div class="block block-button"><a href="\${block.content.buttonUrl || '#'}" class="btn-block" target="_blank">\${block.content.buttonText || 'Botão'}</a></div>\`;
+                     blockHtml = \`<div class="block block-button"><a href="\${block.content.buttonUrl || '#'}" class="btn-block" target="_blank">\${block.content.buttonText || 'Botão'}</a></div>\`;
+                     break;
                 case 'quiz':
-                     return \`<div class="block block-quiz"><p class="quiz-question">\${block.content.question || ''}</p><div class="pdf-quiz-placeholder">Quiz interativo disponível na versão online.</div></div>\`;
+                     blockHtml = \`<div class="block block-quiz"><p class="quiz-question">\${block.content.question || ''}</p><div class="pdf-quiz-placeholder">Quiz interativo disponível na versão online.</div></div>\`;
+                     break;
                 default:
-                    return '';
+                    blockHtml = '';
             }
-        }).join('\\n');
-        
-        const htmlContent = \`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>\${css}</style>
-                 <link rel="preconnect" href="https://fonts.googleapis.com">
-                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-            </head>
-            <body>
-                <div id="render-me">
-                    <h2 class="module-main-title">\${handbookTitle}</h2>
-                    <h1 class="module-title-header">\${project.title}</h1>
-                    <div class="divider"></div>
-                    \${projectHtml}
-                </div>
-            </body>
-            </html>\`;
-        
-        iframeDoc.open();
-        iframeDoc.write(htmlContent);
-        iframeDoc.close();
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const elementToRender = iframeDoc.getElementById('render-me');
-
-        if (elementToRender) {
-            const canvas = await html2canvas(elementToRender, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-            });
-            if (canvas.height > 0) {
-              const imgData = canvas.toDataURL('image/png');
-              const pdfWidth = pdf.internal.pageSize.getWidth();
-              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-              if (projects.indexOf(project) > 0) pdf.addPage();
-              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            }
+            projectHtml += blockHtml;
         }
-        
-        document.body.removeChild(iframe);
+
+        allHtml += \`
+            <section class="pdf-module-page">
+                <h2 class="module-main-title">\${handbookTitle}</h2>
+                <h1 class="module-title-header">\${project.title}</h1>
+                <div class="divider"></div>
+                \${projectHtml}
+            </section>
+        \`;
     }
+
+    renderContainer.innerHTML = allHtml;
     
+    // Allow images and fonts to render
+    await new Promise(r => setTimeout(r, 1000));
+    
+    const canvas = await html2canvas(renderContainer, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: null, // Use transparent background
+      scrollY: -window.scrollY,
+      windowWidth: renderContainer.scrollWidth,
+      windowHeight: renderContainer.scrollHeight
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.output('dataurlnewwindow');
 
   } catch (error) {
     console.error("Error during PDF generation process:", error);
+    alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
   } finally {
     if (modal) modal.style.display = 'none';
+    const renderContainer = document.getElementById('pdf-render-container');
+    if (renderContainer) {
+        document.body.removeChild(renderContainer);
+    }
   }
 }
 `;
+
+function generatePdfStyles() {
+    return `
+    body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #111827; margin: 0; background: #fff; }
+    #pdf-render-container { padding: 15mm; } /* Corresponds to A4 margins */
+    .pdf-module-page { page-break-before: always; }
+    .pdf-module-page:first-child { page-break-before: auto; }
+    .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
+    .module-title-header { color: #111827; font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
+    .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
+    .block { margin-bottom: 2rem; }
+    img { max-width: 100%; height: auto; border-radius: 8px; }
+    .block-text { text-align: left; }
+    .block-image { text-align: center; }
+    .block-image figcaption { font-size: 0.9rem; color: #555; margin-top: 0.5rem; text-align: center; }
+    .block-quote { position: relative; padding: 1.5rem; background-color: #F4F5F7; border-left: 4px solid #2563EB; border-radius: 4px; font-style: italic; font-size: 1.1rem; }
+    .block-button { text-align: center; }
+    .btn-block { display: inline-block; background-color: #2563EB; color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; text-decoration: none; }
+    .pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
+    .pdf-video-placeholder a { color: #2563EB; text-decoration: none; font-weight: 500; }
+    .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
+    .pdf-video-placeholder-icon svg { fill: #374151; }
+    .pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
+    .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
+    .pdf-quiz-placeholder { padding: 1rem; background: #f3f4f6; border-radius: 6px; text-align: center; margin-top: 1rem; border: 1px solid #d1d5db; }
+    .block-quiz .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
+    `;
+}
 
 export function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
@@ -626,6 +608,9 @@ ${getPdfGenerationScript()}
             <link rel="stylesheet" href="style.css">
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <style>
+                ${generatePdfStyles()}
+            </style>
         </head>
         <body>
             <div id="loading-modal">
@@ -658,5 +643,3 @@ ${getPdfGenerationScript()}
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
-
-    
