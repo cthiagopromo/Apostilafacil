@@ -11,27 +11,24 @@ import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData } from '@/lib/types';
 
-// This function now returns a string for the <script> tag.
 const getInteractiveScript = (handbookData: HandbookData) => {
     // This script contains all the client-side interactivity logic.
     // It will be embedded directly into the exported HTML.
     const scriptLogic = `
         document.addEventListener('DOMContentLoaded', () => {
-            // Data is now embedded in a script tag with id 'apostila-data'
+            // Data is embedded in a script tag with id 'apostila-data'
             const dataElement = document.getElementById('apostila-data');
             if (!dataElement) {
                 console.error('Handbook data script tag not found.');
                 return;
             }
-            const handbookData = JSON.parse(dataElement.textContent || '{}');
+            // No need to parse, it's already an object via window
+            const handbookData = window.apostilaData;
 
             // --- Quiz Interactivity ---
             document.querySelectorAll('.quiz-card').forEach(card => {
-                const blockId = card.closest('[data-block-id]')?.dataset.blockId;
-                if (!blockId) return;
-
-                const radioButtons = card.querySelectorAll('.radio-group-item');
                 const retryBtn = card.querySelector('.retry-btn');
+                const radioButtons = card.querySelectorAll('.radio-group-item');
                 const options = card.querySelectorAll('.quiz-option');
 
                 const handleAnswer = (e) => {
@@ -45,18 +42,18 @@ const getInteractiveScript = (handbookData: HandbookData) => {
                     const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
 
                     if (isSelectedCorrect) {
-                        selectedOptionEl.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
+                        selectedOptionEl.classList.add('bg-primary/10', 'border-primary/50', 'border');
                         const icon = selectedOptionEl.querySelector('.lucide-check-circle');
                         if (icon) icon.style.display = 'inline-block';
                     } else {
-                        selectedOptionEl.classList.add('bg-red-100', 'dark:bg-red-900/50', 'border-red-500', 'border');
+                        selectedOptionEl.classList.add('bg-red-100', 'border-red-500', 'border');
                         const icon = selectedOptionEl.querySelector('.lucide-x-circle');
                         if (icon) icon.style.display = 'inline-block';
                         
                         // Also show the correct answer
                         const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
                         if(correctOption) {
-                           correctOption.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
+                           correctOption.classList.add('bg-primary/10', 'border-primary/50', 'border');
                            const correctIcon = correctOption.querySelector('.lucide-check-circle');
                            if(correctIcon) correctIcon.style.display = 'inline-block';
                         }
@@ -76,7 +73,7 @@ const getInteractiveScript = (handbookData: HandbookData) => {
                             rb.checked = false;
                         });
                         options.forEach(opt => {
-                           opt.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border', 'bg-red-100', 'dark:bg-red-900/50', 'border-red-500');
+                           opt.classList.remove('bg-primary/10', 'border-primary/50', 'border', 'bg-red-100', 'border-red-500');
                            const checkIcon = opt.querySelector('.lucide-check-circle');
                            const xIcon = opt.querySelector('.lucide-x-circle');
                            if(checkIcon) checkIcon.style.display = 'none';
@@ -115,12 +112,19 @@ const getInteractiveScript = (handbookData: HandbookData) => {
 
     return (
         <>
-            <script id="apostila-data" type="application/json" dangerouslySetInnerHTML={{ __html: JSON.stringify(handbookData) }} />
-            <script id="interactive-script" dangerouslySetInnerHTML={{ __html: scriptLogic }} />
+            <script
+              id="apostila-data"
+              dangerouslySetInnerHTML={{
+                __html: `window.apostilaData = ${JSON.stringify(handbookData)};`,
+              }}
+            />
+            <script
+              id="interactive-script"
+              dangerouslySetInnerHTML={{ __html: scriptLogic }}
+            />
         </>
     );
 };
-
 
 export default function PreviewPage() {
   const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
@@ -129,8 +133,6 @@ export default function PreviewPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Add a class to the body when the component has mounted and rendered.
-    // This will be used by the export function to know the content is ready.
     document.body.classList.add('ready-for-export');
   }, []);
 

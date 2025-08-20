@@ -33,26 +33,8 @@ export default function Header() {
         const checkForReadyState = () => {
             const iframeDoc = iframe.contentWindow?.document;
             if (iframeDoc && iframeDoc.body && iframeDoc.body.classList.contains('ready-for-export')) {
-                const doc = iframeDoc.cloneNode(true) as Document;
-                doc.querySelectorAll('.no-export').forEach(el => el.remove());
-                
-                // Add base tag to ensure relative paths work if any
-                let base = doc.querySelector('base');
-                if (!base) {
-                    base = doc.createElement('base');
-                    base.href = '.'; // Or the actual base URL if needed
-                    doc.head.insertBefore(base, doc.head.firstChild);
-                }
-
-                // Add charset meta tag
-                let meta = doc.querySelector('meta[charset]');
-                if(!meta) {
-                    meta = doc.createElement('meta');
-                    meta.setAttribute('charset', 'UTF-8');
-                    doc.head.insertBefore(meta, doc.head.firstChild);
-                }
-                
-                const finalHtml = doc.documentElement.outerHTML;
+                // Directly use the outerHTML of the fully rendered document
+                const finalHtml = iframeDoc.documentElement.outerHTML;
                 resolve(`<!DOCTYPE html>${finalHtml}`);
             } else if (tries < maxTries) {
                 tries++;
