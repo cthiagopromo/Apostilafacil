@@ -165,8 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const getAppCssTemplate = (): string => {
     // This will be a straight copy of the globals.css to ensure consistency
-    return \`
-@tailwind base;
+    return `@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -232,7 +231,7 @@ const getAppCssTemplate = (): string => {
 .min-h-screen { min-height: 100vh; }
 .bg-primary { background-color: hsl(var(--primary)); }
 .text-primary-foreground { color: hsl(var(--primary-foreground)); }
-.bg-secondary\/40 { background-color: hsla(var(--secondary), 0.4); }
+.bg-secondary\\/40 { background-color: hsla(var(--secondary), 0.4); }
 .bg-card { background-color: hsl(var(--card)); }
 .text-foreground { color: hsl(var(--foreground)); }
 .text-muted-foreground { color: hsl(var(--muted-foreground)); }
@@ -307,7 +306,7 @@ export default function Header() {
     
     try {
         const zip = new JSZip();
-        const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
+        const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\\s+/g, '-');
         
         const handbookData: HandbookData = { 
             id: handbookId, 
@@ -434,3 +433,5 @@ export default function Header() {
     </>
   );
 }
+
+    
