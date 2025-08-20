@@ -68,22 +68,9 @@ function renderBlockToHtml(block: Block): string {
                 embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId);
                 videoUrlForLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`;
             }
-
-            const placeholder = `
-                <div class="block-video-placeholder" data-pdf-only>
-                    <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
-                        <span>▶️</span>
-                        <span>Este conteúdo é interativo. Clique para assistir.</span>
-                    </a>
-                </div>
-            `;
-
-            if (!embedUrl) {
-                return placeholder;
-            }
-
-            return `
-                <div class="block block-video" data-interactive-only>
+            
+            const interactiveContent = `
+                <div class="block-video" data-interactive-only>
                     <iframe 
                         src="${embedUrl}?autoplay=${block.content.autoplay ? 1:0}&controls=${block.content.showControls ? 1:0}" 
                         title="${block.content.videoTitle || 'Player de vídeo'}" 
@@ -91,9 +78,17 @@ function renderBlockToHtml(block: Block): string {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
-                </div>
-                ${placeholder} 
-            `;
+                </div>`;
+            
+            const staticContent = `
+                 <div class="block-video-placeholder" data-pdf-only>
+                    <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
+                        <span>▶️</span>
+                        <span>Este conteúdo é interativo. Clique para assistir.</span>
+                    </a>
+                </div>`;
+
+            return embedUrl ? (interactiveContent + staticContent) : staticContent;
         }
         case 'button':
              return `
@@ -222,6 +217,19 @@ function generateCssContent(): string {
         .high-contrast-mode .main-header {
              border-bottom: 2px solid var(--border-color);
         }
+        .high-contrast-mode .toolbar-btn {
+            color: #000000;
+            background-color: #FFFFFF;
+            border-color: #000000;
+        }
+        .high-contrast-mode .main-title {
+             color: #000000;
+        }
+         .high-contrast-mode #floating-nav-button {
+            background-color: #FFFF00;
+            color: #000;
+        }
+
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { font-size: var(--base-font-size); scroll-behavior: smooth; }
@@ -295,13 +303,11 @@ function generateCssContent(): string {
                  background-color: var(--background-color) !important;
                  color: var(--text-color) !important;
             }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .toolbar, .quiz-options-container, .quiz-feedback, .quiz-retry-btn { display: none !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .toolbar, .quiz-options-container, .quiz-feedback, .quiz-retry-btn, [data-interactive-only] { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
-            .block-video { display: none !important; } 
-            .block-video-placeholder, [data-pdf-only] { display: flex !important; }
-            [data-interactive-only] { display: none !important; }
+            [data-pdf-only] { display: flex !important; }
         }
 
         @page {
@@ -310,7 +316,7 @@ function generateCssContent(): string {
             @top-center { content: string(doctitle); font-size: 9pt; color: #888; }
             @bottom-right { content: "Página " counter(page); font-size: 9pt; color: #888; }
         }
-        main > h1.main-title, .module-title-header { string-set: doctitle content(text); }
+        .main-title, .module-title-header { string-set: doctitle content(text); }
         .pagedjs_pages, .pagedjs_page, .pagedjs_sheet {
             background: var(--background-color) !important;
             box-shadow: none !important;
@@ -357,6 +363,7 @@ function getScriptContent(): string {
         }
         
         function updateActiveModuleLink() {
+            if (!moduleLinks.length) return;
             moduleLinks.forEach((link, i) => {
                 link.classList.toggle('active', i === currentModuleIndex);
             });
@@ -372,6 +379,20 @@ function getScriptContent(): string {
         class MyHandler extends Paged.Handler {
             constructor(chunker, polisher, caller) {
                 super(chunker, polisher, caller);
+            }
+             afterPreview(pages) {
+                const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
+                const modal = document.getElementById('loading-modal');
+
+                // Re-enable button after PDF is shown/closed in print preview
+                if (pdfButton) pdfButton.disabled = false;
+                if (modal) modal.style.display = 'none';
+
+                // Cleanup, but maybe delayed to allow print dialog to work properly
+                 setTimeout(() => {
+                    pagedArtifacts.forEach(el => el.remove());
+                    showModule(currentModuleIndex); // Restore original view
+                }, 1000);
             }
         }
         Paged.registerHandlers(MyHandler);
@@ -393,27 +414,17 @@ function getScriptContent(): string {
                 modules.forEach(m => m.style.display = 'block');
 
                 let paged = new Paged.Previewer();
-                // Pass content element directly
                 let flow = await paged.preview(content, [], document.body);
-                
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                
+
+                // The print dialog is now managed by the browser after preview
                 window.print();
-                
-                // Restore original view
-                showModule(currentModuleIndex);
 
             } catch (error) {
                 console.error("Erro durante a geração do PDF com Paged.js:", error);
                 alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
-            } finally {
-                if (modal) modal.style.display = 'none';
-                if (pdfButton) pdfButton.disabled = false;
-                
-                const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
-                pagedArtifacts.forEach(el => el.remove());
-                 // Restore original view in case of error too
-                showModule(currentModuleIndex);
+                 if (modal) modal.style.display = 'none';
+                 if (pdfButton) pdfButton.disabled = false;
+                 showModule(currentModuleIndex);
             }
         }
 
@@ -434,14 +445,17 @@ function getScriptContent(): string {
             }
         });
 
-        moduleLinks.forEach((link) => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
-                showModule(index);
-                if(floatingNavMenu) floatingNavMenu.classList.remove('show');
+        if (moduleLinks.length > 0) {
+            moduleLinks.forEach((link) => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+                    showModule(index);
+                    if(floatingNavMenu) floatingNavMenu.classList.remove('show');
+                });
             });
-        });
+        }
+
 
         if(btnFontIncrease && btnFontDecrease) {
             btnFontIncrease.addEventListener('click', () => {
@@ -540,7 +554,7 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
 
 export async function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
-    const cleanTitle = handbookTitle.toLowerCase().replace(/\\s+/g, '-') || 'apostila';
+    const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\\s+/g, '-');
 
     const htmlContent = generateHtmlContent(projects, handbookTitle);
     zip.file('index.html', htmlContent);
@@ -549,3 +563,5 @@ export async function generateZip(projects: Project[], handbookTitle: string) {
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
+
+    
