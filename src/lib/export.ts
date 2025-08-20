@@ -8,7 +8,6 @@ import DOMPurify from 'dompurify';
 
 function sanitizeHtml(html: string): string {
     if (typeof window !== 'undefined') {
-        // Permitir iframes para vídeos do YouTube/Cloudflare no HTML, mas eles serão substituídos no PDF.
         return DOMPurify.sanitize(html, { 
             ADD_TAGS: ["iframe"], 
             ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'title'] 
@@ -61,16 +60,18 @@ function renderBlockToHtml(block: Block): string {
             `;
         case 'video': {
             let embedUrl = null;
-            if (block.content.videoType === 'youtube') {
-                embedUrl = getYoutubeEmbedUrl(block.content.videoUrl || '');
-            } else if (block.content.videoType === 'cloudflare') {
-                embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId || '');
+            let videoUrlForLink = '#';
+            if (block.content.videoType === 'youtube' && block.content.videoUrl) {
+                embedUrl = getYoutubeEmbedUrl(block.content.videoUrl);
+                videoUrlForLink = block.content.videoUrl;
+            } else if (block.content.videoType === 'cloudflare' && block.content.cloudflareVideoId) {
+                embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId);
+                videoUrlForLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`;
             }
 
-            // Fallback para PDF e HTML interativo
             const placeholder = `
                 <div class="block-video-placeholder" data-pdf-only>
-                    <a href="${block.content.videoUrl || '#'}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
+                    <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
                         <span>▶️</span>
                         <span>Este conteúdo é interativo. Clique para assistir.</span>
                     </a>
@@ -242,8 +243,7 @@ function generateCssContent(): string {
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1,h2,h3,h4,h5,h6 { text-align: center; margin-bottom: 1.5rem; }
-        h1.module-title-header { font-size: 2.25rem; font-weight: 700; }
+        h1.module-title-header { text-align: center; }
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2rem; }
         .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
@@ -284,7 +284,7 @@ function generateCssContent(): string {
         
         [data-pdf-only] { display: none; }
         
-        @media print, (forced-colors: active) {
+        @media print {
             html, body {
                 --background-color: #FFF !important;
                 --text-color: #000 !important;
@@ -295,7 +295,7 @@ function generateCssContent(): string {
                  background-color: var(--background-color) !important;
                  color: var(--text-color) !important;
             }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-header, .toolbar, .quiz-options-container, .quiz-feedback, .quiz-retry-btn { display: none !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .toolbar, .quiz-options-container, .quiz-feedback, .quiz-retry-btn { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
@@ -310,7 +310,7 @@ function generateCssContent(): string {
             @top-center { content: string(doctitle); font-size: 9pt; color: #888; }
             @bottom-right { content: "Página " counter(page); font-size: 9pt; color: #888; }
         }
-        .main-title { string-set: doctitle content(text); }
+        main > h1.main-title, .module-title-header { string-set: doctitle content(text); }
         .pagedjs_pages, .pagedjs_page, .pagedjs_sheet {
             background: var(--background-color) !important;
             box-shadow: none !important;
@@ -320,50 +320,6 @@ function generateCssContent(): string {
 }
 
 function getScriptContent(): string {
-    const pagedJsScript = `
-        class MyHandler extends Paged.Handler {
-            constructor(chunker, polisher, caller) {
-                super(chunker, polisher, caller);
-            }
-        }
-        Paged.registerHandlers(MyHandler);
-
-        async function generatePdfWithPagedJs() {
-            const modal = document.getElementById('loading-modal');
-            const content = document.getElementById('apostila-completa');
-            const pdfButton = document.getElementById('btn-pdf');
-            
-            if (!content || !pdfButton) {
-                console.error("Elementos essenciais para PDF não encontrados.");
-                return;
-            }
-
-            if (modal) modal.style.display = 'flex';
-            if (pdfButton) pdfButton.disabled = true;
-
-            try {
-                let paged = new Paged.Previewer();
-                let flow = await paged.preview(content.innerHTML, ["/page.css"], document.body);
-                
-                // Aguarda um tempo para a renderização. Idealmente, Paged.js teria um evento 'rendered'.
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                
-                window.print();
-
-            } catch (error) {
-                console.error("Erro durante a geração do PDF com Paged.js:", error);
-                alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
-            } finally {
-                if (modal) modal.style.display = 'none';
-                if (pdfButton) pdfButton.disabled = false;
-                
-                // Limpeza dos artefatos do Paged.js
-                const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
-                pagedArtifacts.forEach(el => el.remove());
-            }
-        }
-    `;
-
     return `
     document.addEventListener('DOMContentLoaded', () => {
         let currentModuleIndex = 0;
@@ -413,6 +369,54 @@ function getScriptContent(): string {
             if(prevBtn) prevBtn.addEventListener('click', () => showModule(currentModuleIndex - 1));
         });
 
+        class MyHandler extends Paged.Handler {
+            constructor(chunker, polisher, caller) {
+                super(chunker, polisher, caller);
+            }
+        }
+        Paged.registerHandlers(MyHandler);
+
+        async function generatePdfWithPagedJs() {
+            const modal = document.getElementById('loading-modal');
+            const content = document.querySelector('main');
+            
+            if (!content || !pdfButton) {
+                console.error("Elementos essenciais para PDF não encontrados.");
+                return;
+            }
+
+            if (modal) modal.style.display = 'flex';
+            if (pdfButton) pdfButton.disabled = true;
+
+            try {
+                // Temporarily show all modules for PDF generation
+                modules.forEach(m => m.style.display = 'block');
+
+                let paged = new Paged.Previewer();
+                // Pass content element directly
+                let flow = await paged.preview(content, [], document.body);
+                
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                window.print();
+                
+                // Restore original view
+                showModule(currentModuleIndex);
+
+            } catch (error) {
+                console.error("Erro durante a geração do PDF com Paged.js:", error);
+                alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+            } finally {
+                if (modal) modal.style.display = 'none';
+                if (pdfButton) pdfButton.disabled = false;
+                
+                const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
+                pagedArtifacts.forEach(el => el.remove());
+                 // Restore original view in case of error too
+                showModule(currentModuleIndex);
+            }
+        }
+
         if(pdfButton) {
             pdfButton.addEventListener('click', generatePdfWithPagedJs);
         }
@@ -439,7 +443,6 @@ function getScriptContent(): string {
             });
         });
 
-        // Accessibility controls
         if(btnFontIncrease && btnFontDecrease) {
             btnFontIncrease.addEventListener('click', () => {
                 let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--base-font-size'));
@@ -447,7 +450,7 @@ function getScriptContent(): string {
             });
             btnFontDecrease.addEventListener('click', () => {
                 let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--base-font-size'));
-                if (currentSize > 10) { // minimum font size
+                if (currentSize > 10) {
                     root.style.setProperty('--base-font-size', (currentSize - 1) + 'px');
                 }
             });
@@ -465,7 +468,6 @@ function getScriptContent(): string {
             showModule(0);
         }
 
-        // Quiz Logic
         document.querySelectorAll('.block-quiz').forEach(quizBlock => {
             const options = quizBlock.querySelectorAll('.quiz-option');
             const feedbackEl = quizBlock.querySelector('.quiz-feedback');
@@ -498,7 +500,6 @@ function getScriptContent(): string {
             }
         });
     });
-    ${pagedJsScript}
     `;
 }
 
