@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 const getAppCssTemplate = (): string => {
-    return \`
+    return `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
 :root {
@@ -263,7 +263,7 @@ body {
     border-radius: 0 8px 8px 0;
     font-style: italic;
 }
-\`;
+`;
 }
 
 export default function Header() {
