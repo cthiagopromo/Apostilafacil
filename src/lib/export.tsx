@@ -289,7 +289,7 @@ blockquote { margin: 0; padding: 1.5rem; background-color: hsl(var(--muted) / 0.
 @media print { .no-print { display: none !important; } body, main, #printable-content, .bg-card { background: white !important; color: black !important; font-size: 11pt; box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; border-radius: 0 !important; max-width: 100% !important; } main { padding-top: 0 !important; } .pagedjs_page_content { padding: 0 !important; } }
 `;
 
-const getIndexHtml = (handbookTitle: string) => `<!DOCTYPE html>
+const getIndexHtml = (handbookTitle: string, dataScript: string) => `<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -306,9 +306,9 @@ const getIndexHtml = (handbookTitle: string) => `<!DOCTYPE html>
         </div>
     </div>
     <div id="root"></div>
-    <script src="react.production.min.js"></script>
-    <script src="react-dom.production.min.js"></script>
-    <script src="data.js"></script>
+    <script>${dataScript}</script>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script>${getAppScript()}</script>
 </body>
 </html>`;
@@ -318,28 +318,11 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
     const handbookData = { title: handbookTitle, description: handbookDescription, projects };
 
-    const dataScript = `window.apostilaData = ${JSON.stringify(handbookData)};`;
-
-    // Fetch React and ReactDOM from CDN
-    const reactResponse = await fetch("https://unpkg.com/react@17/umd/react.production.min.js");
-    const reactDomResponse = await fetch("https://unpkg.com/react-dom@17/umd/react-dom.production.min.js");
-    const pagedJsResponse = await fetch("https://unpkg.com/pagedjs/dist/paged.polyfill.js");
-
-    if (!reactResponse.ok || !reactDomResponse.ok || !pagedJsResponse.ok) {
-        throw new Error("Failed to fetch required libraries");
-    }
-
-    const reactScript = await reactResponse.text();
-    const reactDomScript = await reactDomResponse.text();
-    const pagedJsScript = await pagedJsResponse.text();
+    const dataScript = \`window.apostilaData = \${JSON.stringify(handbookData, null, 2)};\`;
     
-    zip.file('index.html', getIndexHtml(handbookTitle));
-    zip.file('data.js', dataScript);
-    zip.file('react.production.min.js', reactScript);
-    zip.file('react-dom.production.min.js', reactDomScript);
-    zip.file('paged.polyfill.js', pagedJsScript);
+    zip.file('index.html', getIndexHtml(handbookTitle, dataScript));
     zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP, certifique-se de que todos os arquivos estão na mesma pasta e abra o arquivo index.html em seu navegador.');
     
     const blob = await zip.generateAsync({ type: 'blob' });
-    saveAs(blob, `${cleanTitle}.zip`);
+    saveAs(blob, \`\${cleanTitle}.zip\`);
 }
