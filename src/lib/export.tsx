@@ -8,17 +8,16 @@ import { renderToString } from 'react-dom/server';
 import BlockRenderer from '@/components/BlockRenderer';
 
 function renderBlockToHtml(block: Block): string {
-    // This is the key change: instead of manually crafting HTML strings,
-    // we use React's server-side rendering to convert the actual component
-    // into an HTML string. This guarantees a 1:1 match with the preview.
+    // Render the React component to an HTML string. This ensures visual consistency.
     const componentHtml = renderToString(<BlockRenderer block={block} />);
 
-    // For the quiz, we need to inject the interactivity logic via specific classes and data attributes
-    // that our exported script will pick up. The server-rendered component doesn't have the client-side logic.
+    // For the quiz, we need to inject interactivity hooks (classes and data-attributes)
+    // because server-side rendering doesn't include client-side event handlers.
+    // The script in the exported HTML will use these hooks.
     if (block.type === 'quiz') {
         const quizOptionsHtml = block.content.options?.map(opt => `
             <div class="quiz-option" data-correct="${opt.isCorrect}">
-                 <div class="radio-button-wrapper">
+                <div class="radio-button-wrapper">
                     <div class="radio-button"></div>
                 </div>
                 <label>${opt.text}</label>
@@ -39,6 +38,7 @@ function renderBlockToHtml(block: Block): string {
             </div>`;
     }
     
+    // For all other blocks, the rendered HTML is perfect as is.
     return componentHtml;
 }
 
@@ -148,7 +148,12 @@ function generateCssContent(): string {
         .module-header { text-align: center; margin-bottom: 3rem; page-break-after: avoid; }
         .module-title { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
         .module-description { color: hsl(var(--muted-foreground)); }
-        .module-content > *:not(:last-child) { margin-bottom: 2rem; }
+        .module-content > * {
+            margin-bottom: 2rem;
+        }
+        .module-content > *:last-child {
+            margin-bottom: 0;
+        }
         
         /* Prose styles for rendered text blocks */
         .prose { max-width: none; color: hsl(var(--foreground));}
@@ -181,11 +186,11 @@ function generateCssContent(): string {
         .relative { position: relative; }
         .p-6 { padding: 1.5rem; }
         .bg-muted\\/50 { background-color: hsla(var(--muted), 0.5); }
-        .border-l-4 { border-left: 4px solid hsl(var(--primary)); }
+        .border-l-4 { border-left-width: 4px; border-left-style: solid; border-color: hsl(var(--primary)); }
         .rounded-r-lg { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
         .text-lg { font-size: 1.125rem; }
         .italic { font-style: italic; }
-        .text-foreground\\/80 { color: hsl(var(--foreground), 0.8); }
+        .text-foreground\\/80 { color: hsla(var(--foreground), 0.8); }
         .m-0 { margin: 0; }
         .p-0 { padding: 0; }
         .border-none { border: none; }
@@ -207,10 +212,10 @@ function generateCssContent(): string {
         /* Toolbar */
         #accessibility-toolbar { background-color: transparent; border: none; }
         .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
-        .toolbar-btn:hover { background-color: hsl(var(--primary-foreground)/.1); }
+        .toolbar-btn:hover { background-color: hsla(var(--primary-foreground), 0.1); }
         .toolbar-btn svg { height: 1.25rem; width: 1.25rem; stroke: currentColor; }
-        .border-l { border-left: 1px solid hsl(var(--primary-foreground)/.2); }
-        .border-r { border-right: 1px solid hsl(var(--primary-foreground)/.2); }
+        .border-l { border-left: 1px solid hsla(var(--primary-foreground), 0.2); }
+        .border-r { border-right: 1px solid hsla(var(--primary-foreground), 0.2); }
         .mx-1 { margin-left: 0.25rem; margin-right: 0.25rem; }
         .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
 
@@ -285,22 +290,22 @@ function getScriptContent(): string {
 
                 if(loadingModal) loadingModal.style.display = 'flex';
 
-                const content = document.querySelector('main');
+                const content = document.querySelector('.printable-content-wrapper');
                 
                 class Previewer extends Paged.Previewer {
                     afterPreview() {
                         if(loadingModal) loadingModal.style.display = 'none';
                         window.print();
                         // This timeout is a workaround to give the browser time to process the print dialog
+                        // and prevent styles from being stuck.
                         setTimeout(() => {
-                            // Reload the original state to remove paged.js styles
                             location.reload();
                         }, 1000);
                     }
                 }
                 
                 let paged = new Previewer();
-                paged.preview(content.innerHTML, [], document.body).then((flow) => {
+                paged.preview(content.outerHTML, [], document.body).then((flow) => {
                     console.log("Rendered", flow.total, "pages.");
                 }).catch(error => {
                     console.error("Paged.js error:", error);
@@ -404,7 +409,7 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
         <style>
             ${cssContent}
         </style>
-        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js" defer></script>
     </head>
     <body>
         <div id="loading-modal">
@@ -441,5 +446,3 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
-
-    
