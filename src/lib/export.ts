@@ -17,9 +17,7 @@ function renderBlockToHtml(block: Block): string {
         case 'text':
             return `<div ${animationClass}><div class="block block-text">${sanitizeHtml(block.content.text || '')}</div></div>`;
         case 'image':
-             const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
-                ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`
-                : block.content.url;
+             const imageUrl = block.content.url;
             const width = block.content.width ?? 100;
             return `
                 <div ${animationClass}>
@@ -234,8 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- PDF Generation ---
     async function toDataURL(url) {
+        // Use a proxy or server-side endpoint if you have one to bypass CORS
+        // For client-side only, this will be limited by CORS policies
         try {
-            const response = await fetch(url, { mode: 'cors' });
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error('Network response was not ok.');
             }
@@ -248,20 +248,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (e) {
             console.error('CORS error or network issue fetching image:', url, e);
-            return null; // Return null if fetch fails
+            // Return a placeholder or null
+            return null;
         }
     }
 
-    async function embedImages(container) {
+    async function embedImagesInContainer(container) {
         const images = Array.from(container.querySelectorAll('img'));
         for (const img of images) {
+             // Only process external images
             if (img.src && !img.src.startsWith('data:')) {
                 const dataUrl = await toDataURL(img.src);
-                if (dataUrl) {
+                 if (dataUrl) {
                     img.src = dataUrl;
                 } else {
+                    // Replace the image with a placeholder text if it fails to load
                     const p = document.createElement('p');
-                    p.innerText = '[Imagem não disponível]';
+                    p.innerText = '[Image not available]';
                     img.parentNode.replaceChild(p, img);
                 }
             }
@@ -282,10 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const pdfContainer = document.getElementById('apostila-pdf-export');
-            
-            await embedImages(pdfContainer);
-
             const allModules = pdfContainer.querySelectorAll('.modulo-pdf');
+            
+            // Embed images before rendering
+            await embedImagesInContainer(pdfContainer);
 
             for (let i = 0; i < allModules.length; i++) {
                 const module = allModules[i];
@@ -321,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     console.error('Error rendering module to canvas:', error);
                     if (i > 0) pdf.addPage();
-                    pdf.text("Erro ao renderizar este módulo.", 40, 40);
+                    pdf.text("Error rendering this module.", 40, 40);
                 }
             }
             
@@ -430,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generatePdfHtmlForProject(project: Project, mainTitle: string): string {
     const content = project.blocks.map(block => {
-        // We reuse the main renderer, but handle video and quiz differently for PDF
         if (block.type === 'video') {
             const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
             let videoLink = '#';
@@ -440,8 +442,8 @@ function generatePdfHtmlForProject(project: Project, mainTitle: string): string 
                 videoLink = videoUrl;
             }
             return `
-                <div class="pdf-video-placeholder">
-                    <div class="pdf-video-placeholder-icon">
+                 <div class="pdf-video-placeholder">
+                     <div class="pdf-video-placeholder-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                     </div>
                     <div class="pdf-video-placeholder-text">
@@ -485,8 +487,7 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
           </section>
       `).join('');
 
-    // Create a separate, hidden container for PDF export
-    const pdfExportModules = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
+    const pdfExportModules = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white; width: 800px;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
 
     return interactiveModules + pdfExportModules;
 }
@@ -557,8 +558,8 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoVBL5gI9kLmbG0C+wFjrBgixfl4ZA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4D7lrdigTBzPJBU5/SUVA5AbonrSIGNZnZvSanoSiEzroUgdPFPFbhEag==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -740,7 +741,12 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     background-color: #fff;
     color: #000;
     padding: 2rem;
+    page-break-before: always;
 }
+.modulo-pdf:first-child {
+    page-break-before: auto;
+}
+
 
 .pdf-video-placeholder, .pdf-quiz-placeholder {
     display: block;
@@ -784,11 +790,18 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 }
 
 @media print {
-    body { padding-top: 0 !important; }
+    body { padding-top: 0 !important; background-color: #fff !important; }
     .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block, .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn, .block-video iframe { 
         display: none !important; 
     }
     
+    #apostila-completa { display: none !important; }
+    #apostila-pdf-export {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+    }
+
     .block-video .pdf-video-placeholder, .block-quiz .pdf-quiz-placeholder {
         display: block !important;
     }
