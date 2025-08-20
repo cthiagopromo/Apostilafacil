@@ -30,17 +30,18 @@ export default function Header() {
       });
       return null;
     }
-
+    
     const doc = iframe.contentWindow.document;
-    const clone = doc.documentElement.cloneNode(true) as HTMLElement;
+    const originalHtml = doc.documentElement.outerHTML;
     
-    // Remove elements that should not be in the final export
-    clone.querySelectorAll('.no-export').forEach(el => el.remove());
-    clone.querySelectorAll('script[src*="next/dist"]').forEach(el => el.remove());
-    
-    // Ensure all interactivity scripts and data are present, they are already in the preview page.
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = originalHtml;
 
-    const finalHtml = clone.outerHTML;
+    // Remove elements that should not be in the final export
+    tempDiv.querySelectorAll('.no-export').forEach(el => el.remove());
+    
+    const finalHtml = tempDiv.innerHTML;
     
     return `<!DOCTYPE html>${finalHtml}`;
   }
@@ -58,10 +59,8 @@ export default function Header() {
 
     setIsExporting(true);
     
-    // Ensure the modal is open to have the iframe rendered.
     if (!isPreviewModalOpen) {
       setIsPreviewModalOpen(true);
-      // Wait a moment for the iframe content to load.
       await new Promise(resolve => setTimeout(resolve, 2500));
     }
 
@@ -95,8 +94,6 @@ export default function Header() {
       });
     } finally {
       setIsExporting(false);
-      // Keep the modal open for user convenience
-      // setIsPreviewModalOpen(false); 
     }
   };
 

@@ -121,68 +121,35 @@ const getInteractiveScript = (handbookData: HandbookData) => {
     );
 };
 
-const getGlobalStyles = () => {
-  if (typeof document === 'undefined') return '';
-  
-  const styleSheets = Array.from(document.styleSheets);
-  let cssText = '';
-
-  for (const sheet of styleSheets) {
-    try {
-      if (sheet.cssRules) {
-        // Basic filtering to avoid including dev-only Next.js styles in export
-        if (sheet.href && (sheet.href.includes('_next/static') || sheet.href.includes('localhost'))) {
-          cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-        } else if (!sheet.href) { // Inline styles
-          cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-        }
-      }
-    } catch (e) {
-      console.warn("Could not read stylesheet rules (likely CORS):", sheet.href);
-    }
-  }
-  return cssText;
-}
-
 
 const FullPageHandout = ({ handbookData }: { handbookData: HandbookData }) => {
     // This component represents the full HTML document structure for export.
     return (
-        <html lang="pt-BR">
-            <head>
-                <meta charSet="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <title>{handbookData.title}</title>
-                <style dangerouslySetInnerHTML={{ __html: getGlobalStyles() }} />
-            </head>
-            <body className='font-sans antialiased' suppressHydrationWarning>
-                <div id="handbook-root-container">
-                    <div className="bg-secondary/40 min-h-screen">
-                        <PreviewHeader setIsExporting={() => {}} />
-                        <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
-                            <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
-                                {handbookData.projects.map((project) => (
-                                    <section key={project.id} className="module-section mb-12 last:mb-0">
-                                        <header className='text-center mb-12'>
-                                            <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
-                                            <p className="text-muted-foreground">{project.description}</p>
-                                        </header>
-                                        <div className="space-y-8">
-                                            {project.blocks.map((block) => (
-                                                <div key={block.id} data-block-id={block.id}>
-                                                     <BlockRenderer block={block} />
-                                                </div>
-                                            ))}
+        <div id="handbook-root-container">
+            <div className="bg-secondary/40 min-h-screen">
+                <PreviewHeader setIsExporting={() => {}} />
+                <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                    <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                        {handbookData.projects.map((project) => (
+                            <section key={project.id} className="module-section mb-12 last:mb-0">
+                                <header className='text-center mb-12'>
+                                    <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
+                                    <p className="text-muted-foreground">{project.description}</p>
+                                </header>
+                                <div className="space-y-8">
+                                    {project.blocks.map((block) => (
+                                        <div key={block.id} data-block-id={block.id}>
+                                             <BlockRenderer block={block} />
                                         </div>
-                                    </section>
-                                ))}
-                            </div>
-                        </main>
+                                    ))}
+                                </div>
+                            </section>
+                        ))}
                     </div>
-                </div>
-                {getInteractiveScript(handbookData)}
-            </body>
-        </html>
+                </main>
+            </div>
+            {getInteractiveScript(handbookData)}
+        </div>
     );
 };
 
