@@ -143,7 +143,7 @@ function generateCssContent(): string {
         .module-content > *:not(:last-child) { margin-bottom: 2rem; }
         
         .prose { max-width: none; }
-        .prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
+        .prose h1, .prose h2, .prose h3 { color: hsl(var(--foreground)); }
         .dark .prose-invert { color: hsl(var(--foreground)); }
 
         .flex { display: flex; }
@@ -175,7 +175,7 @@ function generateCssContent(): string {
         iframe.rounded-md { border-radius: 0.375rem; border: none; }
 
         .btn-primary { display: inline-block; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
-        .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
+        .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; cursor: pointer; }
         
         /* Toolbar */
         #accessibility-toolbar { background-color: transparent; border: none; }
@@ -369,7 +369,7 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
     <!DOCTYPE html>
     <html lang="pt-br">
     <head>
-        <meta charset="UTF-R-8">
+        <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${handbookTitle}</title>
         <style>
@@ -412,5 +412,7 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
+
+    
 
     
