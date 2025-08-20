@@ -64,6 +64,9 @@ const QuizBlock = ({ block }: { block: Block }) => {
         }
     };
 
+    // This component is used in both the live preview and the static export.
+    // For the static export, the interactivity is handled by `script.js`.
+    // The data attributes `data-correct` are essential for that script.
     return (
         <Card className="quiz-card bg-muted/30">
             <CardHeader className="quiz-card-header">
@@ -83,11 +86,9 @@ const QuizBlock = ({ block }: { block: Block }) => {
                                 isAnswered && option.isCorrect && 'bg-primary/10 dark:bg-primary/20 border-primary/50 border',
                                 showResult && !option.isCorrect && 'bg-red-100 dark:bg-red-900/50 border-red-500 border'
                                 )}
-                                data-correct={option.isCorrect}
+                                data-correct={String(option.isCorrect)}
                             >
-                                <RadioGroupItem value={option.id} id={option.id} className="radio-group-item">
-                                    <div className="radio-group-indicator"></div>
-                                </RadioGroupItem>
+                                <RadioGroupItem value={option.id} id={option.id} className="radio-group-item" />
                                 <Label htmlFor={option.id} className="flex-1 cursor-pointer">{option.text}</Label>
                                 {showResult && option.isCorrect && <CheckCircle className="text-primary" />}
                                 {showResult && !option.isCorrect && <XCircle className="text-red-600" />}
@@ -96,16 +97,9 @@ const QuizBlock = ({ block }: { block: Block }) => {
                     })}
                 </RadioGroup>
             </CardContent>
-            {isAnswered ? (
-                <CardFooter className="quiz-card-footer">
-                    <Button variant="outline" className="retry-btn" onClick={() => resetQuiz(block.id)}>Tentar Novamente</Button>
-                </CardFooter>
-            ) : (
-                 <CardFooter className="quiz-card-footer">
-                    <div className="quiz-feedback"></div>
-                    <Button variant="outline" className="retry-btn" style={{display: 'none'}}>Tentar Novamente</Button>
-                </CardFooter>
-            )}
+            <CardFooter className="quiz-card-footer">
+                <Button variant="outline" className="retry-btn" onClick={() => resetQuiz(block.id)} style={{ display: isAnswered ? 'inline-flex' : 'none' }}>Tentar Novamente</Button>
+            </CardFooter>
         </Card>
     )
 }
@@ -145,7 +139,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
             return (
                  <div className="relative">
                     <blockquote className="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
-                         <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20" />
+                         <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon" />
                         {block.content.text}
                     </blockquote>
                  </div>

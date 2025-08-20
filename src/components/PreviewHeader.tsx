@@ -4,7 +4,7 @@
 import useProjectStore from '@/lib/store';
 import { AccessibilityToolbar } from '@/components/AccessibilityToolbar';
 
-export default function PreviewHeader() {
+export function PreviewHeader() {
   const { handbookTitle } = useProjectStore();
 
   return (
@@ -16,3 +16,5 @@ export default function PreviewHeader() {
     </header>
   );
 }
+
+export default PreviewHeader;

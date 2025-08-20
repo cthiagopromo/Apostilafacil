@@ -9,8 +9,8 @@ interface PrintableHandbookProps {
 }
 
 /**
- * A component designed specifically for server-side rendering to static HTML.
- * It mirrors the structure of the preview page to ensure 1:1 visual consistency.
+ * Um componente projetado especificamente para renderização em string HTML.
+ * Ele espelha a estrutura da página de pré-visualização para garantir consistência 1:1.
  */
 export function PrintableHandbook({ projects }: PrintableHandbookProps) {
   if (!projects || projects.length === 0) {
@@ -24,8 +24,8 @@ export function PrintableHandbook({ projects }: PrintableHandbookProps) {
   return (
     <>
       {projects.map((project) => (
-        <section key={project.id} className="mb-16 last:mb-0">
-          <header className='text-center mb-12'>
+        <section key={project.id} className="module-section">
+          <header className='text-center'>
             <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
             <p className="text-muted-foreground">{project.description}</p>
           </header>
