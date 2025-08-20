@@ -128,10 +128,6 @@ function generateHeaderNavHtml(projects: Project[], handbookTitle: string): stri
                 <i class="material-icons">picture_as_pdf</i>
                 <span>PDF</span>
             </button>
-            <button class="btn-acessibilidade" id="btn-zip" title="Exportar como ZIP">
-                <i class="material-icons">archive</i>
-                <span>ZIP</span>
-            </button>
         </div>
     `;
 }
@@ -323,7 +319,7 @@ async function generatePdfForClient(handbookTitle, projects) {
 
     const imageToBase64 = async (url) => {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { mode: 'cors' });
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -412,6 +408,9 @@ async function generatePdfForClient(handbookTitle, projects) {
             <html>
             <head>
                 <style>\${css}</style>
+                 <link rel="preconnect" href="https://fonts.googleapis.com">
+                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
             </head>
             <body>
                 <div id="render-me">
@@ -474,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
-    const zipButton = document.getElementById('btn-zip');
 
     // --- Embedded Data ---
     const handbookTitle = ${handbookTitleStr};
@@ -573,12 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfButton.addEventListener('click', () => generatePdfForClient(handbookTitle, projects));
     }
 
-     if (zipButton) {
-        zipButton.addEventListener('click', () => {
-             alert('Este arquivo já é um ZIP. Para exportar novamente, use a aplicação principal.');
-        });
-    }
-
     floatingNavButton.addEventListener('click', (event) => {
         event.stopPropagation();
         floatingNavMenu.classList.toggle('show');
@@ -666,3 +658,5 @@ ${getPdfGenerationScript()}
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
+
+    
