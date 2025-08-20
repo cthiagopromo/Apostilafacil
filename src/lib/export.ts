@@ -219,117 +219,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- PDF Generation ---
-    async function toDataURL(url) {
-        // Use a proxy or server-side endpoint if you have one to bypass CORS
-        // For client-side only, this will be limited by CORS policies
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error('Network response was not ok.');
-            }
-            const blob = await response.blob();
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) {
-            console.error('CORS error or network issue fetching image:', url, e);
-            // Return a placeholder or null
-            return null;
-        }
-    }
-
-    async function embedImagesInContainer(container) {
-        const images = Array.from(container.querySelectorAll('img'));
-        for (const img of images) {
-             // Only process external images
-            if (img.src && !img.src.startsWith('data:')) {
-                const dataUrl = await toDataURL(img.src);
-                 if (dataUrl) {
-                    img.src = dataUrl;
-                } else {
-                    // Replace the image with a placeholder text if it fails to load
-                    const p = document.createElement('p');
-                    p.innerText = '[Imagem não disponível]';
-                    img.parentNode.replaceChild(p, img);
-                }
-            }
-        }
-    }
-    
     pdfButton.addEventListener('click', async () => {
         modal.style.display = 'flex';
         
         try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: 'p',
-                unit: 'pt',
-                format: 'a4',
-                putOnlyUsedFonts: true,
-                floatPrecision: 16
+            const pdfContainer = document.getElementById('apostila-pdf-export');
+            const htmlContent = pdfContainer.innerHTML;
+            const fullHtml = \`
+                <!DOCTYPE html>
+                <html lang="pt-br">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Export PDF</title>
+                    <style>
+                        body { font-family: 'Inter', sans-serif; color: #111827; }
+                        h1, h2, h3, h4, h5, h6 { text-align: center; color: #111827; }
+                        .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
+                        .module-title-header { font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
+                        .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
+                        .modulo-pdf { page-break-before: always; padding: 2rem; }
+                        .modulo-pdf:first-child { page-break-before: auto; }
+                        .pdf-video-placeholder { padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; page-break-inside: avoid; display: flex; align-items: center; gap: 1em; }
+                        .pdf-video-placeholder-icon svg { width: 24px; height: 24px; fill: #374151; }
+                        .pdf-video-placeholder-text { font-size: 0.9rem; }
+                        .pdf-video-placeholder-text p { margin: 0; }
+                        .pdf-video-placeholder-text .video-title { font-weight: bold; margin-bottom: 0.25em; }
+                        .pdf-video-placeholder-text a { color: #2563EB; text-decoration: none; }
+                        .pdf-quiz-placeholder { padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; page-break-inside: avoid; }
+                        .pdf-quiz-options { list-style-type: none; padding-left: 1rem; margin-top: 0.5rem; }
+                        img { max-width: 100%; height: auto; }
+                    </style>
+                </head>
+                <body>\${htmlContent}</body>
+                </html>
+            \`;
+
+            const response = await fetch('https://html-to-pdf-converter-alpha.vercel.app/api/convert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ html: fullHtml })
             });
 
-            const pdfContainer = document.getElementById('apostila-pdf-export');
-            const allModules = pdfContainer.querySelectorAll('.modulo-pdf');
-            
-            // Embed images before rendering
-            await embedImagesInContainer(pdfContainer);
-
-            for (let i = 0; i < allModules.length; i++) {
-                const module = allModules[i];
-                try {
-                    const canvas = await html2canvas(module, {
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: true,
-                        logging: false,
-                        backgroundColor: '#ffffff'
-                    });
-                    
-                    const imgData = canvas.toDataURL('image/png', 0.95);
-                    
-                    // Check for empty canvas
-                    if (imgData === 'data:,') {
-                         console.error('html2canvas returned an empty canvas. Skipping module', i);
-                         if (i > 0) pdf.addPage();
-                         pdf.text("Error rendering this module.", 40, 40);
-                         continue;
-                    }
-
-                    const imgWidth = 595.28; // A4 width in pts
-                    const pageHeight = 841.89; // A4 height in pts
-                    const imgHeight = canvas.height * imgWidth / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = 0;
-                    
-                    if (i > 0) {
-                        pdf.addPage();
-                    }
-
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
-                    }
-                } catch (error) {
-                    console.error('Error rendering module to canvas:', error);
-                    if (i > 0) pdf.addPage();
-                    pdf.text("Error rendering this module.", 40, 40);
-                }
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate PDF');
             }
-            
-            pdf.output('dataurlnewwindow');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'apostila.pdf';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
         } catch (error) {
             console.error('Error during PDF generation process:', error);
-            alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+            alert('Ocorreu um erro ao gerar o PDF: ' + error.message);
         } finally {
             modal.style.display = 'none';
         }
@@ -441,7 +390,7 @@ function generatePdfHtmlForProject(project: Project, mainTitle: string): string 
             return `
                  <div class="pdf-video-placeholder">
                      <div class="pdf-video-placeholder-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                     </div>
                     <div class="pdf-video-placeholder-text">
                         <p class="video-title">${videoTitle || 'Vídeo'}</p>
@@ -460,12 +409,10 @@ function generatePdfHtmlForProject(project: Project, mainTitle: string): string 
                 </div>
             `;
         }
-        // Fallback for other block types
-        return renderBlockToHtml(block)
-          // Remove a div animatable para a versão PDF, já que não é interativa
-          .replace(/class="animatable"/g, '')
-          // Remove iframes para o PDF
-          .replace(/<div class="block block-video">[\s\S]*?<\/div>/g, '');
+        // Fallback for other block types to render for PDF
+        const blockHtml = renderBlockToHtml(block);
+        // Ensure no iframes from video blocks slip through
+        return blockHtml.replace(/<iframe[^>]*>.*?<\/iframe>/g, '');
 
     }).join('\n');
 
@@ -498,7 +445,7 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
           </section>
       `).join('');
 
-    const pdfExportContainer = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white; width: 800px;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
+    const pdfExportContainer = `<div id="apostila-pdf-export" style="display: none;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
 
     return interactiveModules + pdfExportContainer;
 }
@@ -569,8 +516,6 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
