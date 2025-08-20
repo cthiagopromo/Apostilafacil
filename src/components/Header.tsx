@@ -117,9 +117,8 @@ const getInteractiveScript = (): string => {
 const renderBlockToHtml = (block: Block): string => {
     // Sanitize text content
     const sanitizedText = (text: string | undefined) => {
-        if (typeof window !== 'undefined' && DOMPurify) {
-            return DOMPurify.sanitize(text || '');
-        }
+        // This function should run on the client, where DOMPurify is available.
+        // We'll call it before zipping.
         return text || '';
     };
 
@@ -291,8 +290,12 @@ export default function Header() {
   const { toast } = useToast();
 
   const handleExportZip = async () => {
-    if (!projects || projects.length === 0) {
-        toast({ variant: 'destructive', title: 'Nenhum projeto para exportar' });
+    if (!projects || projects.length === 0 || !projects.every(p => p.blocks)) {
+        toast({ 
+            variant: 'destructive', 
+            title: 'Nenhum projeto para exportar',
+            description: 'Adicione pelo menos um módulo com conteúdo antes de exportar.'
+        });
         return;
     }
     setIsExporting(true);
@@ -309,7 +312,18 @@ export default function Header() {
             projects
         };
         
-        const contentHtml = renderProjectsToHtml(projects);
+        // This process must run on the client-side where DOMPurify is available.
+        const sanitizedProjects = handbookData.projects.map(p => ({
+            ...p,
+            blocks: p.blocks.map(b => {
+                if (b.type === 'text' && b.content.text) {
+                    return { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } };
+                }
+                return b;
+            })
+        }));
+        
+        const contentHtml = renderProjectsToHtml(sanitizedProjects);
         
         const finalHtml = `
             <!DOCTYPE html>
@@ -392,7 +406,7 @@ export default function Header() {
         toast({
             variant: 'destructive',
             title: 'Erro na Exportação',
-            description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
+            description: \`Não foi possível exportar o projeto. Detalhes: \${error instanceof Error ? error.message : 'Erro desconhecido.'}\`,
         });
     } finally {
         setIsExporting(false);
