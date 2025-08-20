@@ -126,10 +126,11 @@ function renderBlockToHtml(block: Block): string {
 }
 
 
-function generateModulesHtml(projects: Project[]): string {
+function generateModulesHtml(projects: Project[], handbookTitle: string): string {
     return projects.map((project, index) => `
           <section id="modulo-${index}" class="modulo">
               <div class="module-content">
+                  <p class="module-breadcrumb">${handbookTitle.toUpperCase()}</p>
                   <h1 class="module-title-header">${project.title}</h1>
                   <div class="divider"></div>
                   ${project.blocks.map(renderBlockToHtml).join('\n')}
@@ -259,7 +260,8 @@ function generateCssContent(): string {
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1.module-title-header { text-align: center; font-size: 2rem; margin-bottom: 1rem; }
+        .module-breadcrumb { color: var(--primary-color); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        h1.module-title-header { font-size: 2.25rem; margin-bottom: 1rem; color: var(--text-color);}
         h2 { font-size: 1.75rem; }
         h3 { font-size: 1.5rem; }
         h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; }
@@ -273,7 +275,7 @@ function generateCssContent(): string {
         .dark-mode .block-quote { background-color: rgba(255,255,255,0.05); }
 
         .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;}
 
         .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
         .dark-mode .video-placeholder-link { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568;}
@@ -316,9 +318,10 @@ function generateCssContent(): string {
                 --base-font-size: 11pt;
                  background-color: var(--background-color) !important;
                  color: var(--text-color) !important;
+                 padding-top: 0;
             }
             .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .interactive-content { display: none !important; }
-            main { max-width: none; margin: 0; padding: 0; }
+            main { max-width: none; margin: 0; padding: 0; box-shadow: none !important; border: none !important; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
             .print-only { display: flex !important; }
@@ -352,7 +355,6 @@ function getScriptContent(): string {
         const btnDarkMode = document.getElementById('btn-dark-mode');
         const body = document.body;
         const root = document.documentElement;
-        const mainTitle = document.querySelector('.main-title');
         const mainContent = document.querySelector('main');
 
         function showModule(index) {
@@ -540,7 +542,7 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
         <main id="apostila-completa">
-            ${generateModulesHtml(projects)}
+            ${generateModulesHtml(projects, handbookTitle)}
         </main>
         ${generateFloatingNav(projects)}
         <script>
