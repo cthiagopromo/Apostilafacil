@@ -102,7 +102,7 @@ const getInteractiveScript = (): string => {
                     const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
                     const newSize = increase ? currentSize + 1 : currentSize - 1;
                     if (newSize >= 12 && newSize <= 24) { 
-                      body.style.fontSize = \`\${newSize}px\`;
+                      body.style.fontSize = `${newSize}px`;
                     }
                 };
 
@@ -406,7 +406,7 @@ export default function Header() {
         toast({
             variant: 'destructive',
             title: 'Erro na Exportação',
-            description: \`Não foi possível exportar o projeto. Detalhes: \${error instanceof Error ? error.message : 'Erro desconhecido.'}\`,
+            description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
         });
     } finally {
         setIsExporting(false);
