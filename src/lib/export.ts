@@ -261,7 +261,7 @@ async function generatePdfWithPagedJs() {
         Paged.registerHandlers(MyHandler);
 
         let paged = new Paged.Previewer();
-        let flow = await paged.preview(content, [], document.body);
+        let flow = await paged.preview(content.innerHTML, [], document.body);
         
         await new Promise(resolve => setTimeout(resolve, 1000));
 
