@@ -51,7 +51,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -258,6 +258,9 @@ const getGlobalCss = () => `
           .module-section { display: block !important; page-break-after: always; }
           .module-section:last-of-type { page-break-after: auto; }
           #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
+          .module-section header { margin-bottom: 2rem !important; }
+          .module-section .space-y-8 > * + * { margin-top: 1.5rem !important; }
+          .module-section footer { margin-top: 3rem !important; }
       }
 `;
 
