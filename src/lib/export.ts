@@ -234,29 +234,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- PDF Generation ---
     async function toDataURL(url) {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        try {
+            const response = await fetch(url, { mode: 'cors' });
+            if (!response.ok) {
+                throw new Error('Network response was not ok.');
+            }
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.error('CORS error or network issue fetching image:', url, e);
+            return null; // Return null if fetch fails
+        }
     }
 
     async function embedImages(container) {
-        const images = container.querySelectorAll('img');
+        const images = Array.from(container.querySelectorAll('img'));
         for (const img of images) {
-            try {
-                if (img.src && !img.src.startsWith('data:')) {
-                    const dataUrl = await toDataURL(img.src);
+            if (img.src && !img.src.startsWith('data:')) {
+                const dataUrl = await toDataURL(img.src);
+                if (dataUrl) {
                     img.src = dataUrl;
+                } else {
+                    const p = document.createElement('p');
+                    p.innerText = '[Imagem não disponível]';
+                    img.parentNode.replaceChild(p, img);
                 }
-            } catch (e) {
-                console.error('Could not convert image to data URL:', img.src, e);
-                const p = document.createElement('p');
-                p.innerText = '[Imagem não disponível]';
-                img.parentNode.replaceChild(p, img);
             }
         }
     }
@@ -278,7 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             await embedImages(pdfContainer);
 
-            for (const module of pdfContainer.querySelectorAll('.modulo-pdf')) {
+            const allModules = pdfContainer.querySelectorAll('.modulo-pdf');
+
+            for (let i = 0; i < allModules.length; i++) {
+                const module = allModules[i];
                 try {
                     const canvas = await html2canvas(module, {
                         scale: 2,
@@ -294,6 +304,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imgHeight = canvas.height * imgWidth / canvas.width;
                     let heightLeft = imgHeight;
                     let position = 0;
+                    
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
 
                     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
@@ -305,20 +319,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         heightLeft -= pageHeight;
                     }
                 } catch (error) {
-                    console.error('Error rendering a module:', error);
-                    pdf.addPage();
+                    console.error('Error rendering module to canvas:', error);
+                    if (i > 0) pdf.addPage();
                     pdf.text("Erro ao renderizar este módulo.", 40, 40);
-                }
-
-                if (module !== pdfContainer.querySelector('.modulo-pdf:last-child')) {
-                     pdf.addPage();
                 }
             }
             
             pdf.output('dataurlnewwindow');
 
         } catch (error) {
-            console.error('Error generating PDF:', error);
+            console.error('Error during PDF generation process:', error);
             alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
         } finally {
             modal.style.display = 'none';
@@ -420,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generatePdfHtmlForProject(project: Project, mainTitle: string): string {
     const content = project.blocks.map(block => {
-        // We reuse the main renderer, but handle video differently for PDF
+        // We reuse the main renderer, but handle video and quiz differently for PDF
         if (block.type === 'video') {
             const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
             let videoLink = '#';
@@ -476,7 +486,7 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
       `).join('');
 
     // Create a separate, hidden container for PDF export
-    const pdfExportModules = `<div id="apostila-pdf-export" style="display: none;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
+    const pdfExportModules = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
 
     return interactiveModules + pdfExportModules;
 }
@@ -752,10 +762,14 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     text-decoration: none;
     font-weight: 500;
 }
-.pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; fill: #000; }
+.pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
 .pdf-video-placeholder-icon svg { fill: #000; }
 .pdf-video-placeholder-text p { margin: 0; padding: 0; }
 .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
+
+.block-video .pdf-video-placeholder, .block-quiz .pdf-quiz-placeholder {
+    display: none;
+}
 
 
 @media (max-width: 768px) {
@@ -771,10 +785,14 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 
 @media print {
     body { padding-top: 0 !important; }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block, .block-quiz, .block-video { 
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block, .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn, .block-video iframe { 
         display: none !important; 
     }
-    .pdf-video-placeholder, .pdf-quiz-placeholder { display: block !important; }
+    
+    .block-video .pdf-video-placeholder, .block-quiz .pdf-quiz-placeholder {
+        display: block !important;
+    }
+    
     .animatable { opacity: 1 !important; transform: translateY(0) !important; }
     .modulo { display: block !important; page-break-before: always; box-shadow: none !important; border: none !important; }
     .modulo:first-of-type { page-break-before: auto; }
