@@ -54,7 +54,7 @@ function generateHeaderNavHtml(handbookTitle: string): string {
     return `
       <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
         <h1 class="text-xl font-bold">${handbookTitle}</h1>
-        <div id="accessibility-toolbar" class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">
+        <div id="accessibility-toolbar" class="flex items-center gap-1">
             <button id="export-pdf" title="Exportar para PDF" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </button>
@@ -116,7 +116,7 @@ function generateCssContent(): string {
             min-height: 100vh;
         }
 
-        header.no-print {
+        header.preview-header {
             padding: 1rem 1.5rem;
             background-color: hsl(var(--primary));
             color: hsl(var(--primary-foreground));
@@ -127,7 +127,7 @@ function generateCssContent(): string {
             margin: 0 auto;
         }
         
-        #printable-content-wrapper {
+        .printable-content-wrapper {
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
@@ -143,6 +143,7 @@ function generateCssContent(): string {
         .module-content > *:not(:last-child) { margin-bottom: 2rem; }
         
         .prose { max-width: none; }
+        .prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
         .dark .prose-invert { color: hsl(var(--foreground)); }
 
         .flex { display: flex; }
@@ -153,10 +154,9 @@ function generateCssContent(): string {
         .gap-1 { gap: 0.25rem; }
         .mx-auto { margin-left: auto; margin-right: auto; }
         .max-w-4xl { max-width: 56rem; }
-        h1.font-bold, .font-bold { font-weight: 700; }
-        h1.text-xl, .text-xl { font-size: 1.25rem; }
+        .font-bold { font-weight: 700; }
+        .text-xl { font-size: 1.25rem; }
         
-
         figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         img.rounded-md { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
         figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
@@ -178,7 +178,7 @@ function generateCssContent(): string {
         .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
         
         /* Toolbar */
-        #accessibility-toolbar { background-color: hsl(var(--primary)); border: 1px solid hsl(var(--primary-foreground)/.2); border-radius: 0.5rem; padding: 0.25rem; }
+        #accessibility-toolbar { background-color: transparent; border: none; }
         .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
         .toolbar-btn:hover { background-color: hsl(var(--primary-foreground)/.1); }
         .toolbar-btn svg { height: 1.25rem; width: 1.25rem; stroke: currentColor; }
@@ -206,12 +206,13 @@ function generateCssContent(): string {
         .quiz-feedback.incorrect { color: hsl(var(--destructive)); }
 
         body.high-contrast { background-color: black; color: white; }
-        body.high-contrast header.no-print, body.high-contrast header.no-print #accessibility-toolbar { background-color: black; border-color: white; }
+        body.high-contrast header.preview-header, body.high-contrast header.preview-header #accessibility-toolbar { background-color: black; border-color: white; }
         body.high-contrast .text-primary, body.high-contrast h1, body.high-contrast h2 { color: yellow !important; }
+        body.high-contrast .module-title { color: yellow !important; }
         body.high-contrast .text-muted-foreground { color: lightgray !important; }
         body.high-contrast .border-primary { border-color: yellow !important; }
         body.high-contrast .toolbar-btn, body.high-contrast .toolbar-btn svg { color: white; stroke: white; }
-        body.high-contrast #printable-content-wrapper { background-color: black; border: 1px solid white; }
+        body.high-contrast .printable-content-wrapper { background-color: black; border: 1px solid white; }
         body.high-contrast .toolbar-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
         body.high-contrast .border-l, body.high-contrast .border-r { border-color: white; }
 
@@ -226,7 +227,7 @@ function generateCssContent(): string {
           .no-print, .no-print * { display: none !important; }
           body, main { background: white !important; color: black !important; }
           main { max-width: 100% !important; margin: 0; padding: 0; }
-          #printable-content-wrapper { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0; border-radius: 0;}
+          .printable-content-wrapper { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0; border-radius: 0;}
           @page {
             size: A4;
             margin: 2cm;
@@ -255,20 +256,22 @@ function getScriptContent(): string {
 
                 if(loadingModal) loadingModal.style.display = 'flex';
 
-                const content = document.getElementById('printable-content-wrapper');
+                const content = document.getElementById('printable-content');
                 
                 class Previewer extends Paged.Previewer {
                     afterPreview() {
                         if(loadingModal) loadingModal.style.display = 'none';
-                        // After paged.js has rendered the document, trigger the print dialog
                         window.print();
+                        // This timeout is a workaround to give the browser time to process the print dialog
+                        setTimeout(() => {
+                            // Reload the original state to remove paged.js styles
+                            location.reload();
+                        }, 1000);
                     }
                 }
                 
                 let paged = new Previewer();
-                // The third argument is the element where the preview will be rendered. 
-                // By passing 'undefined', it will render in place.
-                paged.preview(content.innerHTML, [], undefined).then((flow) => {
+                paged.preview(content.innerHTML, [], document.body).then((flow) => {
                     console.log("Rendered", flow.total, "pages.");
                 }).catch(error => {
                     console.error("Paged.js error:", error);
@@ -366,7 +369,7 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
     <!DOCTYPE html>
     <html lang="pt-br">
     <head>
-        <meta charset="UTF-8">
+        <meta charset="UTF-R-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${handbookTitle}</title>
         <style>
@@ -382,11 +385,11 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
             </div>
         </div>
 
-        <header class="no-print">
+        <header class="preview-header no-print">
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
         <main id="printable-content">
-            <div id="printable-content-wrapper">
+            <div class="printable-content-wrapper">
                  ${generateModulesHtml(projects)}
             </div>
         </main>
@@ -409,3 +412,5 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
+
+    
