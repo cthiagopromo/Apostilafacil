@@ -255,9 +255,9 @@ const getGlobalCss = () => `
           @page { size: A4; margin: 0; }
           html, body { height: 100%; }
           body { display: flex; flex-direction: column; }
-          main { display: flex; flex-direction: column; flex-grow: 1; justify-content: center; padding: 2cm 1.5cm !important; margin: 0 !important; }
+          main { display: flex; flex-direction: column; flex-grow: 1; padding: 2cm 1.5cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
-          .module-section { display: flex !important; flex-direction: column; justify-content: center; flex-grow: 1; page-break-after: always; }
+          .module-section { display: flex !important; flex-direction: column; justify-content: flex-start; flex-grow: 1; page-break-after: always; }
           .module-section > * { flex-shrink: 0; }
           .module-section:last-of-type { page-break-after: auto; }
           #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
