@@ -206,7 +206,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 const getGlobalCss = () => {
     // This is a simplified version of globals.css. In a real scenario, you'd fetch this.
     // For this environment, we are hardcoding it.
-    return \`
+    return `
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -282,7 +282,7 @@ const getGlobalCss = () => {
 }
 .prose { color: hsl(var(--foreground)); }
 .prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
-    \`;
+    `;
 };
 
 
@@ -449,4 +449,3 @@ export default function Header() {
     </>
   );
 }
-
