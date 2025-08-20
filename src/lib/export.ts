@@ -8,7 +8,11 @@ import DOMPurify from 'dompurify';
 
 function sanitizeHtml(html: string): string {
     if (typeof window !== 'undefined') {
-        return DOMPurify.sanitize(html, { ADD_TAGS: ["iframe"], ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling'] });
+        // Permitir iframes para vídeos do YouTube/Cloudflare no HTML, mas eles serão substituídos no PDF.
+        return DOMPurify.sanitize(html, { 
+            ADD_TAGS: ["iframe"], 
+            ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 'title'] 
+        });
     }
     return html;
 }
@@ -25,9 +29,15 @@ function getYoutubeEmbedUrl(url: string): string | null {
         }
         return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     } catch (e) {
+        console.error("URL do YouTube inválida:", e);
         return null;
     }
 }
+
+function getCloudflareEmbedUrl(videoId: string): string | null {
+    return videoId ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe` : null;
+}
+
 
 function renderBlockToHtml(block: Block): string {
     switch (block.type) {
@@ -50,27 +60,38 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video': {
-             const embedUrl = getYoutubeEmbedUrl(block.content.videoUrl || '');
-             if (!embedUrl) {
-                return `
-                    <div class="block block-video-placeholder">
-                        <a href="${block.content.videoUrl || '#'}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
-                           <span>▶️</span>
-                           <span>URL do vídeo inválida ou não suportada. Clique para abrir.</span>
-                        </a>
-                    </div>
-                `;
-             }
+            let embedUrl = null;
+            if (block.content.videoType === 'youtube') {
+                embedUrl = getYoutubeEmbedUrl(block.content.videoUrl || '');
+            } else if (block.content.videoType === 'cloudflare') {
+                embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId || '');
+            }
+
+            // Fallback para PDF e HTML interativo
+            const placeholder = `
+                <div class="block-video-placeholder" data-pdf-only>
+                    <a href="${block.content.videoUrl || '#'}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
+                        <span>▶️</span>
+                        <span>Este conteúdo é interativo. Clique para assistir.</span>
+                    </a>
+                </div>
+            `;
+
+            if (!embedUrl) {
+                return placeholder;
+            }
+
             return `
-                <div class="block block-video">
+                <div class="block block-video" data-interactive-only>
                     <iframe 
-                        src="${embedUrl}" 
-                        title="${block.content.videoTitle || 'YouTube video player'}" 
+                        src="${embedUrl}?autoplay=${block.content.autoplay ? 1:0}&controls=${block.content.showControls ? 1:0}" 
+                        title="${block.content.videoTitle || 'Player de vídeo'}" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
                 </div>
+                ${placeholder} 
             `;
         }
         case 'button':
@@ -157,7 +178,7 @@ function generateHeaderNavHtml(handbookTitle: string): string {
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
                   <span>Escuro</span>
               </button>
-              <button id="btn-audio" class="toolbar-btn" title="Leitor de Áudio (Em breve)">
+              <button id="btn-audio" class="toolbar-btn" title="Leitor de Áudio (Em breve)" disabled>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
                   <span>Áudio</span>
               </button>
@@ -211,7 +232,7 @@ function generateCssContent(): string {
 
         .toolbar { display: flex; align-items: center; gap: 0.5rem; }
         .toolbar-btn { display: flex; align-items: center; gap: 0.5rem; background: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: background-color 0.2s; }
-        .toolbar-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .toolbar-btn:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
         .toolbar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .toolbar-btn svg { width: 16px; height: 16px; }
         .toolbar-separator { width: 1px; height: 24px; background-color: rgba(255, 255, 255, 0.3); margin: 0 0.5rem; }
@@ -221,7 +242,8 @@ function generateCssContent(): string {
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1.module-title-header { font-size: 2.25rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
+        h1,h2,h3,h4,h5,h6 { text-align: center; margin-bottom: 1.5rem; }
+        h1.module-title-header { font-size: 2.25rem; font-weight: 700; }
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2rem; }
         .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
@@ -233,7 +255,7 @@ function generateCssContent(): string {
         .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        .block-video-placeholder, .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
+        .video-placeholder-link, .block-video-placeholder { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
         .dark-mode .video-placeholder-link, .dark-mode .block-video-placeholder { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568;}
         .video-placeholder-link span:first-child { font-size: 2.5rem; }
 
@@ -260,21 +282,28 @@ function generateCssContent(): string {
         #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        @media print {
-            body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; --base-font-size: 11pt; }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-header, .toolbar { display: none !important; }
+        [data-pdf-only] { display: none; }
+        
+        @media print, (forced-colors: active) {
+            html, body {
+                --background-color: #FFF !important;
+                --text-color: #000 !important;
+                --card-background: #FFF !important;
+                --border-color: #000 !important;
+                --primary-color: #000 !important;
+                --base-font-size: 11pt;
+                 background-color: var(--background-color) !important;
+                 color: var(--text-color) !important;
+            }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-header, .toolbar, .quiz-options-container, .quiz-feedback, .quiz-retry-btn { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
-            
-            .block-video { display: none; } 
-            .block-video-placeholder { display: flex; }
-            .video-placeholder-link {
-                color: #000;
-                background-color: #eee;
-                border: 1px solid #ccc;
-            }
+            .block-video { display: none !important; } 
+            .block-video-placeholder, [data-pdf-only] { display: flex !important; }
+            [data-interactive-only] { display: none !important; }
         }
+
         @page {
             size: A4;
             margin: 18mm;
@@ -290,15 +319,11 @@ function generateCssContent(): string {
     `;
 }
 
-function getScriptContent(projects: Project[]): string {
+function getScriptContent(): string {
     const pagedJsScript = `
         class MyHandler extends Paged.Handler {
             constructor(chunker, polisher, caller) {
                 super(chunker, polisher, caller);
-            }
-
-            afterPageLayout(pageElement, page, breakToken, chunker) {
-                // You can add page numbers or headers/footers here if needed
             }
         }
         Paged.registerHandlers(MyHandler);
@@ -309,53 +334,30 @@ function getScriptContent(projects: Project[]): string {
             const pdfButton = document.getElementById('btn-pdf');
             
             if (!content || !pdfButton) {
-                console.error("Elementos essenciais não encontrados.");
+                console.error("Elementos essenciais para PDF não encontrados.");
                 return;
             }
 
-            // Replace interactive videos with static placeholders for PDF
-            const pdfContent = content.cloneNode(true);
-            pdfContent.querySelectorAll('.block-video').forEach(videoBlock => {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'block-video-placeholder';
-                placeholder.innerHTML = '<a href="#" class="video-placeholder-link"><span>▶️</span><span>Conteúdo interativo. Acesse a versão online para assistir.</span></a>';
-                videoBlock.parentNode.replaceChild(placeholder, videoBlock);
-            });
-            pdfContent.style.display = 'block'; // Ensure it's visible for Paged.js
-             // Hide the original content, show the clone for processing
-            content.style.display = 'none';
-            document.body.appendChild(pdfContent);
-
-
             if (modal) modal.style.display = 'flex';
-            pdfButton.disabled = true;
+            if (pdfButton) pdfButton.disabled = true;
 
             try {
                 let paged = new Paged.Previewer();
-                // Pass the HTML content directly
-                let flow = await paged.preview(pdfContent.outerHTML, [], document.body);
+                let flow = await paged.preview(content.innerHTML, ["/page.css"], document.body);
                 
-                // Wait for rendering to complete. This is a simple delay, might need more robust solution.
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Aguarda um tempo para a renderização. Idealmente, Paged.js teria um evento 'rendered'.
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 
-                const pdfBlob = await flow.toBlob();
-                if (pdfBlob) {
-                    const pdfUrl = URL.createObjectURL(pdfBlob);
-                    window.open(pdfUrl, '_blank');
-                } else {
-                    console.warn("Paged.js toBlob() falhou, usando window.print() como fallback.");
-                    window.print();
-                }
+                window.print();
+
             } catch (error) {
                 console.error("Erro durante a geração do PDF com Paged.js:", error);
                 alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
             } finally {
                 if (modal) modal.style.display = 'none';
-                pdfButton.disabled = false;
+                if (pdfButton) pdfButton.disabled = false;
                 
-                // Cleanup: remove cloned content and Paged.js artifacts
-                pdfContent.remove();
-                content.style.display = 'block';
+                // Limpeza dos artefatos do Paged.js
                 const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
                 pagedArtifacts.forEach(el => el.remove());
             }
@@ -445,7 +447,9 @@ function getScriptContent(projects: Project[]): string {
             });
             btnFontDecrease.addEventListener('click', () => {
                 let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--base-font-size'));
-                root.style.setProperty('--base-font-size', (currentSize - 1) + 'px');
+                if (currentSize > 10) { // minimum font size
+                    root.style.setProperty('--base-font-size', (currentSize - 1) + 'px');
+                }
             });
         }
         
@@ -460,6 +464,39 @@ function getScriptContent(projects: Project[]): string {
         if (modules.length > 0) {
             showModule(0);
         }
+
+        // Quiz Logic
+        document.querySelectorAll('.block-quiz').forEach(quizBlock => {
+            const options = quizBlock.querySelectorAll('.quiz-option');
+            const feedbackEl = quizBlock.querySelector('.quiz-feedback');
+            const retryBtn = quizBlock.querySelector('.quiz-retry-btn');
+            let answered = false;
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    if (answered) return;
+                    answered = true;
+                    const isCorrect = option.getAttribute('data-correct') === 'true';
+
+                    option.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    if(feedbackEl) {
+                       feedbackEl.textContent = isCorrect ? 'Resposta correta!' : 'Resposta incorreta.';
+                       feedbackEl.style.color = isCorrect ? 'green' : 'red';
+                    }
+
+                    if (retryBtn) retryBtn.style.display = 'inline-block';
+                });
+            });
+
+            if(retryBtn) {
+                retryBtn.addEventListener('click', () => {
+                    answered = false;
+                    options.forEach(opt => opt.classList.remove('correct', 'incorrect'));
+                    if(feedbackEl) feedbackEl.textContent = '';
+                    retryBtn.style.display = 'none';
+                });
+            }
+        });
     });
     ${pagedJsScript}
     `;
@@ -493,7 +530,7 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
         </main>
         ${generateFloatingNav(projects)}
         <script>
-            ${getScriptContent(projects)}
+            ${getScriptContent()}
         </script>
     </body>
     </html>
