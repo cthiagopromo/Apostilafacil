@@ -35,10 +35,15 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video':
+            const videoUrl = block.content.videoType === 'cloudflare' 
+                ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`
+                : block.content.videoUrl;
              return `
                 <div class="block block-video pagedjs-video-placeholder">
-                    <p>Este conteúdo é interativo.</p>
-                    <a href="#" onclick="window.location.reload()">Acessar versão online</a>
+                   <a href="${videoUrl || '#'}" target="_blank" class="video-placeholder-link">
+                        <span class="video-placeholder-icon">▶️</span>
+                        <span class="video-placeholder-text">Clique aqui para assistir ao vídeo</span>
+                   </a>
                 </div>
             `;
         case 'button':
@@ -106,7 +111,7 @@ function generateFloatingNav(projects: Project[]): string {
     `;
 }
 
-function generateHeaderNavHtml(projects: Project[], handbookTitle: string): string {
+function generateHeaderNavHtml(): string {
     return `
         <div class="header-nav">
              <button class="btn-acessibilidade" id="btn-pdf" title="Exportar como PDF">
@@ -142,23 +147,48 @@ function generateCss(): string {
         .btn-acessibilidade .material-icons { font-size: 20px; }
         main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
         .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
-        h1, h2, h3, h4, h5, h6 { text-align: left; }
-        .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-        .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
+        h1, h2, h3, h4, h5, h6 { text-align: center; }
+        .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+        .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; }
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2.5rem; }
         img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .block-image { text-align: center; }
         .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
         .block-quote { position: relative; padding: 1.5rem; background-color: var(--background-color); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .block-video .pdf-video-placeholder { display: none; }
+        
+        .pagedjs-video-placeholder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            border: 2px dashed #ccc;
+            padding: 2rem;
+            border-radius: 8px;
+            min-height: 200px; /* Adjust as needed */
+        }
+        .video-placeholder-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .video-placeholder-link:hover {
+            transform: scale(1.05);
+        }
+        .video-placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
         .block-button { text-align: center; }
         .btn-block { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .btn-block:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .block-quiz { padding: 1.5rem; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color); }
-        .block-quiz .pdf-quiz-placeholder { display: none; }
         .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
         .quiz-option { display: flex; align-items: center; padding: 0.75rem; margin: 0.5rem 0; background: var(--card-background); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease-in-out; }
         .quiz-option:not(.answered):hover { border-color: var(--primary-color); background: var(--primary-color); color: white; }
@@ -188,28 +218,21 @@ function generateCss(): string {
         #floating-nav-menu li a { display: block; padding: 0.75rem 1rem; color: var(--text-color); text-decoration: none; border-radius: 4px; transition: background-color 0.2s; }
         #floating-nav-menu li a:hover { background-color: var(--background-color); }
         #floating-nav-menu li a.active { background-color: var(--primary-color); color: white; font-weight: bold; }
-        .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
-        .animatable.revealed { opacity: 1; transform: translateY(0); }
         
         #loading-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         #loading-modal .modal-content { background-color: #fff; padding: 30px 50px; border-radius: 12px; text-align: center; color: #333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
         #loading-modal .modal-content p { font-size: 1.1rem; margin-top: 1rem; }
         #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid #2563EB; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .pagedjs-video-placeholder { padding: 1em; border: 1px dashed #ccc; background-color: #f9f9f9; text-align: center; }
-        .pagedjs-video-placeholder p { margin: 0 0 0.5em 0; }
-        .pagedjs-video-placeholder a { color: var(--primary-color); font-weight: bold; }
 
         @media screen {
             .pagedjs_pages {
                 display: none;
             }
         }
-
         @media print {
             body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-acessibilidade { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { 
                 display: block !important; 
@@ -218,7 +241,7 @@ function generateCss(): string {
                 padding: 1rem;
                 page-break-before: always;
             }
-             .modulo:first-of-type {
+            .modulo:first-of-type {
                 page-break-before: auto;
             }
         }
@@ -227,7 +250,6 @@ function generateCss(): string {
     return interactiveStyles;
 }
 
-
 const getPagedJsScript = () => `
 async function generatePdfWithPagedJs() {
     const modal = document.getElementById('loading-modal');
@@ -235,40 +257,47 @@ async function generatePdfWithPagedJs() {
     const pdfButton = document.getElementById('btn-pdf');
     
     if (modal) modal.style.display = 'flex';
-    if(pdfButton) pdfButton.disabled = true;
+    if (pdfButton) pdfButton.disabled = true;
 
     try {
-        // Paged.js Previewer will take the content and paginate it.
-        // It creates a preview in an iframe that we can then use.
         class MyHandler extends Paged.Handler {
-             constructor(chunker, polisher, caller) {
+            constructor(chunker, polisher, caller) {
                 super(chunker, polisher, caller);
             }
-            // You can add custom handlers here if needed
         }
         Paged.registerHandlers(MyHandler);
 
         let paged = new Paged.Previewer();
-        let flow = await paged.preview(content, ['/style.css'], document.body);
+        // A 'preview' precisa do conteúdo e dos estilos para renderizar corretamente.
+        // O Paged.js injetará o CSS em seu iframe de visualização.
+        let flow = await paged.preview(content, [], document.body);
         
+        // Espera a renderização ser concluída
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const pdfBlob = await flow.toBlob();
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
+        if(pdfBlob) {
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+        } else {
+            throw new Error("A geração do blob de PDF falhou.");
+        }
 
     } catch (error) {
-        console.error("Error during Paged.js PDF generation:", error);
+        console.error("Erro durante a geração do PDF com Paged.js:", error);
         alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
     } finally {
         if (modal) modal.style.display = 'none';
-        if(pdfButton) pdfButton.disabled = false;
+        if (pdfButton) pdfButton.disabled = false;
         
-        // Clean up the paged.js preview elements
+        // Limpa os elementos de preview do paged.js
         const pagedPages = document.querySelectorAll('.pagedjs_pages');
         pagedPages.forEach(p => p.remove());
+        const pagedStyles = document.head.querySelectorAll('style[data-pagedjs-inserted-styles]');
+        pagedStyles.forEach(s => s.remove());
     }
 }
 `;
-
 
 export function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
@@ -428,7 +457,7 @@ ${getPagedJsScript()}
             <header class="main-header">
                 <div class="header-container">
                     <h1 class="main-title">${handbookTitle}</h1>
-                    ${generateHeaderNavHtml(projects, handbookTitle)}
+                    ${generateHeaderNavHtml()}
                 </div>
             </header>
             <main>
@@ -448,3 +477,5 @@ ${getPagedJsScript()}
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
+
+    
