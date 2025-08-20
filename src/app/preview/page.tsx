@@ -1,34 +1,76 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useProjectStore from '@/lib/store';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
-import type { HandbookData } from '@/lib/types';
+import type { HandbookData, Project } from '@/lib/types';
+import FloatingNav from '@/components/FloatingNav';
 
 const getInteractiveScript = (handbookData: HandbookData) => {
-    // This script contains all the client-side interactivity logic.
-    // It will be embedded directly into the exported HTML.
     const scriptLogic = `
         document.addEventListener('DOMContentLoaded', () => {
-            // Data is embedded in a script tag with id 'apostila-data'
             const dataElement = document.getElementById('apostila-data');
-            if (!dataElement) {
-                console.error('Handbook data script tag not found.');
-                return;
+            if (!dataElement) return;
+
+            const handbookData = JSON.parse(dataElement.textContent || '{}');
+            let currentModuleIndex = 0;
+            const modules = document.querySelectorAll('.module-section');
+            const navButtons = document.querySelectorAll('.module-nav-btn');
+            const floatingNavButtons = document.querySelectorAll('.floating-nav-btn');
+            const floatingNavMenu = document.getElementById('floating-nav-menu');
+            const floatingNavToggle = document.getElementById('floating-nav-toggle');
+
+            const showModule = (index) => {
+                modules.forEach((module, i) => {
+                    module.style.display = i === index ? 'block' : 'none';
+                });
+                floatingNavButtons.forEach((btn, i) => {
+                    if (i === index) {
+                        btn.classList.add('bg-primary', 'text-primary-foreground');
+                    } else {
+                        btn.classList.remove('bg-primary', 'text-primary-foreground');
+                    }
+                });
+                currentModuleIndex = index;
+                window.scrollTo(0, 0);
+            };
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const direction = e.currentTarget.dataset.direction;
+                    let newIndex = currentModuleIndex;
+                    if (direction === 'next') {
+                        newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
+                    } else if (direction === 'prev') {
+                        newIndex = Math.max(0, currentModuleIndex - 1);
+                    }
+                    showModule(newIndex);
+                });
+            });
+
+            floatingNavButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    showModule(index);
+                    if (floatingNavMenu) floatingNavMenu.classList.add('hidden');
+                });
+            });
+            
+            if (floatingNavToggle && floatingNavMenu) {
+                floatingNavToggle.addEventListener('click', () => {
+                    floatingNavMenu.classList.toggle('hidden');
+                });
             }
-            // No need to parse, it's already an object via window
-            const handbookData = window.apostilaData;
 
             // --- Quiz Interactivity ---
             document.querySelectorAll('.quiz-card').forEach(card => {
                 const retryBtn = card.querySelector('.retry-btn');
-                const radioButtons = card.querySelectorAll('.radio-group-item');
+                const radioButtons = card.querySelectorAll('input[type="radio"]');
                 const options = card.querySelectorAll('.quiz-option');
 
                 const handleAnswer = (e) => {
@@ -50,7 +92,6 @@ const getInteractiveScript = (handbookData: HandbookData) => {
                         const icon = selectedOptionEl.querySelector('.lucide-x-circle');
                         if (icon) icon.style.display = 'inline-block';
                         
-                        // Also show the correct answer
                         const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
                         if(correctOption) {
                            correctOption.classList.add('bg-primary/10', 'border-primary/50', 'border');
@@ -84,7 +125,7 @@ const getInteractiveScript = (handbookData: HandbookData) => {
                 }
             });
 
-            // --- Accessibility Toolbar ---
+             // --- Accessibility Toolbar ---
             const toolbar = document.querySelector('.accessibility-toolbar');
             if (toolbar) {
                 const printBtn = toolbar.querySelector('[data-action="print"]');
@@ -107,6 +148,8 @@ const getInteractiveScript = (handbookData: HandbookData) => {
                 if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
+            
+            showModule(0); // Show the first module initially
         });
     `;
 
@@ -114,8 +157,9 @@ const getInteractiveScript = (handbookData: HandbookData) => {
         <>
             <script
               id="apostila-data"
+              type="application/json"
               dangerouslySetInnerHTML={{
-                __html: `window.apostilaData = ${JSON.stringify(handbookData)};`,
+                __html: JSON.stringify(handbookData),
               }}
             />
             <script
@@ -129,12 +173,17 @@ const getInteractiveScript = (handbookData: HandbookData) => {
 export default function PreviewPage() {
   const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
   const router = useRouter();
-  const [isClient, setIsClient] = React.useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
     document.body.classList.add('ready-for-export');
-  }, []);
+    
+    // Reset scroll on module change
+    window.scrollTo(0, 0);
+
+  }, [currentModuleIndex]);
 
   if (!isClient) {
     return <LoadingModal isOpen={true} text="Carregando visualização..." />
@@ -160,15 +209,31 @@ export default function PreviewPage() {
     projects 
   };
 
+  const handleModuleChange = (index: number) => {
+    if (index >= 0 && index < projects.length) {
+      setCurrentModuleIndex(index);
+    }
+  };
+
   return (
       <>
         <div id="handbook-root-container">
             <div className="bg-secondary/40 min-h-screen">
                 <PreviewHeader setIsExporting={() => {}} />
-                <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12 relative">
+                    <FloatingNav 
+                        modules={projects} 
+                        currentIndex={currentModuleIndex} 
+                        onModuleSelect={handleModuleChange}
+                    />
+
                     <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
-                        {handbookData.projects.map((project) => (
-                            <section key={project.id} className="module-section mb-12 last:mb-0">
+                        {handbookData.projects.map((project, index) => (
+                            <section 
+                                key={project.id} 
+                                className="module-section"
+                                style={{ display: index === currentModuleIndex ? 'block' : 'none' }}
+                            >
                                 <header className='text-center mb-12'>
                                     <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
                                     <p className="text-muted-foreground">{project.description}</p>
@@ -180,6 +245,26 @@ export default function PreviewPage() {
                                         </div>
                                     ))}
                                 </div>
+                                <footer className="mt-16 flex justify-between items-center no-print">
+                                    <Button 
+                                      onClick={() => handleModuleChange(currentModuleIndex - 1)}
+                                      disabled={currentModuleIndex === 0}
+                                      variant="outline"
+                                    >
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Módulo Anterior
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                        Módulo {currentModuleIndex + 1} de {projects.length}
+                                    </span>
+                                    <Button 
+                                      onClick={() => handleModuleChange(currentModuleIndex + 1)}
+                                      disabled={currentModuleIndex === projects.length - 1}
+                                    >
+                                        Próximo Módulo
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </footer>
                             </section>
                         ))}
                     </div>
