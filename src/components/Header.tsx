@@ -134,28 +134,32 @@ export default function Header() {
         const previewResponse = await fetch('/preview');
         let previewHtml = await previewResponse.text();
 
-        // 2. Sanitize and extract the root container
-        const sanitizedHtml = DOMPurify.sanitize(previewHtml, { WHOLE_DOCUMENT: true, RETURN_DOM: true });
-        const rootContainer = sanitizedHtml.getElementById('handbook-root-container');
+        // 2. Sanitize and extract the root container and find CSS links
+        const doc = new DOMParser().parseFromString(previewHtml, 'text/html');
+        const rootContainer = doc.getElementById('handbook-root-container');
         let contentHtml = rootContainer ? rootContainer.outerHTML : '<p>Erro ao carregar conteúdo.</p>';
+        
+        // 3. Find all CSS <link> tags from the original page
+        const cssLinks = Array.from(doc.head.querySelectorAll('link[rel="stylesheet"]'))
+                            .map(link => link.getAttribute('href'))
+                            .filter((href): href is string => !!href);
 
-        // 3. Remove script tags that are not needed in the export
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = contentHtml;
-        tempDiv.querySelectorAll('#apostila-data, #interactive-script, script[src*="_next"]').forEach(el => el.remove());
-        contentHtml = tempDiv.innerHTML;
+        let cssContent = '';
+        // Fetch all CSS content and concatenate it
+        for (const link of cssLinks) {
+          // Resolve relative URLs
+          const cssUrl = new URL(link, window.location.origin);
+          try {
+            const cssResponse = await fetch(cssUrl.href);
+            if (cssResponse.ok) {
+              cssContent += await cssResponse.text();
+            }
+          } catch(e) {
+            console.warn(`Could not fetch CSS from ${cssUrl.href}`, e);
+          }
+        }
 
-        // 4. Fetch the global CSS content
-        const cssResponse = await fetch('/globals.css');
-        let cssContent = await cssResponse.text();
-
-        // Replace Tailwind directives with the actual CSS (simple replacement for this context)
-        // In a real build, this CSS is already compiled. For this environment, we'll manually add some key styles.
-        // This is a simplified simulation
-        const tailwindDirectives = /@tailwind base;\s*@tailwind components;\s*@tailwind utilities;/g;
-        // The fetched globals.css will have the compiled tailwind css. No need to replace.
-
-        // 5. Create the final HTML file
+        // 4. Create the final HTML file
         const finalHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -163,6 +167,7 @@ export default function Header() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${handbookTitle}</title>
     <style>
+        /* Inlining all fetched CSS */
         ${cssContent}
     </style>
 </head>
@@ -282,5 +287,3 @@ export default function Header() {
     </>
   );
 }
-
-    
