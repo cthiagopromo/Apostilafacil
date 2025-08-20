@@ -35,7 +35,7 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             `;
         case 'video':
-            const videoUrl = block.content.videoType === 'cloudflare' 
+             const videoUrl = block.content.videoType === 'cloudflare' 
                 ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`
                 : block.content.videoUrl;
             return `
@@ -240,56 +240,7 @@ function generateCss(): string {
     `;
 }
 
-const getPagedJsScript = () => `
-async function generatePdfWithPagedJs() {
-    const modal = document.getElementById('loading-modal');
-    const content = document.getElementById('apostila-completa');
-    const pdfButton = document.getElementById('btn-pdf');
-    
-    if (!content) {
-        console.error("Elemento 'apostila-completa' não encontrado.");
-        return;
-    }
-
-    if (modal) modal.style.display = 'flex';
-    if (pdfButton) pdfButton.disabled = true;
-
-    try {
-        class MyHandler extends Paged.Handler {}
-        Paged.registerHandlers(MyHandler);
-
-        let paged = new Paged.Previewer();
-        let flow = await paged.preview(content.innerHTML, [], document.body);
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const pdfBlob = await flow.toBlob();
-        if(pdfBlob) {
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-        } else {
-            throw new Error("A geração do blob de PDF falhou.");
-        }
-
-    } catch (error) {
-        console.error("Erro durante a geração do PDF com Paged.js:", error);
-        alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
-    } finally {
-        if (modal) modal.style.display = 'none';
-        if (pdfButton) pdfButton.disabled = false;
-        
-        const pagedPages = document.querySelectorAll('.pagedjs_pages');
-        pagedPages.forEach(p => p.remove());
-        const pagedStyles = document.head.querySelectorAll('style[data-pagedjs-inserted-styles]');
-        pagedStyles.forEach(s => s.remove());
-    }
-}
-`;
-
-export function generateZip(projects: Project[], handbookTitle: string) {
-    const zip = new JSZip();
-    
-    const scriptContent = `
+const getScriptContent = () => `
 document.addEventListener('DOMContentLoaded', () => {
     let currentModuleIndex = 0;
     const modules = document.querySelectorAll('.modulo');
@@ -419,9 +370,58 @@ document.addEventListener('DOMContentLoaded', () => {
     showModule(0);
 });
 
-${getPagedJsScript()}
-    `;
+async function generatePdfWithPagedJs() {
+    const modal = document.getElementById('loading-modal');
+    const content = document.getElementById('apostila-completa');
+    const pdfButton = document.getElementById('btn-pdf');
+    
+    if (!content) {
+        console.error("Elemento 'apostila-completa' não encontrado.");
+        return;
+    }
 
+    if (modal) modal.style.display = 'flex';
+    if (pdfButton) pdfButton.disabled = true;
+
+    try {
+        class MyHandler extends Paged.Handler {}
+        Paged.registerHandlers(MyHandler);
+
+        let paged = new Paged.Previewer();
+        let flow = await paged.preview(content.innerHTML, [], document.body);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const pdfBlob = await flow.toBlob();
+        if(pdfBlob) {
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+        } else {
+            throw new Error("A geração do blob de PDF falhou.");
+        }
+
+    } catch (error) {
+        console.error("Erro durante a geração do PDF com Paged.js:", error);
+        alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+    } finally {
+        if (modal) modal.style.display = 'none';
+        if (pdfButton) pdfButton.disabled = false;
+        
+        const pagedPages = document.querySelectorAll('.pagedjs_pages');
+        pagedPages.forEach(p => p.remove());
+        const pagedStyles = document.head.querySelectorAll('style[data-pagedjs-inserted-styles]');
+        pagedStyles.forEach(s => s.remove());
+    }
+}
+`;
+
+
+export function generateZip(projects: Project[], handbookTitle: string) {
+    const zip = new JSZip();
+
+    const cssContent = generateCss();
+    const scriptContent = getScriptContent();
+    
     const mainHtmlContent = `
         <!DOCTYPE html>
         <html lang="pt-br">
@@ -430,9 +430,7 @@ ${getPagedJsScript()}
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${handbookTitle}</title>
             <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
-            <style>
-                ${generateCss()}
-            </style>
+            <link rel="stylesheet" href="style.css">
         </head>
         <body>
             <div id="loading-modal">
@@ -453,16 +451,16 @@ ${getPagedJsScript()}
                 </div>
             </main>
             ${generateFloatingNav(projects)}
-            <script>${scriptContent}</script>
+            <script src="script.js"></script>
         </body>
         </html>
     `;
 
     zip.file('index.html', mainHtmlContent);
+    zip.file('style.css', cssContent);
+    zip.file('script.js', scriptContent);
     
     zip.generateAsync({ type: 'blob' }).then(blob => {
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
-
-    
