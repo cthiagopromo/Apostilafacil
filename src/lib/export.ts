@@ -209,21 +209,18 @@ function generateCss(): string {
 
         @media print {
             body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #btn-pdf, #btn-zip { display: none !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
-            
-            #apostila-completa { display: none; }
-            .pagedjs_pages { display: block; }
             .modulo { 
                 display: block !important; 
                 box-shadow: none !important; 
                 border: none !important;
                 padding: 1rem;
+                page-break-before: always;
             }
-            .pagedjs_page {
-                page-break-before: always; 
+             .modulo:first-of-type {
+                page-break-before: auto;
             }
-            .pagedjs_page:first-of-type { page-break-before: auto; }
         }
     `;
     
@@ -241,23 +238,18 @@ async function generatePdfWithPagedJs() {
     if(pdfButton) pdfButton.disabled = true;
 
     try {
-        const printContent = content.cloneNode(true);
-        printContent.id = 'pagedjs-render-source';
-        printContent.style.display = 'block'; 
-        printContent.querySelectorAll('.modulo').forEach(m => m.style.display = 'block');
-        
-        content.style.display = 'none';
-        document.body.appendChild(printContent);
-
+        // Paged.js Previewer will take the content and paginate it.
+        // It creates a preview in an iframe that we can then use.
         class MyHandler extends Paged.Handler {
-            constructor(chunker, polisher, caller) {
+             constructor(chunker, polisher, caller) {
                 super(chunker, polisher, caller);
             }
+            // You can add custom handlers here if needed
         }
         Paged.registerHandlers(MyHandler);
 
         let paged = new Paged.Previewer();
-        let flow = await paged.preview(printContent.innerHTML);
+        let flow = await paged.preview(content, ['/style.css'], document.body);
         
         const pdfBlob = await flow.toBlob();
         const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -270,16 +262,9 @@ async function generatePdfWithPagedJs() {
         if (modal) modal.style.display = 'none';
         if(pdfButton) pdfButton.disabled = false;
         
-        const renderSource = document.getElementById('pagedjs-render-source');
-        if (renderSource) {
-            renderSource.remove();
-        }
-        content.style.display = 'block';
-
+        // Clean up the paged.js preview elements
         const pagedPages = document.querySelectorAll('.pagedjs_pages');
         pagedPages.forEach(p => p.remove());
-        
-        // No need to reload, just clean up the created elements.
     }
 }
 `;
@@ -463,5 +448,3 @@ ${getPagedJsScript()}
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
-
-    
