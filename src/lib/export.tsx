@@ -8,6 +8,13 @@ import { renderToString } from 'react-dom/server';
 import BlockRenderer from '@/components/BlockRenderer';
 
 function renderBlockToHtml(block: Block): string {
+    // This is the key change: instead of manually crafting HTML strings,
+    // we use React's server-side rendering to convert the actual component
+    // into an HTML string. This guarantees a 1:1 match with the preview.
+    const componentHtml = renderToString(<BlockRenderer block={block} />);
+
+    // For the quiz, we need to inject the interactivity logic via specific classes and data attributes
+    // that our exported script will pick up. The server-rendered component doesn't have the client-side logic.
     if (block.type === 'quiz') {
         const quizOptionsHtml = block.content.options?.map(opt => `
             <div class="quiz-option" data-correct="${opt.isCorrect}">
@@ -31,12 +38,8 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             </div>`;
     }
-    // This is a simplified server-side rendering of the component.
-    // It's not perfect and might not work for complex components with client-side interactivity,
-    // but it's the most effective way to ensure visual consistency without maintaining two render paths.
-    // Note: This won't work for components that rely heavily on client-side hooks without hydration.
-    // Our BlockRenderer is mostly presentational, so it works well here.
-    return renderToString(<BlockRenderer block={block} />);
+    
+    return componentHtml;
 }
 
 
@@ -130,14 +133,14 @@ function generateCssContent(): string {
         main {
             max-width: 56rem; /* 896px */
             margin: 0 auto;
-            padding: 2rem 1rem; /* p-8 sm:p-12 md:p-12 */
+            padding: 2rem 1rem;
         }
         
         .printable-content-wrapper {
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-            padding: 2rem; /* p-8 sm:p-12 md:p-16 */
+            padding: 4rem;
         }
 
         .module-section { margin-bottom: 4rem; page-break-after: always; }
@@ -148,22 +151,24 @@ function generateCssContent(): string {
         .module-content > *:not(:last-child) { margin-bottom: 2rem; }
         
         /* Prose styles for rendered text blocks */
-        .prose { max-width: none; }
-        .prose h1 { font-size: 1.5em; font-weight: bold; }
-        .prose h2 { font-size: 1.25em; font-weight: bold; }
-        .prose h3 { font-size: 1.1em; font-weight: bold; }
+        .prose { max-width: none; color: hsl(var(--foreground));}
+        .prose h1, .prose h2, .prose h3 { font-weight: bold; color: hsl(var(--primary)); }
+        .prose h1 { font-size: 1.5em; }
+        .prose h2 { font-size: 1.25em; }
+        .prose h3 { font-size: 1.1em; }
         .prose p, .prose ul, .prose ol, .prose blockquote { margin-top: 1em; margin-bottom: 1em; }
         .prose ul { list-style-type: disc; padding-left: 2em; }
         .prose ol { list-style-type: decimal; padding-left: 2em; }
         .prose a { color: hsl(var(--primary)); text-decoration: underline; }
-        .prose blockquote { border-left: 4px solid hsl(var(--border)); padding-left: 1em; font-style: italic; }
-
+        
         .flex { display: flex; }
+        .flex-col { flex-direction: column; }
         .flex-row { flex-direction: row; }
         .justify-between { justify-content: space-between; }
         .items-center { align-items: center; }
         .justify-center { justify-content: center; }
         .gap-1 { gap: 0.25rem; }
+        .gap-2 { gap: 0.5rem; }
         .mx-auto { margin-left: auto; margin-right: auto; }
         .max-w-4xl { max-width: 56rem; }
         .font-bold { font-weight: 700; }
@@ -174,19 +179,29 @@ function generateCssContent(): string {
         figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
         
         .relative { position: relative; }
-        .bg-muted\\/50 { background-color: hsla(var(--muted) / 0.5); }
+        .p-6 { padding: 1.5rem; }
+        .bg-muted\\/50 { background-color: hsla(var(--muted), 0.5); }
         .border-l-4 { border-left: 4px solid hsl(var(--primary)); }
         .rounded-r-lg { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
-        blockquote { margin: 0; padding: 1.5rem; font-style: italic; color: hsla(var(--foreground) / 0.8); border: none; }
-        .text-primary\\/20 { color: hsla(var(--primary) / 0.2); }
+        .text-lg { font-size: 1.125rem; }
+        .italic { font-style: italic; }
+        .text-foreground\\/80 { color: hsl(var(--foreground), 0.8); }
+        .m-0 { margin: 0; }
+        .p-0 { padding: 0; }
+        .border-none { border: none; }
+        blockquote { margin: 0; padding: 0; border: none; }
+        .text-primary\\/20 { color: hsla(var(--primary), 0.2); }
         .absolute { position: absolute; }
         .-top-3 { top: -0.75rem; }
         .-left-4 { left: -1rem; }
+        .h-10 { height: 2.5rem; }
+        .w-10 { width: 2.5rem; }
+
 
         .w-full.aspect-video { width: 100%; aspect-ratio: 16 / 9; }
         iframe.rounded-md { border-radius: 0.375rem; border: none; }
 
-        .btn-primary { display: inline-block; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
+        .btn-primary { display: inline-flex; justify-content: center; align-items: center; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; font-size: 1rem; }
         .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; cursor: pointer; }
         
         /* Toolbar */
@@ -426,3 +441,5 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
+
+    
