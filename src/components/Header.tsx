@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { generateZip } from '@/lib/export';
+import { generateZip } from '@/lib/export.tsx';
 import { useRouter } from 'next/navigation';
 import { PreviewModal } from './PreviewModal';
 
