@@ -125,7 +125,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 0; /* Remove default browser headers/footers */
+    margin: 0;
   }
 
   .no-print, .no-print * {
@@ -140,13 +140,13 @@
     margin: 0;
     padding: 0;
     box-shadow: none;
-    -webkit-print-color-adjust: exact; /* Chrome, Safari */
-    print-color-adjust: exact; /* Firefox */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   main {
     max-width: 100% !important;
-    padding: 1.5cm !important; /* Add margins back for content */
+    padding: 1.5cm !important;
   }
 
   #handbook-root, .bg-card {
@@ -157,8 +157,8 @@
   }
   
   .module-section {
-    display: block !important; /* Show all modules for printing */
-    page-break-after: always; /* Each module starts on a new page */
+    display: block !important;
+    page-break-after: always;
   }
 
   .module-section:last-of-type {
@@ -170,7 +170,7 @@
   }
 
   figure, .quiz-card, blockquote, .prose {
-    page-break-inside: avoid; /* Avoid breaking complex elements */
+    page-break-inside: avoid;
   }
 
   a {

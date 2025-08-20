@@ -2,7 +2,6 @@
 'use client';
 
 import {
-  FileDown,
   Hand,
   ZoomIn,
   ZoomOut,
@@ -17,23 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useState } from 'react';
-import { LoadingModal } from './LoadingModal';
 
 interface AccessibilityToolbarProps {
   setIsExporting: (isExporting: boolean) => void;
 }
 
 export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarProps) {
-  const [isLoading, setIsLoading] = useState(false);
 
   const handlePdfExport = () => {
-    setIsLoading(true);
-    // This now just triggers the browser's print dialog.
-    // The @media print styles will handle the layout.
-    window.print();
-    // We can't know when the user closes the print dialog, so we'll hide the loader after a short delay.
-    setTimeout(() => setIsLoading(false), 2000);
+    setIsExporting(true);
   };
 
   const handleFontSize = (increase: boolean) => {
@@ -55,7 +46,6 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
 
   return (
     <>
-      <LoadingModal isOpen={isLoading} text="Preparando para impressão..." />
       <div className="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
         <TooltipProvider>
           <Tooltip>
