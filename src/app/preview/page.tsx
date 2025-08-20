@@ -13,7 +13,6 @@ export default function PreviewPage() {
   const router = useRouter();
 
   if (!projects || projects.length === 0) {
-    // This case might not be hit if we check before opening the preview, but it's good for robustness.
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-secondary">
         <p className="text-xl mb-4">Nenhum conteúdo para visualizar.</p>
@@ -26,17 +25,15 @@ export default function PreviewPage() {
   }
 
   return (
-    <div className="bg-secondary/40 min-h-screen printable-content">
+    <div className="bg-secondary/40 min-h-screen">
       <header className="bg-card p-4 shadow-sm sticky top-0 z-10 no-print">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold">{handbookTitle}</h1>
-            </div>
-            <AccessibilityToolbar />
+        <div className="max-w-5xl mx-auto flex flex-col items-start gap-3">
+          <h1 className="text-2xl font-bold">{handbookTitle}</h1>
+          <AccessibilityToolbar />
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+      <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
         <div className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
           <header className="text-center mb-12">
             <div className="inline-block p-4 bg-primary/10 rounded-2xl mb-4">
