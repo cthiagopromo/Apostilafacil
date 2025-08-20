@@ -22,7 +22,7 @@ export default function Header() {
 
   const getPreviewContentAsHtml = async (): Promise<string | null> => {
     const iframe = previewIframeRef.current;
-    if (!iframe?.contentWindow?.document?.getElementById('handbook-root-container')) {
+    if (!iframe?.contentWindow?.document?.documentElement) {
       toast({
         variant: 'destructive',
         title: 'Erro ao Acessar Conteúdo',
@@ -32,17 +32,19 @@ export default function Header() {
     }
 
     const doc = iframe.contentWindow.document;
-    const clone = doc.cloneNode(true) as Document;
+    const clone = doc.documentElement.cloneNode(true) as HTMLElement;
+    
+    // Remove elements that should not be in the final export
+    clone.querySelectorAll('.no-export').forEach(el => el.remove());
+    clone.querySelectorAll('script[src*="next/dist"]').forEach(el => el.remove());
+    
+    // Ensure all interactivity scripts and data are present, they are already in the preview page.
 
-    // Remover elementos que não devem estar no export final
-    clone.querySelector('.no-export')?.remove();
-    clone.querySelector('script[src*="next/dist"]')?.remove();
-
-    // Extrair o HTML final
-    const finalHtml = clone.documentElement.outerHTML;
+    const finalHtml = clone.outerHTML;
     
     return `<!DOCTYPE html>${finalHtml}`;
   }
+
 
   const handleExportZip = async () => {
     if (!projects || projects.length === 0) {
@@ -56,9 +58,11 @@ export default function Header() {
 
     setIsExporting(true);
     
+    // Ensure the modal is open to have the iframe rendered.
     if (!isPreviewModalOpen) {
       setIsPreviewModalOpen(true);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait a moment for the iframe content to load.
+      await new Promise(resolve => setTimeout(resolve, 2500));
     }
 
     try {
@@ -72,7 +76,7 @@ export default function Header() {
       const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
 
       zip.file('index.html', htmlContent);
-      zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
+      zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web.');
 
       const blob = await zip.generateAsync({ type: 'blob' });
       saveAs(blob, `${cleanTitle}.zip`);
@@ -91,7 +95,8 @@ export default function Header() {
       });
     } finally {
       setIsExporting(false);
-      setIsPreviewModalOpen(false);
+      // Keep the modal open for user convenience
+      // setIsPreviewModalOpen(false); 
     }
   };
 

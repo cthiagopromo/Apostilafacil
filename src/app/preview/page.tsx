@@ -11,45 +11,39 @@ import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData } from '@/lib/types';
 
-const getOfflineScript = (handbookData: HandbookData) => {
-    const interactiveScript = `
+// This function now returns a string for the <script> tag.
+const getInteractiveScript = (handbookData: HandbookData) => {
+    // This script contains all the client-side interactivity logic.
+    // It will be embedded directly into the exported HTML.
+    const scriptLogic = `
         document.addEventListener('DOMContentLoaded', () => {
-            const data = window.apostilaData;
-            if (!data) return;
+            // Data is now embedded in a script tag with id 'apostila-data'
+            const dataElement = document.getElementById('apostila-data');
+            if (!dataElement) {
+                console.error('Handbook data script tag not found.');
+                return;
+            }
+            const handbookData = JSON.parse(dataElement.textContent || '{}');
 
             // --- Quiz Interactivity ---
-            const quizCards = document.querySelectorAll('.quiz-card');
-            quizCards.forEach(card => {
-                const options = card.querySelectorAll('.quiz-option');
+            document.querySelectorAll('.quiz-card').forEach(card => {
+                const blockId = card.closest('[data-block-id]')?.dataset.blockId;
+                if (!blockId) return;
+
                 const radioButtons = card.querySelectorAll('.radio-group-item');
                 const retryBtn = card.querySelector('.retry-btn');
-                const blockId = card.closest('[data-block-id]')?.dataset.blockId;
+                const options = card.querySelectorAll('.quiz-option');
 
-                const getBlockData = () => {
-                   for (const project of data.projects) {
-                       const block = project.blocks.find(b => b.id === blockId);
-                       if (block) return block;
-                   }
-                   return null;
-                }
-                
                 const handleAnswer = (e) => {
                     const selectedOptionEl = e.currentTarget.closest('.quiz-option');
                     if (!selectedOptionEl) return;
-
-                    options.forEach(opt => {
-                        const isCorrect = opt.dataset.correct === 'true';
-                        opt.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border', 'bg-red-100', 'dark:bg-red-900/50', 'border-red-500');
-                        
-                        const checkIcon = opt.querySelector('.lucide-check-circle');
-                        const xIcon = opt.querySelector('.lucide-x-circle');
-                        if(checkIcon) checkIcon.style.display = 'none';
-                        if(xIcon) xIcon.style.display = 'none';
+                    
+                    radioButtons.forEach(rb => {
+                       rb.disabled = true;
                     });
-
-                    radioButtons.forEach(rb => rb.disabled = true);
-
+                    
                     const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
+
                     if (isSelectedCorrect) {
                         selectedOptionEl.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
                         const icon = selectedOptionEl.querySelector('.lucide-check-circle');
@@ -59,6 +53,7 @@ const getOfflineScript = (handbookData: HandbookData) => {
                         const icon = selectedOptionEl.querySelector('.lucide-x-circle');
                         if (icon) icon.style.display = 'inline-block';
                         
+                        // Also show the correct answer
                         const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
                         if(correctOption) {
                            correctOption.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
@@ -118,15 +113,15 @@ const getOfflineScript = (handbookData: HandbookData) => {
         });
     `;
 
-    return `
-        <script id="apostila-data" type="application/json">${JSON.stringify(handbookData)}</script>
-        <script>${interactiveScript}</script>
-    `;
+    return (
+        <>
+            <script id="apostila-data" type="application/json" dangerouslySetInnerHTML={{ __html: JSON.stringify(handbookData) }} />
+            <script id="interactive-script" dangerouslySetInnerHTML={{ __html: scriptLogic }} />
+        </>
+    );
 };
 
 const getGlobalStyles = () => {
-  // A simple way to grab all the styles from the current document.
-  // This is better than fetching globals.css as it includes all dynamic styles.
   if (typeof document === 'undefined') return '';
   
   const styleSheets = Array.from(document.styleSheets);
@@ -135,7 +130,12 @@ const getGlobalStyles = () => {
   for (const sheet of styleSheets) {
     try {
       if (sheet.cssRules) {
-        cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\\n');
+        // Basic filtering to avoid including dev-only Next.js styles in export
+        if (sheet.href && (sheet.href.includes('_next/static') || sheet.href.includes('localhost'))) {
+          cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+        } else if (!sheet.href) { // Inline styles
+          cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+        }
       }
     } catch (e) {
       console.warn("Could not read stylesheet rules (likely CORS):", sheet.href);
@@ -145,8 +145,8 @@ const getGlobalStyles = () => {
 }
 
 
-const OfflineHandout = ({ handbookData }: { handbookData: HandbookData }) => {
-    // This is the structure for the offline HTML file
+const FullPageHandout = ({ handbookData }: { handbookData: HandbookData }) => {
+    // This component represents the full HTML document structure for export.
     return (
         <html lang="pt-BR">
             <head>
@@ -179,8 +179,8 @@ const OfflineHandout = ({ handbookData }: { handbookData: HandbookData }) => {
                             </div>
                         </main>
                     </div>
-                    <div dangerouslySetInnerHTML={{ __html: getOfflineScript(handbookData) }} />
                 </div>
+                {getInteractiveScript(handbookData)}
             </body>
         </html>
     );
@@ -190,13 +190,11 @@ const OfflineHandout = ({ handbookData }: { handbookData: HandbookData }) => {
 export default function PreviewPage() {
   const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
   const router = useRouter();
-  const [isExporting, setIsExporting] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
-
 
   if (!isClient) {
     return <LoadingModal isOpen={true} text="Carregando visualização..." />
@@ -222,5 +220,5 @@ export default function PreviewPage() {
     projects 
   };
 
-  return <OfflineHandout handbookData={handbookData} />;
+  return <FullPageHandout handbookData={handbookData} />;
 }
