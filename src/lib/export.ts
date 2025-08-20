@@ -241,44 +241,32 @@ async function generatePdfWithPagedJs() {
     if(pdfButton) pdfButton.disabled = true;
 
     try {
-        // Clone the content to avoid disrupting the main view
         const printContent = content.cloneNode(true);
         printContent.id = 'pagedjs-render-source';
         printContent.style.display = 'block'; 
-        // Ensure all modules are visible for rendering
         printContent.querySelectorAll('.modulo').forEach(m => m.style.display = 'block');
         
-        // Hide the original content, show the render source temporarily but out of view
         content.style.display = 'none';
         document.body.appendChild(printContent);
 
-        // Define a custom handler for Paged.js
         class MyHandler extends Paged.Handler {
             constructor(chunker, polisher, caller) {
                 super(chunker, polisher, caller);
             }
-            
-            afterPageLayout(pageElement, page, breakToken, chunker) {
-                // You can add page numbers or other elements here if needed
-            }
         }
         Paged.registerHandlers(MyHandler);
 
-        // Run Paged.js previewer
         let paged = new Paged.Previewer();
-        let flow = await paged.preview(printContent.innerHTML, [], document.body);
+        let flow = await paged.preview(printContent.innerHTML);
         
-        // The preview method returns a promise that resolves when rendering is complete
-        console.log('Rendered', flow.pageCount, 'pages.');
-        
-        // After rendering, open the print dialog
-        window.print();
+        const pdfBlob = await flow.toBlob();
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
 
     } catch (error) {
         console.error("Error during Paged.js PDF generation:", error);
         alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
     } finally {
-        // Cleanup after printing
         if (modal) modal.style.display = 'none';
         if(pdfButton) pdfButton.disabled = false;
         
@@ -286,16 +274,12 @@ async function generatePdfWithPagedJs() {
         if (renderSource) {
             renderSource.remove();
         }
-        // Restore original content view
         content.style.display = 'block';
 
-        // Paged.js adds its own pages, we need to remove them
         const pagedPages = document.querySelectorAll('.pagedjs_pages');
         pagedPages.forEach(p => p.remove());
-
-        // This is a bit of a hack, but Paged.js doesn't have a clean "destroy" method.
-        // We reload to get back to the clean interactive state.
-        window.location.reload();
+        
+        // No need to reload, just clean up the created elements.
     }
 }
 `;
@@ -406,13 +390,15 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfButton.addEventListener('click', () => generatePdfWithPagedJs());
     }
 
-    floatingNavButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        floatingNavMenu.classList.toggle('show');
-    });
+    if(floatingNavButton){
+        floatingNavButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            floatingNavMenu.classList.toggle('show');
+        });
+    }
 
     document.addEventListener('click', (event) => {
-        if (!floatingNavMenu.contains(event.target) && !floatingNavButton.contains(event.target)) {
+        if (floatingNavMenu && !floatingNavMenu.contains(event.target) && floatingNavButton && !floatingNavButton.contains(event.target)) {
             floatingNavMenu.classList.remove('show');
         }
     });
@@ -421,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             showModule(i);
-            floatingNavMenu.classList.remove('show');
+            if(floatingNavMenu) floatingNavMenu.classList.remove('show');
         });
     });
 
@@ -442,8 +428,10 @@ ${getPagedJsScript()}
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="style.css">
             <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+            <style>
+                ${generateCss()}
+            </style>
         </head>
         <body>
             <div id="loading-modal">
@@ -470,9 +458,10 @@ ${getPagedJsScript()}
     `;
 
     zip.file('index.html', mainHtmlContent);
-    zip.file('style.css', generateCss());
     
     zip.generateAsync({ type: 'blob' }).then(blob => {
         saveAs(blob, `${handbookTitle.toLowerCase().replace(/\\s/g, '-')}.zip`);
     });
 }
+
+    
