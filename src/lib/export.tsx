@@ -8,9 +8,6 @@ import { renderToString } from 'react-dom/server';
 import BlockRenderer from '@/components/BlockRenderer';
 
 function renderBlockToHtml(block: Block): string {
-    // We can't use the real components directly for the interactive parts in a static export,
-    // so we build the interactive logic in getScriptContent() and provide the base HTML structure here.
-    
     if (block.type === 'quiz') {
         const quizOptionsHtml = block.content.options?.map(opt => `
             <div class="quiz-option" data-correct="${opt.isCorrect}">
@@ -34,24 +31,18 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             </div>`;
     }
-
-    // For other components, we can render them to a string.
-    // This is a bit of a hack as it brings in server-side rendering logic to the client,
-    // but it's the most effective way to ensure visual consistency without maintaining two render paths.
-    // Note: This won't work for components that rely heavily on client-side hooks without hydration.
-    // Our BlockRenderer is mostly presentational, so it works well here.
     return renderToString(<BlockRenderer block={block} />);
 }
 
 
 function generateModulesHtml(projects: Project[]): string {
     return projects.map((project) => `
-         <section class="mb-16 last:mb-0">
-              <header class='text-center mb-12'>
-                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                <p class="text-muted-foreground">${project.description}</p>
+         <section class="module-section">
+              <header class='module-header'>
+                <h2 class="module-title">${project.title}</h2>
+                <p class="module-description">${project.description}</p>
               </header>
-              <div class="space-y-8">
+              <div class="module-content">
                 ${project.blocks.map(renderBlockToHtml).join('\n')}
               </div>
         </section>
@@ -62,15 +53,15 @@ function generateModulesHtml(projects: Project[]): string {
 function generateHeaderNavHtml(handbookTitle: string): string {
     return `
       <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
-        <h1 class="text-2xl font-bold text-foreground">${handbookTitle}</h1>
-        <div id="accessibility-toolbar" class="flex items-center gap-1 bg-card p-1 rounded-lg border">
+        <h1 class="text-xl font-bold">${handbookTitle}</h1>
+        <div id="accessibility-toolbar" class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">
             <button id="export-pdf" title="Exportar para PDF" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </button>
             <button id="libras" title="Libras (Em desenvolvimento)" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path><path d="M4 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path></svg>
             </button>
-            <div class="flex items-center border-l border-r mx-1 px-1">
+            <div class="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
                  <button id="font-decrease" title="Diminuir Fonte" class="toolbar-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
@@ -126,33 +117,30 @@ function generateCssContent(): string {
         }
 
         header.no-print {
-            padding: 1rem 0;
+            padding: 1rem 1.5rem;
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
         }
         
         main {
             max-width: 56rem; /* 896px */
             margin: 0 auto;
-            padding: 2rem 3rem 4rem; /* p-8 sm:p-12 md:p-16 */
         }
         
         #printable-content-wrapper {
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-            padding: 2rem 3rem; /* Corresponds to p-8 sm:p-12 */
+            padding: 4rem;
+            margin: 2rem 1rem;
         }
 
-        .header-content {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        
-        section { margin-bottom: 4rem; }
-        section:last-child { margin-bottom: 0; }
-        section > header { text-align: center; margin-bottom: 3rem; }
-        h2 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
-        .text-muted-foreground { color: hsl(var(--muted-foreground)); }
-        .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+        .module-section { page-break-after: always; }
+        .module-section:last-child { page-break-after: auto; }
+        .module-header { text-align: center; margin-bottom: 3rem; page-break-after: avoid; }
+        .module-title { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
+        .module-description { color: hsl(var(--muted-foreground)); }
+        .module-content > *:not(:last-child) { margin-bottom: 2rem; }
         
         .prose { max-width: none; }
         .dark .prose-invert { color: hsl(var(--foreground)); }
@@ -165,8 +153,8 @@ function generateCssContent(): string {
         .gap-1 { gap: 0.25rem; }
         .mx-auto { margin-left: auto; margin-right: auto; }
         .max-w-4xl { max-width: 56rem; }
-        h1.font-bold { font-weight: 700; }
-        h1.text-2xl { font-size: 1.5rem; }
+        h1.font-bold, .font-bold { font-weight: 700; }
+        h1.text-xl, .text-xl { font-size: 1.25rem; }
         
 
         figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
@@ -190,17 +178,17 @@ function generateCssContent(): string {
         .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
         
         /* Toolbar */
-        #accessibility-toolbar { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 0.5rem; padding: 0.25rem; }
-        .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; }
-        .toolbar-btn:hover { background-color: hsl(var(--accent)); }
-        .toolbar-btn svg { height: 1.25rem; width: 1.25rem; stroke: hsl(var(--foreground)); }
-        .border-l { border-left: 1px solid hsl(var(--border)); }
-        .border-r { border-right: 1px solid hsl(var(--border)); }
+        #accessibility-toolbar { background-color: hsl(var(--primary)); border: 1px solid hsl(var(--primary-foreground)/.2); border-radius: 0.5rem; padding: 0.25rem; }
+        .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
+        .toolbar-btn:hover { background-color: hsl(var(--primary-foreground)/.1); }
+        .toolbar-btn svg { height: 1.25rem; width: 1.25rem; stroke: currentColor; }
+        .border-l { border-left: 1px solid hsl(var(--primary-foreground)/.2); }
+        .border-r { border-right: 1px solid hsl(var(--primary-foreground)/.2); }
         .mx-1 { margin-left: 0.25rem; margin-right: 0.25rem; }
         .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
 
         /* Quiz Styles */
-        .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; }
+        .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; page-break-inside: avoid; }
         .quiz-header { padding: 1rem 1.5rem; }
         .quiz-question { font-weight: 700; color: hsl(var(--card-foreground)); }
         .quiz-description { font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
@@ -218,24 +206,31 @@ function generateCssContent(): string {
         .quiz-feedback.incorrect { color: hsl(var(--destructive)); }
 
         body.high-contrast { background-color: black; color: white; }
-        body.high-contrast main, body.high-contrast header.no-print #accessibility-toolbar { background-color: black; border-color: white; }
+        body.high-contrast header.no-print, body.high-contrast header.no-print #accessibility-toolbar { background-color: black; border-color: white; }
         body.high-contrast .text-primary, body.high-contrast h1, body.high-contrast h2 { color: yellow !important; }
         body.high-contrast .text-muted-foreground { color: lightgray !important; }
         body.high-contrast .border-primary { border-color: yellow !important; }
-        body.high-contrast .toolbar-btn svg { stroke: white; }
+        body.high-contrast .toolbar-btn, body.high-contrast .toolbar-btn svg { color: white; stroke: white; }
         body.high-contrast #printable-content-wrapper { background-color: black; border: 1px solid white; }
+        body.high-contrast .toolbar-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+        body.high-contrast .border-l, body.high-contrast .border-r { border-color: white; }
 
         /* Loading Modal Styles */
-        #loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        #loading-modal-content { background: white; padding: 2rem; border-radius: 0.5rem; text-align: center; color: black; }
+        #loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        #loading-modal-content { background: hsl(var(--card)); padding: 2rem; border-radius: 0.5rem; text-align: center; color: hsl(var(--card-foreground)); box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
-
+        .spinner { width: 40px; height: 40px; border: 4px solid hsl(var(--secondary)); border-top: 4px solid hsl(var(--primary)); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        
+        /* Paged.js Print Styles */
         @media print {
           .no-print, .no-print * { display: none !important; }
-          body, main, #printable-content-wrapper { background: white !important; color: black !important; font-size: 11pt; width: 100%; margin: 0; padding: 0; box-shadow: none; border: none; }
-          main { max-width: 100% !important; }
-          @page { size: A4; margin: 2cm; }
+          body, main { background: white !important; color: black !important; }
+          main { max-width: 100% !important; margin: 0; padding: 0; }
+          #printable-content-wrapper { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0; border-radius: 0;}
+          @page {
+            size: A4;
+            margin: 2cm;
+          }
         }
     `;
 }
@@ -253,45 +248,33 @@ function getScriptContent(): string {
         
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', async () => {
-                const content = document.getElementById('printable-content');
-                if (!content || !window.html2canvas || !window.jspdf) {
-                    alert('Erro: Bibliotecas de exportação não carregaram.');
+                if (!window.Paged) {
+                    alert('Erro: Biblioteca de paginação não carregou.');
                     return;
                 }
 
                 if(loadingModal) loadingModal.style.display = 'flex';
 
-                try {
-                    const canvas = await html2canvas(content, {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: null,
-                    });
-
-                    const imgData = canvas.toDataURL('image/png');
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({
-                        orientation: 'p',
-                        unit: 'px',
-                        format: [canvas.width, canvas.height],
-                        hotfixes: ['px_scaling']
-                    });
-
-                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                    
-                    const pdfBlob = pdf.output('blob');
-                    const pdfUrl = URL.createObjectURL(pdfBlob);
-
-                    window.open(pdfUrl, '_blank');
-                    URL.revokeObjectURL(pdfUrl);
-
-                } catch (error) {
-                    console.error("Erro ao gerar PDF:", error);
-                    alert("Ocorreu um erro ao gerar o PDF. Tente novamente.");
-                } finally {
-                    if(loadingModal) loadingModal.style.display = 'none';
+                const content = document.getElementById('printable-content-wrapper');
+                
+                class Previewer extends Paged.Previewer {
+                    afterPreview() {
+                        if(loadingModal) loadingModal.style.display = 'none';
+                        // After paged.js has rendered the document, trigger the print dialog
+                        window.print();
+                    }
                 }
+                
+                let paged = new Previewer();
+                // The third argument is the element where the preview will be rendered. 
+                // By passing 'undefined', it will render in place.
+                paged.preview(content.innerHTML, [], undefined).then((flow) => {
+                    console.log("Rendered", flow.total, "pages.");
+                }).catch(error => {
+                    console.error("Paged.js error:", error);
+                    if(loadingModal) loadingModal.style.display = 'none';
+                    alert("Ocorreu um erro ao gerar o PDF. Tente novamente.");
+                });
             });
         }
 
@@ -389,14 +372,13 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
         <style>
             ${cssContent}
         </style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoVBL5gI9kDXrd3NHZrqzsoVRgePartnersA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
     </head>
     <body>
         <div id="loading-modal">
             <div id="loading-modal-content">
                 <div class="spinner"></div>
-                <p>Gerando PDF, por favor aguarde...</p>
+                <p>Preparando documento para impressão...</p>
             </div>
         </div>
 

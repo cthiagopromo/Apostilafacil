@@ -18,49 +18,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { LoadingModal } from './LoadingModal';
 
 export function AccessibilityToolbar() {
   const [isExporting, setIsExporting] = useState(false);
 
   const handlePdfExport = async () => {
-    const content = document.getElementById('printable-content');
-    if (!content) return;
-
     setIsExporting(true);
-
-    try {
-      const canvas = await html2canvas(content, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: null, 
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
-        hotfixes: ['px_scaling']
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-
-      window.open(pdfUrl, '_blank');
-      URL.revokeObjectURL(pdfUrl);
-
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      alert("Ocorreu um erro ao gerar o PDF. Tente novamente.");
-    } finally {
-      setIsExporting(false);
-    }
+    // This now just triggers the browser's print dialog.
+    // Paged.js will have already formatted the page for printing.
+    window.print();
+    // We can't know when the user closes the print dialog, so we'll hide the loader after a short delay.
+    setTimeout(() => setIsExporting(false), 2000);
   };
 
   const handleFontSize = (increase: boolean) => {
@@ -82,12 +51,12 @@ export function AccessibilityToolbar() {
 
   return (
     <>
-      <LoadingModal isOpen={isExporting} text="Gerando PDF, por favor aguarde..." />
-      <div className="flex items-center gap-1 bg-card p-1 rounded-lg border">
+      <LoadingModal isOpen={isExporting} text="Preparando documento para impressão..." />
+      <div className="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={handlePdfExport} disabled={isExporting}>
+              <Button variant="ghost" size="icon" onClick={handlePdfExport} disabled={isExporting} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                 {isExporting ? <Loader className="h-5 w-5 animate-spin"/> : <FileDown className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
@@ -96,17 +65,17 @@ export function AccessibilityToolbar() {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => showAlert('Libras')}>
+              <Button variant="ghost" size="icon" onClick={() => showAlert('Libras')} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                 <Hand className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent><p>Libras (Em desenvolvimento)</p></TooltipContent>
           </Tooltip>
 
-          <div className="flex items-center border-l border-r mx-1 px-1">
+          <div className="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleFontSize(false)}>
+                <Button variant="ghost" size="icon" onClick={() => handleFontSize(false)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                   <ZoomOut className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
@@ -114,7 +83,7 @@ export function AccessibilityToolbar() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleFontSize(true)}>
+                <Button variant="ghost" size="icon" onClick={() => handleFontSize(true)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                   <ZoomIn className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
@@ -124,7 +93,7 @@ export function AccessibilityToolbar() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={toggleContrast}>
+              <Button variant="ghost" size="icon" onClick={toggleContrast} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                 <Contrast className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -133,7 +102,7 @@ export function AccessibilityToolbar() {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => showAlert('Acessibilidade')}>
+              <Button variant="ghost" size="icon" onClick={() => showAlert('Acessibilidade')} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
                 <Droplets className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
