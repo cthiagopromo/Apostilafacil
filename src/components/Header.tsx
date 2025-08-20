@@ -15,161 +15,95 @@ import type { HandbookData, Block as BlockType } from '@/lib/types';
 import DOMPurify from 'dompurify';
 
 
-// Função para gerar o HTML de um bloco específico
-const renderBlockToHtml = (block: BlockType): string => {
-  // Sanitize content before rendering
-  const sanitize = (html: string) => (typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html);
-
-  switch (block.type) {
-    case 'text':
-      return `<div class="prose dark:prose-invert max-w-none">${sanitize(block.content.text || '')}</div>`;
-    case 'image':
-      const width = block.content.width ?? 100;
-      return `
-        <figure class='flex flex-col items-center gap-2' style="width: ${width}%;">
-          <img src="${block.content.url || 'https://placehold.co/600x400.png'}" alt="${block.content.alt || 'Placeholder'}" class="rounded-md shadow-md max-w-full h-auto" />
-          ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
-        </figure>
-      `;
-    case 'quote':
-       return `
-        <div class="relative">
-            <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 2v6h3v4c0 2.25 1 4 3 4Z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2h-4c-1.25 0-2 .75-2 2v6h3v4c0 2.25 1 4 3 4Z"/></svg>
-                ${block.content.text}
-            </blockquote>
-        </div>`;
-    case 'video':
-       const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
-       let videoEmbed = '';
-       if (videoType === 'cloudflare' && cloudflareVideoId) {
-            const src = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
-            videoEmbed = `<iframe class="w-full aspect-video rounded-md" src="${src}" title="${videoTitle || 'Cloudflare video'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-       } else if (videoType === 'youtube' && videoUrl) {
-           try {
-                const urlObj = new URL(videoUrl);
-                let videoId = urlObj.searchParams.get('v');
-                if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
-                videoEmbed = `<iframe class="w-full aspect-video rounded-md" src="${src}" title="${videoTitle || 'YouTube video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-           } catch(e) { videoEmbed = '<p class="text-destructive">URL do YouTube inválida.</p>'}
-       }
-       return videoEmbed;
-    case 'button':
-      return `
-        <div class='flex justify-center'>
-          <a href="${block.content.buttonUrl || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            ${block.content.buttonText || 'Botão'}
-          </a>
-        </div>
-      `;
-    case 'quiz':
-      const optionsHtml = block.content.options?.map(opt => `
-        <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all" data-correct="${opt.isCorrect}">
-            <input type="radio" name="quiz-${block.id}" value="${opt.id}" class="radio-group-item" />
-            <label for="quiz-${block.id}-${opt.id}" class="flex-1 cursor-pointer">${opt.text}</label>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-check-circle text-primary" style="display: none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-x-circle text-red-600" style="display: none;"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
-        </div>
-      `).join('') || '';
-      return `
-        <div class="quiz-card bg-muted/30 rounded-lg p-6">
-            <h3 class="quiz-card-title font-bold text-lg mb-2">${block.content.question}</h3>
-            <div class="quiz-options">${optionsHtml}</div>
-            <div class="quiz-card-footer mt-4">
-                <button class="retry-btn btn btn-outline" style="display: none;">Tentar Novamente</button>
-            </div>
-        </div>
-      `;
-    default:
-      return `<p>Bloco do tipo "${block.type}" não suportado.</p>`;
-  }
-};
-
-
 // Função para gerar o script JS que irá no ZIP
 const getInteractiveScript = (): string => {
+    // This script contains all the client-side interactivity logic.
+    // It will be embedded directly into the exported HTML.
     return `
-      document.addEventListener('DOMContentLoaded', () => {
-        const dataElement = document.getElementById('apostila-data');
-        if (!dataElement) {
-            console.error('Handbook data script tag not found.');
-            return;
-        }
-        
-        const handbookData = JSON.parse(dataElement.textContent || '{}');
-        const contentRoot = document.getElementById('handbook-root');
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Quiz Interactivity ---
+            document.querySelectorAll('.quiz-card').forEach(card => {
+                const retryBtn = card.querySelector('.retry-btn');
+                const radioButtons = card.querySelectorAll('input[type="radio"]');
+                const options = card.querySelectorAll('.quiz-option');
 
-        if (!handbookData || !contentRoot) {
-             console.error('Handbook data or root element not found.');
-             return;
-        }
-        
-        // Render all projects and blocks
-        contentRoot.innerHTML = handbookData.projects.map(project => \`
-            <section class="module-section mb-12 last:mb-0">
-                <header class='text-center mb-12'>
-                    <h2 class="text-3xl font-bold mb-2 pb-2">\${project.title}</h2>
-                    <p class="text-muted-foreground">\${project.description}</p>
-                </header>
-                <div class="space-y-8">
-                    \${project.blocks.map(block => \`
-                        <div data-block-id="\${block.id}">
-                            \${block.htmlContent}
-                        </div>
-                    \`).join('')}
-                </div>
-            </section>
-        \`).join('');
-
-        // --- Quiz Interactivity ---
-        document.querySelectorAll('.quiz-card').forEach(card => {
-            const retryBtn = card.querySelector('.retry-btn');
-            const radioButtons = card.querySelectorAll('.radio-group-item');
-            const options = card.querySelectorAll('.quiz-option');
-
-            const handleAnswer = (e) => {
-                const selectedOptionEl = e.currentTarget.closest('.quiz-option');
-                if (!selectedOptionEl) return;
-                
-                radioButtons.forEach(rb => { rb.disabled = true; });
-                
-                const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
-
-                if (isSelectedCorrect) {
-                    selectedOptionEl.classList.add('bg-primary/10', 'border-primary/50', 'border');
-                    const icon = selectedOptionEl.querySelector('.lucide-check-circle');
-                    if (icon) icon.style.display = 'inline-block';
-                } else {
-                    selectedOptionEl.classList.add('bg-red-100', 'border-red-500', 'border');
-                    const icon = selectedOptionEl.querySelector('.lucide-x-circle');
-                    if (icon) icon.style.display = 'inline-block';
+                const handleAnswer = (e) => {
+                    const selectedOptionEl = e.currentTarget.closest('.quiz-option');
+                    if (!selectedOptionEl) return;
                     
-                    const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
-                    if(correctOption) {
-                       correctOption.classList.add('bg-primary/10', 'border-primary/50', 'border');
-                       const correctIcon = correctOption.querySelector('.lucide-check-circle');
-                       if(correctIcon) correctIcon.style.display = 'inline-block';
-                    }
-                }
-                if (retryBtn) retryBtn.style.display = 'inline-flex';
-            };
-            radioButtons.forEach(radio => { radio.addEventListener('change', handleAnswer); });
-            if (retryBtn) {
-                retryBtn.addEventListener('click', () => {
-                    radioButtons.forEach(rb => { rb.disabled = false; rb.checked = false; });
-                    options.forEach(opt => {
-                       opt.classList.remove('bg-primary/10', 'border-primary/50', 'border', 'bg-red-100', 'border-red-500');
-                       const checkIcon = opt.querySelector('.lucide-check-circle');
-                       const xIcon = opt.querySelector('.lucide-x-circle');
-                       if(checkIcon) checkIcon.style.display = 'none';
-                       if(xIcon) xIcon.style.display = 'none';
+                    radioButtons.forEach(rb => {
+                       rb.disabled = true;
                     });
-                    retryBtn.style.display = 'none';
+                    
+                    const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
+
+                    if (isSelectedCorrect) {
+                        selectedOptionEl.classList.add('bg-primary/10', 'border-primary/50');
+                        const icon = selectedOptionEl.querySelector('.lucide-check-circle');
+                        if (icon) icon.style.display = 'inline-block';
+                    } else {
+                        selectedOptionEl.classList.add('bg-red-100', 'border-red-500');
+                        const icon = selectedOptionEl.querySelector('.lucide-x-circle');
+                        if (icon) icon.style.display = 'inline-block';
+                        
+                        // Also show the correct answer
+                        const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
+                        if(correctOption) {
+                           correctOption.classList.add('bg-primary/10', 'border-primary/50');
+                           const correctIcon = correctOption.querySelector('.lucide-check-circle');
+                           if(correctIcon) correctIcon.style.display = 'inline-block';
+                        }
+                    }
+
+                    if (retryBtn) retryBtn.style.display = 'inline-flex';
+                };
+
+                radioButtons.forEach(radio => {
+                    radio.addEventListener('change', handleAnswer);
                 });
+
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => {
+                        radioButtons.forEach(rb => {
+                            rb.disabled = false;
+                            rb.checked = false;
+                        });
+                        options.forEach(opt => {
+                           opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-red-100', 'border-red-500');
+                           const checkIcon = opt.querySelector('.lucide-check-circle');
+                           const xIcon = opt.querySelector('.lucide-x-circle');
+                           if(checkIcon) checkIcon.style.display = 'none';
+                           if(xIcon) xIcon.style.display = 'none';
+                        });
+                        retryBtn.style.display = 'none';
+                    });
+                }
+            });
+
+            // --- Accessibility Toolbar ---
+            const toolbar = document.querySelector('.accessibility-toolbar');
+            if (toolbar) {
+                const printBtn = toolbar.querySelector('[data-action="print"]');
+                const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
+                const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
+                const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
+                
+                if (printBtn) printBtn.addEventListener('click', () => window.print());
+                if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
+                
+                const handleFontSize = (increase) => {
+                    const body = document.body;
+                    const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
+                    const newSize = increase ? currentSize + 1 : currentSize - 1;
+                    if (newSize >= 12 && newSize <= 24) { 
+                      body.style.fontSize = \`\${newSize}px\`;
+                    }
+                };
+
+                if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
+                if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
         });
-      });
     `;
 };
 
@@ -196,61 +130,51 @@ export default function Header() {
         const zip = new JSZip();
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
         
-        // 1. Pre-render block content to HTML
-        const handbookDataWithHtml: HandbookData = JSON.parse(JSON.stringify({ 
-            id: handbookId, 
-            title: handbookTitle, 
-            description: handbookDescription, 
-            updatedAt: handbookUpdatedAt,
-            projects 
-        }));
+        // 1. Fetch the preview page content
+        const previewResponse = await fetch('/preview');
+        let previewHtml = await previewResponse.text();
 
-        handbookDataWithHtml.projects.forEach(project => {
-            project.blocks.forEach(block => {
-                // @ts-ignore
-                block.htmlContent = renderBlockToHtml(block);
-            });
-        });
+        // 2. Sanitize and extract the root container
+        const sanitizedHtml = DOMPurify.sanitize(previewHtml, { WHOLE_DOCUMENT: true, RETURN_DOM: true });
+        const rootContainer = sanitizedHtml.getElementById('handbook-root-container');
+        let contentHtml = rootContainer ? rootContainer.outerHTML : '<p>Erro ao carregar conteúdo.</p>';
 
-        // 2. Fetch global CSS content
+        // 3. Remove script tags that are not needed in the export
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contentHtml;
+        tempDiv.querySelectorAll('#apostila-data, #interactive-script, script[src*="_next"]').forEach(el => el.remove());
+        contentHtml = tempDiv.innerHTML;
+
+        // 4. Fetch the global CSS content
         const cssResponse = await fetch('/globals.css');
-        const cssContent = await cssResponse.text();
+        let cssContent = await cssResponse.text();
 
-        // 3. Generate interactive script
-        const scriptContent = getInteractiveScript();
+        // Replace Tailwind directives with the actual CSS (simple replacement for this context)
+        // In a real build, this CSS is already compiled. For this environment, we'll manually add some key styles.
+        // This is a simplified simulation
+        const tailwindDirectives = /@tailwind base;\s*@tailwind components;\s*@tailwind utilities;/g;
+        // The fetched globals.css will have the compiled tailwind css. No need to replace.
 
-        // 4. Create the final HTML content
-        const htmlContent = `<!DOCTYPE html>
-<html lang="en">
+        // 5. Create the final HTML file
+        const finalHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${handbookTitle}</title>
     <style>
         ${cssContent}
-        /* Add some basic button styles for the exported version */
-        .btn { display: inline-flex; items-align: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; }
-        .btn-primary { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-        .btn-outline { border: 1px solid hsl(var(--input)); background-color: transparent; }
     </style>
 </head>
-<body class="bg-secondary/40">
-    <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
-        <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
-            <!-- Content will be rendered here by the script -->
-        </div>
-    </main>
-
-    <script id="apostila-data" type="application/json">
-        ${JSON.stringify(handbookDataWithHtml)}
-    </script>
-    <script id="interactive-script">
-        ${scriptContent}
+<body class="font-sans antialiased">
+    ${contentHtml}
+    <script>
+        ${getInteractiveScript()}
     </script>
 </body>
 </html>`;
 
-        zip.file('index.html', htmlContent);
+        zip.file('index.html', finalHtml);
         
         const blob = await zip.generateAsync({ type: 'blob' });
         saveAs(blob, `apostila-${cleanTitle}.zip`);
@@ -358,3 +282,5 @@ export default function Header() {
     </>
   );
 }
+
+    
