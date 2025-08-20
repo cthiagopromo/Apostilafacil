@@ -18,7 +18,7 @@ function renderBlockToHtml(block: Block): string {
         case 'text':
             return `<div class="block block-text">${sanitizeHtml(block.content.text || '')}</div>`;
         case 'image':
-             const imageUrl = block.content.url;
+            const imageUrl = block.content.url;
             const width = block.content.width ?? 100;
             return `
                 <div class="block block-image" style="display: flex; justify-content: center;">
@@ -75,7 +75,7 @@ function renderBlockToHtml(block: Block): string {
 }
 
 
-function generateModulesHtml(projects: Project[], mainTitle: string): string {
+function generateModulesHtml(projects: Project[]): string {
     return projects.map((project, index) => `
           <section id="modulo-${index}" class="modulo">
               <div class="module-content">
@@ -127,7 +127,7 @@ function generateHeaderNavHtml(): string {
 }
 
 function generateCss(): string {
-    const interactiveStyles = `
+    return `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root {
             --primary-color: #2563EB;
@@ -165,7 +165,7 @@ function generateCss(): string {
         .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
         .block-quote { position: relative; padding: 1.5rem; background-color: var(--background-color); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
         
-        .pagedjs-video-placeholder { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; }
+        .pagedjs-video-placeholder { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-decoration: none; color: inherit; }
         .video-placeholder-content { text-align: center; }
         .video-placeholder-content p { font-weight: 500; color: #333; margin: 0 0 1rem 0; }
 
@@ -238,8 +238,6 @@ function generateCss(): string {
         }
         .pagedjs_pages { display: none; }
     `;
-    
-    return interactiveStyles;
 }
 
 const getPagedJsScript = () => `
@@ -451,7 +449,7 @@ ${getPagedJsScript()}
             </header>
             <main>
                 <div id="apostila-completa">
-                    ${generateModulesHtml(projects, handbookTitle)}
+                    ${generateModulesHtml(projects)}
                 </div>
             </main>
             ${generateFloatingNav(projects)}
