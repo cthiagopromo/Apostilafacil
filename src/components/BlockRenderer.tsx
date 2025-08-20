@@ -65,24 +65,29 @@ const QuizBlock = ({ block }: { block: Block }) => {
     };
 
     return (
-        <Card className="bg-muted/30">
-            <CardHeader>
-                <CardTitle>{question}</CardTitle>
-                <CardDescription>Selecione a resposta correta.</CardDescription>
+        <Card className="quiz-card bg-muted/30">
+            <CardHeader className="quiz-card-header">
+                <CardTitle className="quiz-card-title">{question}</CardTitle>
+                <CardDescription className="quiz-card-desc">Selecione a resposta correta.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="quiz-card-content">
                 <RadioGroup value={userAnswerId || undefined} onValueChange={handleValueChange} disabled={isAnswered}>
                     {options?.map((option) => {
                         const isSelected = userAnswerId === option.id;
                         const showResult = isAnswered && isSelected;
                         
                         return (
-                            <div key={option.id} className={cn(
-                                "flex items-center space-x-3 p-3 rounded-md transition-all",
+                            <div key={option.id} 
+                                className={cn(
+                                "quiz-option flex items-center space-x-3 p-3 rounded-md transition-all",
                                 isAnswered && option.isCorrect && 'bg-primary/10 dark:bg-primary/20 border-primary/50 border',
                                 showResult && !option.isCorrect && 'bg-red-100 dark:bg-red-900/50 border-red-500 border'
-                            )}>
-                                <RadioGroupItem value={option.id} id={option.id} />
+                                )}
+                                data-correct={option.isCorrect}
+                            >
+                                <RadioGroupItem value={option.id} id={option.id} className="radio-group-item">
+                                    <div className="radio-group-indicator"></div>
+                                </RadioGroupItem>
                                 <Label htmlFor={option.id} className="flex-1 cursor-pointer">{option.text}</Label>
                                 {showResult && option.isCorrect && <CheckCircle className="text-primary" />}
                                 {showResult && !option.isCorrect && <XCircle className="text-red-600" />}
@@ -91,9 +96,14 @@ const QuizBlock = ({ block }: { block: Block }) => {
                     })}
                 </RadioGroup>
             </CardContent>
-            {isAnswered && (
-                <CardFooter>
-                    <Button variant="outline" onClick={() => resetQuiz(block.id)}>Tentar Novamente</Button>
+            {isAnswered ? (
+                <CardFooter className="quiz-card-footer">
+                    <Button variant="outline" className="retry-btn" onClick={() => resetQuiz(block.id)}>Tentar Novamente</Button>
+                </CardFooter>
+            ) : (
+                 <CardFooter className="quiz-card-footer">
+                    <div className="quiz-feedback"></div>
+                    <Button variant="outline" className="retry-btn" style={{display: 'none'}}>Tentar Novamente</Button>
                 </CardFooter>
             )}
         </Card>
@@ -106,7 +116,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         if (typeof window !== 'undefined') {
             return { __html: DOMPurify.sanitize(html) };
         }
-        return { __html: html }; // Or a server-side equivalent
+        return { __html: html };
     };
 
     switch(block.type) {
@@ -133,9 +143,9 @@ const BlockRenderer = ({ block }: { block: Block }) => {
             )
         case 'quote':
             return (
-                 <div className="relative p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg">
-                    <Quote className="absolute -top-3 -left-4 h-10 w-10 text-primary/20" />
-                    <blockquote className="text-lg italic text-foreground/80 m-0 p-0 border-none">
+                 <div className="relative">
+                    <blockquote className="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                         <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20" />
                         {block.content.text}
                     </blockquote>
                  </div>
@@ -148,13 +158,12 @@ const BlockRenderer = ({ block }: { block: Block }) => {
                 return <CloudflareEmbed videoId={cloudflareVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
             }
             
-            // Default to YouTube
             if (!videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
             return <YoutubeEmbed url={videoUrl} title={videoTitle} autoplay={autoplay} showControls={showControls} />
         case 'button':
             return (
                 <div className='flex justify-center'>
-                    <Button asChild size="lg">
+                    <Button asChild size="lg" className="btn btn-primary">
                         <a href={block.content.buttonUrl || '#'} target="_blank" rel="noopener noreferrer">
                             {block.content.buttonText || 'Botão'}
                         </a>
