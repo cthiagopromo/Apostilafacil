@@ -42,10 +42,11 @@ function renderBlockToHtml(block: Block): string {
         case 'video':
             const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
             let embedHtml = '';
+            let videoLink = '#';
 
-            if (videoType === 'cloudflare') {
-                if (!cloudflareVideoId) return `<div class="block-video-invalid">ID do vídeo do Cloudflare não definido.</div>`;
+            if (videoType === 'cloudflare' && cloudflareVideoId) {
                 const src = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+                 videoLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
                 embedHtml = `
                     <iframe
                         src="${src}"
@@ -54,8 +55,8 @@ function renderBlockToHtml(block: Block): string {
                         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen
                     ></iframe>`;
-            } else { // Default to YouTube
-                if (!videoUrl) return `<div class="block-video-invalid">URL do YouTube inválida.</div>`;
+            } else if (videoType === 'youtube' && videoUrl) { // Default to YouTube
+                videoLink = videoUrl;
                 try {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
@@ -76,11 +77,22 @@ function renderBlockToHtml(block: Block): string {
                 } catch (e) {
                     return `<div class="block-video-invalid">URL do vídeo inválida.</div>`;
                 }
+            } else {
+                 return `<div class="block-video-invalid">Dados do vídeo inválidos.</div>`
             }
              return `
                 <div ${animationClass}>
                     <div class="block block-video">
                         ${embedHtml}
+                    </div>
+                     <div class="pdf-video-placeholder">
+                         <div class="pdf-video-placeholder-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                        </div>
+                        <div class="pdf-video-placeholder-text">
+                            <p class="video-title">${videoTitle || 'Vídeo'}</p>
+                            <p>Assista ao vídeo em: <a href="${videoLink}" target="_blank">${videoLink}</a></p>
+                        </div>
                     </div>
                 </div>
             `;
@@ -109,6 +121,9 @@ function renderBlockToHtml(block: Block): string {
                         <div class="quiz-feedback"></div>
                         <button class="btn quiz-retry-btn" style="display:none;">Tentar Novamente</button>
                     </div>
+                     <div class="pdf-quiz-placeholder">
+                        <strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)
+                    </div>
                 </div>`;
         default:
             return '';
@@ -125,8 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
-    const modal = document.getElementById('loading-modal');
-
+    
     function showModule(index) {
         modules.forEach((module, i) => {
             module.style.display = i === index ? 'block' : 'none';
@@ -218,104 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- PDF Generation ---
-    pdfButton.addEventListener('click', async () => {
-        modal.style.display = 'flex';
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: 'a4'
-        });
-
-        const allModules = Array.from(document.querySelectorAll('.pdf-module-page'));
-
-        const imagePromises = [];
-        allModules.forEach(moduleEl => {
-            moduleEl.querySelectorAll('img').forEach(img => {
-                const promise = fetch(img.src)
-                    .then(response => {
-                        if (!response.ok) {
-                           throw new Error('Network response was not ok');
-                        }
-                        return response.blob();
-                    })
-                    .then(blob => new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            img.src = reader.result;
-                            resolve();
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    }))
-                    .catch(error => {
-                        console.error('Error converting image to base64:', img.src, error);
-                        const p = document.createElement('p');
-                        p.innerText = '[Imagem não disponível]';
-                        p.style.textAlign = 'center';
-                        p.style.padding = '2rem';
-                        p.style.color = '#888';
-                        img.parentNode.replaceChild(p, img);
-                    });
-                imagePromises.push(promise);
-            });
-        });
-        
-        await Promise.all(imagePromises);
-        
-        for (let i = 0; i < allModules.length; i++) {
-            const moduleEl = allModules[i];
-            
-            if (i > 0) {
-              pdf.addPage();
-            }
-
-            try {
-                const canvas = await html2canvas(moduleEl, {
-                    scale: 2,
-                    useCORS: false,
-                    allowTaint: true,
-                    logging: false,
-                    width: moduleEl.scrollWidth,
-                    height: moduleEl.scrollHeight,
-                    windowWidth: moduleEl.scrollWidth,
-                    windowHeight: moduleEl.scrollHeight,
-                });
-                
-                const imgData = canvas.toDataURL('image/png', 0.95);
-                if (!imgData || imgData === 'data:,') {
-                    console.error('html2canvas returned an empty canvas. Skipping module ' + i);
-                    pdf.text("Error rendering this module.", 20, 20);
-                } else {
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-                    const imgProps = pdf.getImageProperties(imgData);
-                    const aspectRatio = imgProps.height / imgProps.width;
-                    const imgHeight = pdfWidth * aspectRatio;
-                    
-                    let heightLeft = imgHeight;
-                    let position = 0;
-
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdfHeight;
-
-                    while (heightLeft > 0) {
-                      position -= pdfHeight;
-                      pdf.addPage();
-                      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                      heightLeft -= pdfHeight;
-                    }
-                }
-            } catch(err) {
-                 console.error("Error generating PDF part for module " + i + ":", err);
-                 if (i > 0) pdf.addPage();
-                 pdf.text("Error rendering content for this module.", 20, 20);
-            }
-        }
-        
-        pdf.output('dataurlnewwindow');
-        modal.style.display = 'none';
+    pdfButton.addEventListener('click', () => {
+        window.print();
     });
 
     // --- Accessibility Buttons ---
@@ -413,22 +331,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generateModulesHtml(projects: Project[], mainTitle: string): string {
     return `
-      <div id="apostila-completa">
-        ${projects.map((project, index) => `
-            <section id="modulo-${index}" class="modulo">
-                <div class="module-content">
-                    <h2 class="module-main-title animatable">${mainTitle}</h2>
-                    <h1 class="module-title-header animatable">${project.title}</h1>
-                    <div class="divider animatable"></div>
-                    ${project.blocks.map(renderBlockToHtml).join('\n')}
-                </div>
-                 <div class="module-navigation animatable">
-                    <button class="btn nav-anterior">Módulo Anterior</button>
-                    <button class="btn nav-proximo">Próximo Módulo</button>
-                </div>
-            </section>
-        `).join('')}
-      </div>
+      ${projects.map((project, index) => `
+          <section id="modulo-${index}" class="modulo">
+              <div class="module-content">
+                  <h2 class="module-main-title animatable">${mainTitle}</h2>
+                  <h1 class="module-title-header animatable">${project.title}</h1>
+                  <div class="divider animatable"></div>
+                  ${project.blocks.map(renderBlockToHtml).join('\n')}
+              </div>
+               <div class="module-navigation animatable">
+                  <button class="btn nav-anterior">Módulo Anterior</button>
+                  <button class="btn nav-proximo">Próximo Módulo</button>
+              </div>
+          </section>
+      `).join('')}
     `;
 }
 
@@ -499,16 +415,8 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <div id="loading-modal" style="display: none;">
-      <div class="modal-content">
-        <div class="spinner"></div>
-        <p>Gerando PDF, por favor aguarde...</p>
-      </div>
-    </div>
     <header class="main-header">
         <div class="header-container">
             <h1 class="main-title">${handbookTitle}</h1>
@@ -516,7 +424,9 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
         </div>
     </header>
     <main>
-        ${modulesHtml}
+        <div id="apostila-completa">
+            ${modulesHtml}
+        </div>
     </main>
     ${floatingNavHtml}
     <script src="script.js"></script>
@@ -566,6 +476,8 @@ body.alto-contraste #floating-nav-menu li a.active { color: #000; }
 
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+html { font-size: 16px; }
+
 body {
     font-family: var(--font-family);
     line-height: 1.6;
@@ -574,44 +486,6 @@ body {
     margin: 0;
     padding-top: var(--header-height);
     transition: background-color 0.3s, color 0.3s;
-}
-
-#loading-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-.modal-content {
-    background-color: white;
-    color: #333;
-    padding: 30px 40px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-}
-.modal-content p { font-size: 1.1rem; font-weight: 500; margin: 0; }
-.spinner {
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid var(--primary-color);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 .main-header {
@@ -637,8 +511,6 @@ body {
 main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
 .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
 body.modo-escuro .modulo { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-#apostila-completa .pdf-module-page { page-break-before: always; }
-#apostila-completa .pdf-module-page:first-child { page-break-before: auto; }
 
 h1, h2, h3, h4, h5, h6 { text-align: center; }
 .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
@@ -707,35 +579,8 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animatable.revealed { opacity: 1; transform: translateY(0); }
 
-.pdf-video-placeholder {
-    display: flex;
-    align-items: center;
-    gap: 1em;
-    padding: 1rem;
-    margin: 1.5rem 0;
-    background-color: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    page-break-inside: avoid;
-    text-align: left;
-}
-.pdf-video-placeholder a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-}
-.pdf-video-placeholder-icon {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-}
-.pdf-video-placeholder-text p {
-    margin: 0;
-    padding: 0;
-}
-.pdf-video-placeholder-text p.video-title {
-    font-weight: bold;
-    margin-bottom: 0.25em;
+.pdf-video-placeholder, .pdf-quiz-placeholder {
+    display: none;
 }
 
 @media (max-width: 768px) {
@@ -750,84 +595,107 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 }
 
 @media print {
-    @page { margin: 1.5cm; }
-    body, #apostila-completa { padding-top: 0; background-color: #fff !important; color: #000 !important; }
-    main { margin: 0; padding: 0; box-shadow: none; max-width: 100%; }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
-    .block-video { display: none; } /* Hide interactive video player */
-    .pdf-video-placeholder { display: flex !important; } /* Show placeholder */
-    .animatable { opacity: 1 !important; transform: translateY(0) !important; }
+    @page { 
+      size: A4;
+      margin: 1.5cm;
+    }
+
+    html, body { 
+        width: 210mm;
+        height: 297mm;
+        padding-top: 0 !important; 
+        background-color: #fff !important; 
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    main { 
+        margin: 0 !important; 
+        padding: 0 !important;
+        max-width: 100% !important; 
+    }
+    
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block { 
+        display: none !important; 
+    }
+    
+    .animatable { 
+        opacity: 1 !important; 
+        transform: translateY(0) !important; 
+    }
+    
     .modulo { 
         display: block !important; 
         page-break-before: always; 
         box-shadow: none !important; 
-        border-radius: 0 !important; 
-        border: none !important; 
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
-    .modulo:first-of-type { page-break-before: auto; }
-    .modulo:last-of-type { page-break-after: avoid; }
+
+    .modulo:first-of-type { 
+        page-break-before: auto; 
+    }
+    
+    h1, h2, h3, h4, h5, h6, .module-main-title, .module-title-header {
+      text-align: center !important;
+    }
+    
+    .block-video, .block-quiz {
+        display: none !important;
+    }
+    
+    .pdf-video-placeholder, .pdf-quiz-placeholder {
+        display: flex !important;
+        align-items: center;
+        gap: 1em;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        background-color: #f3f4f6 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px;
+        page-break-inside: avoid;
+        text-align: left;
+    }
+
+    .pdf-quiz-placeholder {
+       display: block !important;
+       text-align: center !important;
+    }
+    
+    .pdf-video-placeholder a {
+        color: var(--primary-color) !important;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .pdf-video-placeholder-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        fill: #000;
+    }
+    .pdf-video-placeholder-icon svg { fill: #000; }
+    
+    .pdf-video-placeholder-text p {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .pdf-video-placeholder-text p.video-title {
+        font-weight: bold;
+        margin-bottom: 0.25em;
+    }
 }
     `;
 }
-
-function getUrlFromBlock(block: Block): string {
-    const { videoType, videoUrl, cloudflareVideoId } = block.content;
-    if (videoType === 'cloudflare' && cloudflareVideoId) {
-        return `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
-    }
-    if (videoType === 'youtube' && videoUrl) {
-        return videoUrl;
-    }
-    return '#';
-}
-
-function generatePdfHtmlForProject(projects: Project[], mainTitle: string): string {
-    const renderBlockForPdf = (block: Block): string => {
-        switch (block.type) {
-            case 'video':
-                const videoTitle = block.content.videoTitle || 'Vídeo';
-                const videoUrl = getUrlFromBlock(block);
-                return `
-                    <div class="pdf-video-placeholder">
-                         <div class="pdf-video-placeholder-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-                        </div>
-                        <div class="pdf-video-placeholder-text">
-                            <p class="video-title">${videoTitle}</p>
-                            <p>Assista ao vídeo em: <a href="${videoUrl}" target="_blank">${videoUrl}</a></p>
-                        </div>
-                    </div>`;
-            case 'quiz':
-                 return `<div class="block-quiz-pdf" style="padding: 1rem; background-color: #f3f4f6; border-radius: 8px; text-align: center;"><strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)</div>`;
-            default:
-                return renderBlockToHtml(block).replace(/class="animatable"/g, '');
-        }
-    };
-
-    return `
-        ${projects.map(project => `
-            <div class="pdf-module-page" style="background-color: white; color: black; page-break-inside: avoid;">
-                <h2 class="module-main-title" style="text-align: center;">${mainTitle}</h2>
-                <h1 class="module-title-header" style="text-align: center;">${project.title}</h1>
-                <div class="divider"></div>
-                ${project.blocks.map(renderBlockForPdf).join('\n')}
-            </div>
-        `).join('')}
-    `;
-}
-
 
 export async function exportToZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
 
-    const pdfHtmlContent = generatePdfHtmlForProject(projects, handbookTitle);
-
-    const mainHtmlContent = generateHtml(projects, handbookTitle)
-      .replace(
-        '</body>',
-        `<div id="pdf-source" style="position: absolute; left: -9999px; top: 0; width: 800px;">${pdfHtmlContent}</div></body>`
-      );
-
+    const mainHtmlContent = generateHtml(projects, handbookTitle);
 
     zip.file('index.html', mainHtmlContent);
     zip.file('style.css', generateCss());
