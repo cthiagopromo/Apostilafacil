@@ -13,7 +13,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData } from '@/lib/types';
 
-const getAppHtmlTemplate = (title: string): string => {
+const getAppHtmlTemplate = (title: string, jsonData: string): string => {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -45,6 +45,9 @@ const getAppHtmlTemplate = (title: string): string => {
     </div>
     
     <!-- Scripts -->
+    <script id="course-data" type="application/json">
+        ${jsonData}
+    </script>
     <script src="libs/html2pdf.min.js"></script>
     <script src="assets/app.js"></script>
 </body>
@@ -61,8 +64,8 @@ class InteractiveCourse {
         this.init();
     }
     
-    async init() {
-        this.courseData = await this.loadCourseData();
+    init() {
+        this.courseData = this.loadCourseData();
         if (this.courseData) {
             this.renderContent();
             // In future steps, we will add:
@@ -71,19 +74,18 @@ class InteractiveCourse {
         }
     }
 
-    async loadCourseData() {
+    loadCourseData() {
         try {
-            const response = await fetch('assets/course-data.json');
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
+            const dataElement = document.getElementById('course-data');
+            if (!dataElement) {
+                throw new Error('Elemento de dados do curso não encontrado.');
             }
-            const data = await response.json();
-            return data;
+            return JSON.parse(dataElement.textContent || '{}');
         } catch (error) {
-            console.error('There has been a problem with your fetch operation:', error);
+            console.error('Falha ao carregar ou analisar os dados do curso:', error);
             const mainContent = document.getElementById('main-content');
             if(mainContent) {
-                mainContent.innerHTML = '<p style="color: red; text-align: center; padding: 2rem;">Falha ao carregar os dados da apostila. Verifique se o arquivo "assets/course-data.json" existe e está acessível.</p>';
+                mainContent.innerHTML = '<p style="color: red; text-align: center; padding: 2rem;">Falha ao carregar os dados da apostila. Os dados embutidos não puderam ser lidos.</p>';
             }
             return null;
         }
@@ -299,8 +301,10 @@ export default function Header() {
             projects 
         };
 
-        // 1. HTML da aplicação
-        const htmlContent = getAppHtmlTemplate(handbookTitle);
+        const jsonDataString = JSON.stringify(handbookData, null, 2);
+
+        // 1. HTML da aplicação (com dados embutidos)
+        const htmlContent = getAppHtmlTemplate(handbookTitle, jsonDataString);
         zip.file('index.html', htmlContent);
 
         // 2. CSS da Aplicação
@@ -309,10 +313,7 @@ export default function Header() {
         // 3. JS da Aplicação
         zip.file('assets/app.js', getAppJsTemplate());
         
-        // 4. Dados do curso
-        zip.file('assets/course-data.json', JSON.stringify(handbookData, null, 2));
-
-        // 5. README
+        // 4. README
         zip.file('README.md', 'Para usar esta apostila, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
         
         // TODO: Adicionar assets (imagens, libs)
