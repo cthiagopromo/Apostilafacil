@@ -10,6 +10,7 @@ import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { CheckCircle, Quote, XCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { useEffect, useState } from 'react';
 
 const YoutubeEmbed = ({ url, title, autoplay, showControls }: { url: string, title?: string, autoplay?: boolean, showControls?: boolean }) => {
     try {
@@ -103,16 +104,17 @@ const QuizBlock = ({ block }: { block: Block }) => {
 
 
 const BlockRenderer = ({ block }: { block: Block }) => {
-    const createSanitizedHtml = (html: string) => {
-        if (typeof window !== 'undefined') {
-            return { __html: DOMPurify.sanitize(html) };
+     const [sanitizedHtml, setSanitizedHtml] = useState('');
+
+    useEffect(() => {
+        if (block.type === 'text' && typeof window !== 'undefined') {
+            setSanitizedHtml(DOMPurify.sanitize(block.content.text || ''));
         }
-        return { __html: html };
-    };
+    }, [block.content.text, block.type]);
 
     switch(block.type) {
         case 'text':
-            return <div dangerouslySetInnerHTML={createSanitizedHtml(block.content.text || '')} className="prose dark:prose-invert max-w-none" />;
+             return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} className="prose dark:prose-invert max-w-none" />;
         case 'image':
             const imageUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT 
                 ? `https://imagedelivery.net/${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT}/${block.content.url}/public`

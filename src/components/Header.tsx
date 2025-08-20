@@ -32,16 +32,12 @@ export default function Header() {
     }
     
     const doc = iframe.contentWindow.document;
-    const originalHtml = doc.documentElement.outerHTML;
-    
-    // Create a temporary DOM element to manipulate the HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = originalHtml;
+    const tempDoc = doc.cloneNode(true) as Document;
 
     // Remove elements that should not be in the final export
-    tempDiv.querySelectorAll('.no-export').forEach(el => el.remove());
+    tempDoc.querySelectorAll('.no-export').forEach(el => el.remove());
     
-    const finalHtml = tempDiv.innerHTML;
+    const finalHtml = tempDoc.documentElement.outerHTML;
     
     return `<!DOCTYPE html>${finalHtml}`;
   }
@@ -59,42 +55,47 @@ export default function Header() {
 
     setIsExporting(true);
     
-    if (!isPreviewModalOpen) {
-      setIsPreviewModalOpen(true);
-      await new Promise(resolve => setTimeout(resolve, 2500));
-    }
+    const openModalAndExport = async () => {
+        setIsPreviewModalOpen(true);
+        // Wait for the iframe to load and React to hydrate. This is a crucial step.
+        await new Promise(resolve => setTimeout(resolve, 2500));
 
-    try {
-      const htmlContent = await getPreviewContentAsHtml();
+        try {
+            const htmlContent = await getPreviewContentAsHtml();
 
-      if (!htmlContent) {
-        throw new Error("O conteúdo HTML não pôde ser gerado.");
-      }
+            if (!htmlContent) {
+                throw new Error("O conteúdo HTML não pôde ser gerado.");
+            }
 
-      const zip = new JSZip();
-      const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
+            const zip = new JSZip();
+            const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
 
-      zip.file('index.html', htmlContent);
-      zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web.');
+            zip.file('index.html', htmlContent);
+            zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web.');
 
-      const blob = await zip.generateAsync({ type: 'blob' });
-      saveAs(blob, `${cleanTitle}.zip`);
+            const blob = await zip.generateAsync({ type: 'blob' });
+            saveAs(blob, `${cleanTitle}.zip`);
 
-      toast({
-        title: 'Exportação Concluída',
-        description: 'Seu projeto foi exportado como um arquivo ZIP.',
-      });
+            toast({
+                title: 'Exportação Concluída',
+                description: 'Seu projeto foi exportado como um arquivo ZIP.',
+            });
 
-    } catch (error) {
-      console.error('Falha ao exportar o projeto', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro na Exportação',
-        description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
-      });
-    } finally {
-      setIsExporting(false);
-    }
+        } catch (error) {
+            console.error('Falha ao exportar o projeto', error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro na Exportação',
+                description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}`,
+            });
+        } finally {
+            setIsExporting(false);
+            // Keep the modal open for user to review
+            // setIsPreviewModalOpen(false); 
+        }
+    };
+    
+    openModalAndExport();
   };
 
   const handleSave = () => {

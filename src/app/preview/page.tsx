@@ -148,7 +148,6 @@ const FullPageHandout = ({ handbookData }: { handbookData: HandbookData }) => {
                     </div>
                 </main>
             </div>
-            {getInteractiveScript(handbookData)}
         </div>
     );
 };
@@ -187,5 +186,10 @@ export default function PreviewPage() {
     projects 
   };
 
-  return <FullPageHandout handbookData={handbookData} />;
+  return (
+      <>
+        <FullPageHandout handbookData={handbookData} />
+        {getInteractiveScript(handbookData)}
+      </>
+  );
 }
