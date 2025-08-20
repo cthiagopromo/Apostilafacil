@@ -11,42 +11,54 @@ import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import type { HandbookData } from '@/lib/types';
+
+const getAppHtmlTemplate = (title: string): string => {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+    <div id="app">
+        <nav class="sidebar">
+            <h2>${title}</h2>
+            <div class="toc-container"></div>
+            <div class="actions">
+                <button id="export-pdf">📄 Salvar PDF</button>
+                <button id="toggle-theme">🌙 Tema</button>
+            </div>
+        </nav>
+        <main class="content">
+            <div class="content-header">
+                <button id="prev-section">← Anterior</button>
+                <div class="progress-bar"></div>
+                <button id="next-section">Próximo →</button>
+            </div>
+            <div class="content-body" id="main-content">
+                <!-- Conteúdo dinâmico será inserido aqui -->
+            </div>
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="libs/html2pdf.min.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+</html>`;
+};
 
 export default function Header() {
-  const { handbookTitle, projects, saveData, isDirty } = useProjectStore();
+  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const { toast } = useToast();
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
-  const getPreviewContentAsHtml = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const iframe = previewIframeRef.current;
-        if (!iframe?.contentWindow?.document) {
-            return reject(new Error('Não foi possível acessar o conteúdo da pré-visualização.'));
-        }
-        
-        const maxTries = 20; // 20 * 250ms = 5 seconds timeout
-        let tries = 0;
-
-        const checkForReadyState = () => {
-            const iframeDoc = iframe.contentWindow?.document;
-            if (iframeDoc && iframeDoc.body && iframeDoc.body.classList.contains('ready-for-export')) {
-                // Directly use the outerHTML of the fully rendered document
-                const finalHtml = iframeDoc.documentElement.outerHTML;
-                resolve(`<!DOCTYPE html>${finalHtml}`);
-            } else if (tries < maxTries) {
-                tries++;
-                setTimeout(checkForReadyState, 250);
-            } else {
-                reject(new Error('Tempo de espera excedido para a pré-visualização carregar.'));
-            }
-        };
-        
-        checkForReadyState();
-    });
-  };
 
   const handleExportZip = async () => {
     if (!projects || projects.length === 0) {
@@ -60,28 +72,42 @@ export default function Header() {
 
     setIsExporting(true);
     
-    // Open the modal first, which starts loading the iframe
-    setIsPreviewModalOpen(true);
-    
     try {
-        const htmlContent = await getPreviewContentAsHtml();
-
-        if (!htmlContent) {
-            throw new Error("O conteúdo HTML não pôde ser gerado.");
-        }
-
         const zip = new JSZip();
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
         
+        const handbookData: HandbookData = { 
+            id: handbookId, 
+            title: handbookTitle, 
+            description: handbookDescription, 
+            updatedAt: handbookUpdatedAt,
+            projects 
+        };
+
+        // 1. HTML da aplicação
+        const htmlContent = getAppHtmlTemplate(handbookTitle);
         zip.file('index.html', htmlContent);
-        zip.file('README.md', 'Para usar esta apostila, suba o arquivo index.html para o seu servidor web, ou abra-o diretamente no navegador.');
+
+        // 2. CSS (vazio por enquanto)
+        zip.file('assets/styles.css', '/* Estilos da aplicação aqui */');
+
+        // 3. JS (vazio por enquanto)
+        zip.file('assets/app.js', '// Lógica da aplicação aqui');
+        
+        // 4. Dados do curso
+        zip.file('assets/course-data.json', JSON.stringify(handbookData, null, 2));
+
+        // 5. README
+        zip.file('README.md', 'Para usar esta apostila, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
+        
+        // TODO: Adicionar assets (imagens, libs)
 
         const blob = await zip.generateAsync({ type: 'blob' });
-        saveAs(blob, `${cleanTitle}.zip`);
+        saveAs(blob, `apostila-${cleanTitle}.zip`);
 
         toast({
             title: 'Exportação Concluída',
-            description: 'Seu projeto foi exportado como um arquivo ZIP.',
+            description: 'Sua apostila interativa foi exportada como um arquivo ZIP.',
         });
 
     } catch (error) {
@@ -93,8 +119,6 @@ export default function Header() {
         });
     } finally {
         setIsExporting(false);
-        // Do not close the modal, let the user do it.
-        // setIsPreviewModalOpen(false); 
     }
   };
 
