@@ -155,8 +155,9 @@
     border-radius: 0 !important;
     padding: 0 !important;
   }
-
+  
   .module-section {
+    display: block !important; /* Show all modules for printing */
     page-break-after: always; /* Each module starts on a new page */
   }
 
