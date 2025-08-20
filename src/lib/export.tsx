@@ -46,12 +46,14 @@ function renderBlockToHtml(block: Block): string {
 
 function generateModulesHtml(projects: Project[]): string {
     return projects.map((project) => `
-        <section class="mb-16">
-            <h2 class="text-3xl font-bold mb-2 border-b-2 border-primary pb-2">${project.title}</h2>
-            <p class="text-muted-foreground mb-8">${project.description}</p>
-            <div class="space-y-8">
+         <section class="mb-16 last:mb-0">
+              <header class='text-center mb-12'>
+                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                <p class="text-muted-foreground">${project.description}</p>
+              </header>
+              <div class="space-y-8">
                 ${project.blocks.map(renderBlockToHtml).join('\n')}
-            </div>
+              </div>
         </section>
     `).join('');
 }
@@ -59,10 +61,8 @@ function generateModulesHtml(projects: Project[]): string {
 
 function generateHeaderNavHtml(handbookTitle: string): string {
     return `
-      <div class="max-w-5xl mx-auto flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold">${handbookTitle}</h1>
-        </div>
+      <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
+        <h1 class="text-2xl font-bold text-foreground">${handbookTitle}</h1>
         <div id="accessibility-toolbar" class="flex items-center gap-1 bg-card p-1 rounded-lg border">
             <button id="export-pdf" title="Exportar para PDF" class="toolbar-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -72,10 +72,10 @@ function generateHeaderNavHtml(handbookTitle: string): string {
             </button>
             <div class="flex items-center border-l border-r mx-1 px-1">
                 <button id="font-decrease" title="Diminuir Fonte" class="toolbar-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
                 <button id="font-increase" title="Aumentar Fonte" class="toolbar-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
             </div>
             <button id="contrast" title="Alto Contraste" class="toolbar-btn">
@@ -113,34 +113,29 @@ function generateCssContent(): string {
             --border: 214 31.8% 91.4%;
             --input: 214 31.8% 91.4%;
             --ring: 221 83% 53%;
-            --radius: 0.75rem;
         }
 
         body {
-            background-color: hsl(var(--secondary));
+            background-color: hsl(var(--secondary) / 0.4);
             color: hsl(var(--foreground));
             font-family: 'Inter', sans-serif;
             transition: font-size 0.2s, background-color 0.3s, color 0.3s;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
 
         header.no-print {
-            background-color: hsl(var(--card));
-            padding: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            padding: 1rem 0;
         }
         
         main {
             max-width: 56rem; /* 896px */
-            margin: 2rem auto;
-            padding: 2rem;
+            margin: 0 auto;
+            padding: 2rem 3rem 4rem; /* p-8 sm:p-12 md:p-16 */
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
         }
 
         .header-content {
@@ -148,60 +143,28 @@ function generateCssContent(): string {
             margin-bottom: 3rem;
         }
         
-        .header-icon-container {
-            display: inline-block;
-            padding: 1rem;
-            background-color: hsla(var(--primary) / 0.1);
-            border-radius: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .header-icon-container svg {
-            height: 2.5rem;
-            width: 2.5rem;
-            color: hsl(var(--primary));
-        }
-        
-        h1.handbook-title {
-            font-size: 3rem;
-            font-weight: 700;
-            color: hsl(var(--primary));
-        }
-
-        p.handbook-description {
-            font-size: 1.25rem;
-            color: hsl(var(--muted-foreground));
-            margin-top: 0.5rem;
-        }
-
-        section {
-            margin-bottom: 4rem;
-        }
-
-        h2 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid hsl(var(--primary));
-        }
-
-        .text-muted-foreground {
-            color: hsl(var(--muted-foreground));
-        }
-
-        .mb-8 {
-            margin-bottom: 2rem;
-        }
-
-        .space-y-8 > :not([hidden]) ~ :not([hidden]) {
-            margin-top: 2rem;
-        }
+        section { margin-bottom: 4rem; }
+        section:last-child { margin-bottom: 0; }
+        section > header { text-align: center; margin-bottom: 3rem; }
+        h2 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
+        .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+        .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
         
         .prose { max-width: none; }
         .dark .prose-invert { color: hsl(var(--foreground)); }
 
-        .flex.justify-center { display:flex; justify-content: center; }
+        .flex { display: flex; }
+        .flex-row { flex-direction: row; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-1 { gap: 0.25rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .max-w-4xl { max-width: 56rem; }
+        h1.font-bold { font-weight: 700; }
+        h1.text-2xl { font-size: 1.5rem; }
+        
+
         figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         img.rounded-md { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
         figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
@@ -223,9 +186,14 @@ function generateCssContent(): string {
         .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
         
         /* Toolbar */
+        #accessibility-toolbar { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 0.5rem; padding: 0.25rem; }
         .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; }
         .toolbar-btn:hover { background-color: hsl(var(--accent)); }
         .toolbar-btn svg { height: 1.25rem; width: 1.25rem; stroke: hsl(var(--foreground)); }
+        .border-l { border-left: 1px solid hsl(var(--border)); }
+        .border-r { border-right: 1px solid hsl(var(--border)); }
+        .mx-1 { margin-left: 0.25rem; margin-right: 0.25rem; }
+        .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
 
         /* Quiz Styles */
         .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; }
@@ -246,11 +214,10 @@ function generateCssContent(): string {
         .quiz-feedback.incorrect { color: hsl(var(--destructive)); }
 
         body.high-contrast { background-color: black; color: white; }
-        body.high-contrast main, body.high-contrast header.no-print { background-color: black; border: 1px solid white; }
+        body.high-contrast main, body.high-contrast header.no-print #accessibility-toolbar { background-color: black; border-color: white; }
         body.high-contrast .text-primary, body.high-contrast h1, body.high-contrast h2 { color: yellow !important; }
         body.high-contrast .text-muted-foreground { color: lightgray !important; }
         body.high-contrast .border-primary { border-color: yellow !important; }
-        body.high-contrast .header-icon-container { background-color: black !important; border: 1px solid yellow; }
         body.high-contrast .toolbar-btn svg { stroke: white; }
 
         @media print {
@@ -263,6 +230,8 @@ function generateCssContent(): string {
 }
 
 function getScriptContent(): string {
+    // This script is identical to the one in `AccessibilityToolbar.tsx`
+    // but without the React/JSX parts.
     return `
     document.addEventListener('DOMContentLoaded', () => {
         const exportPdfBtn = document.getElementById('export-pdf');
@@ -314,9 +283,9 @@ function getScriptContent(): string {
                     if (answered) return;
                     
                     answered = true;
+                    option.classList.add('selected');
                     const isCorrect = option.getAttribute('data-correct') === 'true';
 
-                    // Mark all as answered to show correct/incorrect states
                     options.forEach(opt => {
                        if (opt.getAttribute('data-correct') === 'true') {
                            opt.classList.add('correct');
@@ -375,15 +344,10 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
         <header class="no-print">
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
-        <main>
-            <div class="header-content">
-                <div class="header-icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                </div>
-                <h1 class="handbook-title">${handbookTitle}</h1>
-                <p class="handbook-description">${handbookDescription}</p>
+        <main id="printable-content">
+            <div class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                 ${generateModulesHtml(projects)}
             </div>
-            ${generateModulesHtml(projects)}
         </main>
         <script>
             ${scriptContent}
@@ -404,3 +368,5 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
+
+    
