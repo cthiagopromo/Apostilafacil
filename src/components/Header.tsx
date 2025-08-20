@@ -51,6 +51,67 @@ const getAppHtmlTemplate = (title: string): string => {
 </html>`;
 };
 
+
+const getAppJsTemplate = (): string => {
+    return `
+class InteractiveCourse {
+    constructor() {
+        this.courseData = null;
+        this.currentSection = 0;
+        this.init();
+    }
+    
+    async init() {
+        // Carregar dados do curso
+        this.courseData = await this.loadCourseData();
+        console.log('Course data loaded:', this.courseData);
+        
+        // Renderizar interface
+        if (this.courseData) {
+            // this.renderTOC();
+            // this.renderContent();
+            // this.bindEvents();
+        }
+    }
+
+    async loadCourseData() {
+        try {
+            const response = await fetch('assets/course-data.json');
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+            const mainContent = document.getElementById('main-content');
+            if(mainContent) {
+                mainContent.innerHTML = '<p style="color: red;">Falha ao carregar os dados da apostila.</p>';
+            }
+            return null;
+        }
+    }
+    
+    async exportToPDF() {
+        const content = document.getElementById('main-content');
+        const options = {
+            margin: [10, 10, 10, 10],
+            filename: \`\${this.courseData.title}.pdf\`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        await html2pdf().set(options).from(content).save();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new InteractiveCourse();
+});
+    `;
+}
+
 export default function Header() {
   const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
@@ -91,8 +152,8 @@ export default function Header() {
         // 2. CSS (vazio por enquanto)
         zip.file('assets/styles.css', '/* Estilos da aplicação aqui */');
 
-        // 3. JS (vazio por enquanto)
-        zip.file('assets/app.js', '// Lógica da aplicação aqui');
+        // 3. JS da Aplicação
+        zip.file('assets/app.js', getAppJsTemplate());
         
         // 4. Dados do curso
         zip.file('assets/course-data.json', JSON.stringify(handbookData, null, 2));
