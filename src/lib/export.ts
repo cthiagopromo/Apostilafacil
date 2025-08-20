@@ -83,15 +83,6 @@ function renderBlockToHtml(block: Block): string {
                     <div class="block block-video">
                         ${embedHtml}
                     </div>
-                     <div class="pdf-video-placeholder">
-                         <div class="pdf-video-placeholder-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-                        </div>
-                        <div class="pdf-video-placeholder-text">
-                            <p class="video-title">${videoTitle || 'Vídeo'}</p>
-                            <p>Assista ao vídeo em: <a href="${videoLink}" target="_blank">${videoLink}</a></p>
-                        </div>
-                    </div>
                 </div>
             `;
         case 'button':
@@ -118,9 +109,6 @@ function renderBlockToHtml(block: Block): string {
                         <div class="quiz-options-container">${optionsHtml}</div>
                         <div class="quiz-feedback"></div>
                         <button class="btn quiz-retry-btn" style="display:none;">Tentar Novamente</button>
-                    </div>
-                     <div class="pdf-quiz-placeholder">
-                        <strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)
                     </div>
                 </div>`;
         default:
@@ -264,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // Replace the image with a placeholder text if it fails to load
                     const p = document.createElement('p');
-                    p.innerText = '[Image not available]';
+                    p.innerText = '[Imagem não disponível]';
                     img.parentNode.replaceChild(p, img);
                 }
             }
@@ -301,7 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         backgroundColor: '#ffffff'
                     });
                     
-                    const imgData = canvas.toDataURL('image/png');
+                    const imgData = canvas.toDataURL('image/png', 0.95);
+                    
+                    // Check for empty canvas
+                    if (imgData === 'data:,') {
+                         console.error('html2canvas returned an empty canvas. Skipping module', i);
+                         if (i > 0) pdf.addPage();
+                         pdf.text("Error rendering this module.", 40, 40);
+                         continue;
+                    }
+
                     const imgWidth = 595.28; // A4 width in pts
                     const pageHeight = 841.89; // A4 height in pts
                     const imgHeight = canvas.height * imgWidth / canvas.width;
@@ -453,9 +450,23 @@ function generatePdfHtmlForProject(project: Project, mainTitle: string): string 
                 </div>`;
         }
         if (block.type === 'quiz') {
-            return `<div class="pdf-quiz-placeholder"><strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)</div>`;
+             return `
+                <div class="pdf-quiz-placeholder">
+                    <strong>Quiz:</strong> ${block.content.question || ''}
+                    <ul class="pdf-quiz-options">
+                        ${block.content.options?.map(o => `<li>${o.text} ${o.isCorrect ? '(Correta)' : ''}</li>`).join('') || ''}
+                    </ul>
+                    <small>(Interativo na versão web)</small>
+                </div>
+            `;
         }
-        return renderBlockToHtml(block);
+        // Fallback for other block types
+        return renderBlockToHtml(block)
+          // Remove a div animatable para a versão PDF, já que não é interativa
+          .replace(/class="animatable"/g, '')
+          // Remove iframes para o PDF
+          .replace(/<div class="block block-video">[\s\S]*?<\/div>/g, '');
+
     }).join('\n');
 
     return `
@@ -487,9 +498,9 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
           </section>
       `).join('');
 
-    const pdfExportModules = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white; width: 800px;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
+    const pdfExportContainer = `<div id="apostila-pdf-export" style="position: absolute; left: -9999px; top: -9999px; background-color: white; width: 800px;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
 
-    return interactiveModules + pdfExportModules;
+    return interactiveModules + pdfExportContainer;
 }
 
 
@@ -688,7 +699,7 @@ body.modo-escuro .block-quote { background-color: rgba(96, 165, 250, 0.1); borde
 
 /* Quiz Styles */
 .block-quiz { padding: 1.5rem; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color); }
-.quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; }
+.quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
 .quiz-option { display: flex; align-items: center; padding: 0.75rem; margin: 0.5rem 0; background: var(--card-background); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease-in-out; }
 .quiz-option:not(.answered):hover { border-color: var(--primary-color); background: var(--primary-color); color: white; }
 .quiz-option .radio-button { width: 18px; height: 18px; border: 2px solid var(--border-color); border-radius: 50%; margin-right: 12px; flex-shrink: 0; transition: all 0.2s ease-in-out; }
@@ -747,7 +758,6 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     page-break-before: auto;
 }
 
-
 .pdf-video-placeholder, .pdf-quiz-placeholder {
     display: block;
     align-items: center;
@@ -760,7 +770,7 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
     page-break-inside: avoid;
     text-align: left;
 }
-.pdf-quiz-placeholder { text-align: center; }
+.pdf-quiz-placeholder { text-align: left; }
 .pdf-video-placeholder { display: flex; }
 
 .pdf-video-placeholder a {
@@ -773,9 +783,9 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 .pdf-video-placeholder-text p { margin: 0; padding: 0; }
 .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
 
-.block-video .pdf-video-placeholder, .block-quiz .pdf-quiz-placeholder {
-    display: none;
-}
+.pdf-quiz-options { list-style-type: none; padding-left: 1rem; margin-top: 0.5rem; }
+.pdf-quiz-options li { margin-bottom: 0.25rem; }
+.pdf-quiz-placeholder small { display: block; margin-top: 0.75rem; color: #555; }
 
 
 @media (max-width: 768px) {
