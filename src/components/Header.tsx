@@ -10,11 +10,13 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { generateZip } from '@/lib/export';
 import { useRouter } from 'next/navigation';
+import { PreviewModal } from './PreviewModal';
 
 export default function Header() {
   const { handbookTitle, handbookDescription, activeProject, saveData, isDirty, projects } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -69,13 +71,12 @@ export default function Header() {
       });
       return;
     }
-    // Opens the preview page in a new tab
-    const previewUrl = '/preview';
-    window.open(previewUrl, '_blank');
+    setIsPreviewModalOpen(true);
   }
 
   return (
     <>
+      <PreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
             <Button variant="outline" asChild>
