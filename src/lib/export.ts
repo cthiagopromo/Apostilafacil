@@ -25,7 +25,7 @@ function renderBlockToHtml(block: Block): string {
                 <div ${animationClass}>
                     <div class="block block-image" style="display: flex; justify-content: center;">
                         <figure style="width: ${width}%;">
-                            <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" />
+                            <img src="${imageUrl || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 6px;" crossorigin="anonymous" />
                             ${block.content.caption ? `<figcaption style="padding-top: 0.75rem; font-size: 0.9rem; color: #555; text-align: center;">${block.content.caption}</figcaption>` : ''}
                         </figure>
                     </div>
@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
+    const modal = document.getElementById('loading-modal');
     
     function showModule(index) {
         modules.forEach((module, i) => {
@@ -232,8 +233,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- PDF Generation ---
-    pdfButton.addEventListener('click', () => {
-        window.print();
+    async function toDataURL(url) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async function embedImages(container) {
+        const images = container.querySelectorAll('img');
+        for (const img of images) {
+            try {
+                if (img.src && !img.src.startsWith('data:')) {
+                    const dataUrl = await toDataURL(img.src);
+                    img.src = dataUrl;
+                }
+            } catch (e) {
+                console.error('Could not convert image to data URL:', img.src, e);
+                const p = document.createElement('p');
+                p.innerText = '[Imagem não disponível]';
+                img.parentNode.replaceChild(p, img);
+            }
+        }
+    }
+    
+    pdfButton.addEventListener('click', async () => {
+        modal.style.display = 'flex';
+        
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'p',
+                unit: 'pt',
+                format: 'a4',
+                putOnlyUsedFonts: true,
+                floatPrecision: 16
+            });
+
+            const pdfContainer = document.getElementById('apostila-pdf-export');
+            
+            await embedImages(pdfContainer);
+
+            for (const module of pdfContainer.querySelectorAll('.modulo-pdf')) {
+                try {
+                    const canvas = await html2canvas(module, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 595.28; // A4 width in pts
+                    const pageHeight = 841.89; // A4 height in pts
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                } catch (error) {
+                    console.error('Error rendering a module:', error);
+                    pdf.addPage();
+                    pdf.text("Erro ao renderizar este módulo.", 40, 40);
+                }
+
+                if (module !== pdfContainer.querySelector('.modulo-pdf:last-child')) {
+                     pdf.addPage();
+                }
+            }
+            
+            pdf.output('dataurlnewwindow');
+
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+        } finally {
+            modal.style.display = 'none';
+        }
     });
 
     // --- Accessibility Buttons ---
@@ -329,9 +418,49 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 }
 
-function generateModulesHtml(projects: Project[], mainTitle: string): string {
+function generatePdfHtmlForProject(project: Project, mainTitle: string): string {
+    const content = project.blocks.map(block => {
+        // We reuse the main renderer, but handle video differently for PDF
+        if (block.type === 'video') {
+            const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
+            let videoLink = '#';
+            if (videoType === 'cloudflare' && cloudflareVideoId) {
+                videoLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
+            } else if (videoType === 'youtube' && videoUrl) {
+                videoLink = videoUrl;
+            }
+            return `
+                <div class="pdf-video-placeholder">
+                    <div class="pdf-video-placeholder-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                    </div>
+                    <div class="pdf-video-placeholder-text">
+                        <p class="video-title">${videoTitle || 'Vídeo'}</p>
+                        <p>Assista ao vídeo em: <a href="${videoLink}" target="_blank">${videoLink}</a></p>
+                    </div>
+                </div>`;
+        }
+        if (block.type === 'quiz') {
+            return `<div class="pdf-quiz-placeholder"><strong>Quiz:</strong> ${block.content.question} (Interativo na versão web)</div>`;
+        }
+        return renderBlockToHtml(block);
+    }).join('\n');
+
     return `
-      ${projects.map((project, index) => `
+      <section id="modulo-pdf-${project.id}" class="modulo-pdf">
+          <div class="module-content">
+              <h2 class="module-main-title">${mainTitle}</h2>
+              <h1 class="module-title-header">${project.title}</h1>
+              <div class="divider"></div>
+              ${content}
+          </div>
+      </section>
+    `;
+}
+
+
+function generateModulesHtml(projects: Project[], mainTitle: string): string {
+    const interactiveModules = projects.map((project, index) => `
           <section id="modulo-${index}" class="modulo">
               <div class="module-content">
                   <h2 class="module-main-title animatable">${mainTitle}</h2>
@@ -344,8 +473,12 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
                   <button class="btn nav-proximo">Próximo Módulo</button>
               </div>
           </section>
-      `).join('')}
-    `;
+      `).join('');
+
+    // Create a separate, hidden container for PDF export
+    const pdfExportModules = `<div id="apostila-pdf-export" style="display: none;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
+
+    return interactiveModules + pdfExportModules;
 }
 
 
@@ -414,9 +547,17 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoVBL5gI9kLmbG0C+wFjrBgixfl4ZA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4D7lrdigTBzPJBU5/SUVA5AbonrSIGNZnZvSanoSiEzroUgdPFPFbhEag==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="loading-modal" class="modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p>Gerando PDF, por favor aguarde...</p>
+        </div>
+    </div>
     <header class="main-header">
         <div class="header-container">
             <h1 class="main-title">${handbookTitle}</h1>
@@ -579,9 +720,43 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animatable.revealed { opacity: 1; transform: translateY(0); }
 
-.pdf-video-placeholder, .pdf-quiz-placeholder {
-    display: none;
+/* PDF and Modal Styles */
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+.modal-content { background-color: #fff; color: #333; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 20px; }
+.spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.modulo-pdf {
+    background-color: #fff;
+    color: #000;
+    padding: 2rem;
 }
+
+.pdf-video-placeholder, .pdf-quiz-placeholder {
+    display: block;
+    align-items: center;
+    gap: 1em;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    page-break-inside: avoid;
+    text-align: left;
+}
+.pdf-quiz-placeholder { text-align: center; }
+.pdf-video-placeholder { display: flex; }
+
+.pdf-video-placeholder a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+.pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; fill: #000; }
+.pdf-video-placeholder-icon svg { fill: #000; }
+.pdf-video-placeholder-text p { margin: 0; padding: 0; }
+.pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
+
 
 @media (max-width: 768px) {
     body { padding-top: 120px; }
@@ -595,99 +770,14 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 }
 
 @media print {
-    @page { 
-      size: A4;
-      margin: 1.5cm;
-    }
-
-    html, body { 
-        width: 210mm;
-        height: 297mm;
-        padding-top: 0 !important; 
-        background-color: #fff !important; 
-        color: #000 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-    
-    main { 
-        margin: 0 !important; 
-        padding: 0 !important;
-        max-width: 100% !important; 
-    }
-    
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block { 
+    body { padding-top: 0 !important; }
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block, .block-quiz, .block-video { 
         display: none !important; 
     }
-    
-    .animatable { 
-        opacity: 1 !important; 
-        transform: translateY(0) !important; 
-    }
-    
-    .modulo { 
-        display: block !important; 
-        page-break-before: always; 
-        box-shadow: none !important; 
-        border: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .modulo:first-of-type { 
-        page-break-before: auto; 
-    }
-    
-    h1, h2, h3, h4, h5, h6, .module-main-title, .module-title-header {
-      text-align: center !important;
-    }
-    
-    .block-video, .block-quiz {
-        display: none !important;
-    }
-    
-    .pdf-video-placeholder, .pdf-quiz-placeholder {
-        display: flex !important;
-        align-items: center;
-        gap: 1em;
-        padding: 1rem;
-        margin: 1.5rem 0;
-        background-color: #f3f4f6 !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 8px;
-        page-break-inside: avoid;
-        text-align: left;
-    }
-
-    .pdf-quiz-placeholder {
-       display: block !important;
-       text-align: center !important;
-    }
-    
-    .pdf-video-placeholder a {
-        color: var(--primary-color) !important;
-        text-decoration: none;
-        font-weight: 500;
-    }
-    
-    .pdf-video-placeholder-icon {
-        flex-shrink: 0;
-        width: 24px;
-        height: 24px;
-        fill: #000;
-    }
-    .pdf-video-placeholder-icon svg { fill: #000; }
-    
-    .pdf-video-placeholder-text p {
-        margin: 0;
-        padding: 0;
-    }
-    
-    .pdf-video-placeholder-text p.video-title {
-        font-weight: bold;
-        margin-bottom: 0.25em;
-    }
+    .pdf-video-placeholder, .pdf-quiz-placeholder { display: block !important; }
+    .animatable { opacity: 1 !important; transform: translateY(0) !important; }
+    .modulo { display: block !important; page-break-before: always; box-shadow: none !important; border: none !important; }
+    .modulo:first-of-type { page-break-before: auto; }
 }
     `;
 }
