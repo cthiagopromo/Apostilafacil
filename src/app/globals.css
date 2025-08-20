@@ -56,6 +56,28 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 217.2 32.6% 17.5%;
   }
+
+  body.high-contrast {
+    background-color: black;
+    color: white;
+  }
+
+  body.high-contrast .bg-card {
+      background-color: black;
+      border: 1px solid white;
+  }
+
+  body.high-contrast .text-primary {
+      color: yellow;
+  }
+  
+  body.high-contrast .text-muted-foreground {
+      color: lightgray;
+  }
+
+  body.high-contrast .border-primary {
+      border-color: yellow;
+  }
 }
 
 @layer base {
@@ -65,6 +87,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: font-size 0.2s, background-color 0.3s, color 0.3s;
   }
 }
 
@@ -97,4 +120,37 @@
 
 .tiptap blockquote {
   @apply border-l-4 border-muted-foreground pl-4 italic;
+}
+
+@media print {
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  body, .printable-content {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .bg-card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    page-break-after: always;
+  }
+  
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
 }
