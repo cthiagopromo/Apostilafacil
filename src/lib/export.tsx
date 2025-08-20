@@ -248,7 +248,7 @@ function getScriptContent(): string {
         
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', async () => {
-                if (!window.Paged) {
+                if (typeof Paged === 'undefined') {
                     alert('Erro: Biblioteca de paginação não carregou.');
                     return;
                 }
