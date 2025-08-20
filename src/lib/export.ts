@@ -234,6 +234,7 @@ function generateCssContent(): string {
         .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
         .block-video-placeholder, .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
+        .dark-mode .video-placeholder-link, .dark-mode .block-video-placeholder { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568;}
         .video-placeholder-link span:first-child { font-size: 2.5rem; }
 
         .block-button { text-align: center; }
@@ -265,8 +266,14 @@ function generateCssContent(): string {
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
-            .block-video { display: none; } /* Hide interactive video on print */
-            .block-video-placeholder { display: flex; } /* Show placeholder on print */
+            
+            .block-video { display: none; } 
+            .block-video-placeholder { display: flex; }
+            .video-placeholder-link {
+                color: #000;
+                background-color: #eee;
+                border: 1px solid #ccc;
+            }
         }
         @page {
             size: A4;
@@ -275,61 +282,80 @@ function generateCssContent(): string {
             @bottom-right { content: "Página " counter(page); font-size: 9pt; color: #888; }
         }
         .main-title { string-set: doctitle content(text); }
-        .pagedjs_pages { display: none; }
+        .pagedjs_pages, .pagedjs_page, .pagedjs_sheet {
+            background: var(--background-color) !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
     `;
 }
 
-function getScriptContent(handbookTitle: string): string {
+function getScriptContent(projects: Project[]): string {
     const pagedJsScript = `
+        class MyHandler extends Paged.Handler {
+            constructor(chunker, polisher, caller) {
+                super(chunker, polisher, caller);
+            }
+
+            afterPageLayout(pageElement, page, breakToken, chunker) {
+                // You can add page numbers or headers/footers here if needed
+            }
+        }
+        Paged.registerHandlers(MyHandler);
+
         async function generatePdfWithPagedJs() {
             const modal = document.getElementById('loading-modal');
             const content = document.getElementById('apostila-completa');
             const pdfButton = document.getElementById('btn-pdf');
             
-            if (!content) {
-                console.error("Elemento 'apostila-completa' não encontrado.");
+            if (!content || !pdfButton) {
+                console.error("Elementos essenciais não encontrados.");
                 return;
             }
 
-            if (modal) modal.style.display = 'flex';
-            if (pdfButton) pdfButton.disabled = true;
-
-            // Clone content for printing to avoid altering the live view
-            const printContent = content.cloneNode(true);
-            
-            // Replace interactive videos with placeholders for PDF
-            printContent.querySelectorAll('.block-video').forEach(videoBlock => {
+            // Replace interactive videos with static placeholders for PDF
+            const pdfContent = content.cloneNode(true);
+            pdfContent.querySelectorAll('.block-video').forEach(videoBlock => {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'block-video-placeholder';
                 placeholder.innerHTML = '<a href="#" class="video-placeholder-link"><span>▶️</span><span>Conteúdo interativo. Acesse a versão online para assistir.</span></a>';
                 videoBlock.parentNode.replaceChild(placeholder, videoBlock);
             });
+            pdfContent.style.display = 'block'; // Ensure it's visible for Paged.js
+             // Hide the original content, show the clone for processing
+            content.style.display = 'none';
+            document.body.appendChild(pdfContent);
+
+
+            if (modal) modal.style.display = 'flex';
+            pdfButton.disabled = true;
 
             try {
-                class MyHandler extends Paged.Handler {}
-                Paged.registerHandlers(MyHandler);
-
                 let paged = new Paged.Previewer();
-                let flow = await paged.preview(printContent.outerHTML, ['style.css'], document.body);
+                // Pass the HTML content directly
+                let flow = await paged.preview(pdfContent.outerHTML, [], document.body);
                 
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Wait for rendering to complete. This is a simple delay, might need more robust solution.
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
                 const pdfBlob = await flow.toBlob();
                 if (pdfBlob) {
                     const pdfUrl = URL.createObjectURL(pdfBlob);
                     window.open(pdfUrl, '_blank');
                 } else {
-                    console.warn("Paged.js toBlob() failed, falling back to window.print()");
+                    console.warn("Paged.js toBlob() falhou, usando window.print() como fallback.");
                     window.print();
                 }
-
             } catch (error) {
                 console.error("Erro durante a geração do PDF com Paged.js:", error);
                 alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
             } finally {
                 if (modal) modal.style.display = 'none';
-                if (pdfButton) pdfButton.disabled = false;
+                pdfButton.disabled = false;
                 
+                // Cleanup: remove cloned content and Paged.js artifacts
+                pdfContent.remove();
+                content.style.display = 'block';
                 const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
                 pagedArtifacts.forEach(el => el.remove());
             }
@@ -431,7 +457,9 @@ function getScriptContent(handbookTitle: string): string {
             btnDarkMode.addEventListener('click', () => body.classList.toggle('dark-mode'));
         }
         
-        showModule(0);
+        if (modules.length > 0) {
+            showModule(0);
+        }
     });
     ${pagedJsScript}
     `;
@@ -446,7 +474,9 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${handbookTitle}</title>
         <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
-        <link rel="stylesheet" href="style.css">
+        <style>
+            ${generateCssContent()}
+        </style>
     </head>
     <body>
         <div id="loading-modal">
@@ -462,7 +492,9 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
             ${generateModulesHtml(projects)}
         </main>
         ${generateFloatingNav(projects)}
-        <script src="script.js"></script>
+        <script>
+            ${getScriptContent(projects)}
+        </script>
     </body>
     </html>
   `;
@@ -470,12 +502,12 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
 
 export async function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
+    const cleanTitle = handbookTitle.toLowerCase().replace(/\\s+/g, '-') || 'apostila';
 
-    zip.file('index.html', generateHtmlContent(projects, handbookTitle));
-    zip.file('style.css', generateCssContent());
-    zip.file('script.js', getScriptContent(handbookTitle));
+    const htmlContent = generateHtmlContent(projects, handbookTitle);
+    zip.file('index.html', htmlContent);
     zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
     
     const blob = await zip.generateAsync({ type: 'blob' });
-    saveAs(blob, `${handbookTitle.toLowerCase().replace(/\s+/g, '-') || 'apostila'}.zip`);
+    saveAs(blob, `${cleanTitle}.zip`);
 }
