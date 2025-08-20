@@ -38,7 +38,7 @@ function renderBlockToHtml(block: Block): string {
             const videoUrl = block.content.videoType === 'cloudflare' 
                 ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`
                 : block.content.videoUrl;
-             return `
+            return `
                 <div class="block block-video pagedjs-video-placeholder">
                     <div class="video-placeholder-content">
                         <p>Este conteúdo é interativo.</p>
@@ -80,6 +80,7 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
           <section id="modulo-${index}" class="modulo">
               <div class="module-content">
                   <h1 class="module-title-header">${project.title}</h1>
+                  <p class="module-description">${project.description}</p>
                   <div class="divider"></div>
                   ${project.blocks.map(renderBlockToHtml).join('\n')}
               </div>
@@ -151,10 +152,12 @@ function generateCss(): string {
         .btn-header svg { width: 18px; height: 18px; }
         main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
         .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
+        .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         h1, h2, h3, h4, h5, h6 { text-align: center; }
         .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
         .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; }
+        .module-description { font-size: 1.1rem; text-align: center; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2.5rem; }
         img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -223,7 +226,7 @@ function generateCss(): string {
                 page-break-before: auto;
             }
             .pagedjs_page_content {
-                padding-bottom: 2cm; /* Example footer space */
+                padding-bottom: 2cm;
             }
             @page {
                 @bottom-center {
@@ -233,9 +236,7 @@ function generateCss(): string {
                 }
             }
         }
-        .pagedjs_pages {
-            display: none;
-        }
+        .pagedjs_pages { display: none; }
     `;
     
     return interactiveStyles;
@@ -247,6 +248,11 @@ async function generatePdfWithPagedJs() {
     const content = document.getElementById('apostila-completa');
     const pdfButton = document.getElementById('btn-pdf');
     
+    if (!content) {
+        console.error("Elemento 'apostila-completa' não encontrado.");
+        return;
+    }
+
     if (modal) modal.style.display = 'flex';
     if (pdfButton) pdfButton.disabled = true;
 
@@ -295,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pdfButton = document.getElementById('btn-pdf');
     
     function showModule(index) {
+        if(index < 0 || index >= modules.length) return;
         modules.forEach((module, i) => {
             module.style.display = i === index ? 'block' : 'none';
         });
@@ -384,13 +391,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (pdfButton) {
-        pdfButton.addEventListener('click', () => generatePdfWithPagedJs());
+        pdfButton.addEventListener('click', () => {
+            generatePdfWithPagedJs().catch(console.error);
+        });
     }
 
     if(floatingNavButton){
         floatingNavButton.addEventListener('click', (event) => {
             event.stopPropagation();
-            floatingNavMenu.classList.toggle('show');
+            if (floatingNavMenu) floatingNavMenu.classList.toggle('show');
         });
     }
 
@@ -400,10 +409,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    moduleLinks.forEach((link, i) => {
+    moduleLinks.forEach((link) => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            showModule(i);
+            const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+            showModule(index);
             if(floatingNavMenu) floatingNavMenu.classList.remove('show');
         });
     });
