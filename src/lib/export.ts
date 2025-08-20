@@ -73,7 +73,7 @@ function renderBlockToHtml(block: Block): string {
             }
             
             const interactiveContent = embedUrl ? `
-                <div class="block-video interactive-content">
+                <div class="block block-video interactive-content">
                     <iframe 
                         src="${embedUrl}" 
                         title="${block.content.videoTitle || 'Player de vídeo'}" 
@@ -87,9 +87,7 @@ function renderBlockToHtml(block: Block): string {
                  <div class="block-video-placeholder print-only">
                     <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
                          <div class="play-icon-container">
-                            <svg class="play-icon" viewBox="0 0 100 100">
-                                <path d="M 30,20 L 70,50 L 30,80 Z" fill="#2563EB"></path>
-                            </svg>
+                            <svg class="play-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         </div>
                         <span>Este conteúdo é interativo. Clique para assistir na versão online.</span>
                     </a>
@@ -193,13 +191,14 @@ function generateHeaderNavHtml(handbookTitle: string): string {
 
 function generateCssContent(): string {
     return `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         
         :root {
             --primary-color: #2563EB;
             --primary-color-dark: #1D4ED8;
             --background-color: #F4F5F7;
             --text-color: #1F2937;
+            --text-color-light: #6B7280;
             --card-background: #FFFFFF;
             --header-height: 64px;
             --border-color: #E5E7EB;
@@ -210,6 +209,7 @@ function generateCssContent(): string {
         .dark-mode {
             --background-color: #111827;
             --text-color: #F9FAFB;
+            --text-color-light: #9CA3AF;
             --card-background: #1F2937;
             --border-color: #374151;
         }
@@ -217,42 +217,23 @@ function generateCssContent(): string {
         .high-contrast-mode {
             --background-color: #000000;
             --text-color: #FFFFFF;
+            --text-color-light: #CCCCCC;
             --card-background: #000000;
             --primary-color: #FFFF00;
             --primary-color-dark: #DDDD00;
             --border-color: #FFFFFF;
         }
-        .high-contrast-mode .main-header {
-             border-bottom: 2px solid var(--border-color);
-             background: #000;
-        }
-        .high-contrast-mode .toolbar-btn {
-            color: #000000;
-            background-color: #FFFFFF;
-            border: 1px solid #000;
-        }
-         .high-contrast-mode .toolbar-btn span {
-            color: #000;
-        }
-        .high-contrast-mode .toolbar-btn svg {
-            stroke: #000;
-        }
-
-        .high-contrast-mode .main-title {
-             color: #FFFFFF;
-        }
-         .high-contrast-mode #floating-nav-button {
-            background-color: #FFFF00;
-            color: #000;
-        }
-        .high-contrast-mode .modulo {
-            border: 2px solid #FFF;
-        }
-
+        .high-contrast-mode .main-header { border-bottom: 2px solid var(--border-color); background: #000; }
+        .high-contrast-mode .toolbar-btn { color: #000000; background-color: #FFFFFF; border: 1px solid #000; }
+        .high-contrast-mode .toolbar-btn span { color: #000; }
+        .high-contrast-mode .toolbar-btn svg { stroke: #000; }
+        .high-contrast-mode .main-title { color: #FFFFFF; }
+        .high-contrast-mode #floating-nav-button { background-color: #FFFF00; color: #000; }
+        .high-contrast-mode .modulo { border: 2px solid #FFF; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { font-size: var(--base-font-size); scroll-behavior: smooth; }
-        body { font-family: var(--font-family); line-height: 1.6; background-color: var(--background-color); color: var(--text-color); margin: 0; padding-top: var(--header-height); transition: background-color 0.3s, color 0.3s; }
+        body { font-family: var(--font-family); line-height: 1.7; background-color: var(--background-color); color: var(--text-color); margin: 0; padding-top: var(--header-height); transition: background-color 0.3s, color 0.3s; }
         
         .main-header { position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); background: var(--primary-color); color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; transition: background-color 0.3s; }
         .header-container { max-width: 1280px; height: 100%; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -267,19 +248,19 @@ function generateCssContent(): string {
         .toolbar-separator { width: 1px; height: 24px; background-color: rgba(255, 255, 255, 0.3); margin: 0 0.5rem; }
         
         main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-        .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
+        .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 3rem 4rem; margin-bottom: 2rem; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .module-breadcrumb { color: var(--primary-color); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-        h1.module-title-header { font-size: 2.25rem; margin-bottom: 1rem; color: var(--text-color);}
+        .module-breadcrumb { color: var(--text-color-light); font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        h1.module-title-header { font-size: 2.75rem; font-weight: 900; margin-bottom: 1.5rem; color: var(--text-color); line-height: 1.2; }
         h2 { font-size: 1.75rem; }
         h3 { font-size: 1.5rem; }
-        h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; line-height: 1.2; }
-        .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
-
-        .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
+        h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; font-weight: 700; }
         .block { margin-bottom: 2rem; }
+        .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-color-light); }
+
+        .divider { height: 1px; background-color: var(--border-color); margin: 2rem 0; }
         
         .block-image figure { margin: 0; }
         .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.75rem; text-align: center; }
@@ -289,16 +270,20 @@ function generateCssContent(): string {
         .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: #000; }
         .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;}
 
-        .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f0f0; border: 2px dashed #ccc; padding: 2rem; border-radius: 8px; min-height: 200px; text-align: center; text-decoration: none; color: #333; font-weight: 500; gap: 1rem; }
-        .dark-mode .video-placeholder-link { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568;}
-        .video-placeholder-link .play-icon-container { width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.7); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-        .dark-mode .video-placeholder-link .play-icon-container { background-color: rgba(0, 0, 0, 0.3); }
-        .video-placeholder-link .play-icon { width: 30px; height: 30px; }
+        .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f3f4f6; border: 2px dashed #d1d5db; padding: 2rem; border-radius: 12px; min-height: 250px; text-align: center; text-decoration: none; color: #4b5563; font-weight: 500; gap: 1rem; transition: background-color 0.2s, border-color 0.2s; }
+        .dark-mode .video-placeholder-link { background-color: #374151; color: #d1d5db; border-color: #4b5563;}
+        .video-placeholder-link:hover { background-color: #e5e7eb; border-color: #9ca3af; }
+        .video-placeholder-link .play-icon-container { width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .dark-mode .video-placeholder-link .play-icon-container { background-color: rgba(0, 0, 0, 0.2); }
+        .video-placeholder-link .play-icon { width: 24px; height: 24px; color: var(--primary-color); }
 
-        .block-button { text-align: center; }
-        .btn, .btn-block { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn:hover, .btn-block:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .block-button { text-align: center; margin: 2rem 0; }
+        .btn-block { display: inline-block; background-color: #1F2937; color: white; padding: 1rem 2.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .dark-mode .btn-block { background-color: #ffffff; color: #1F2937; }
+        .btn-block:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         
+        .btn { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .module-navigation { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
         .btn.nav-anterior { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
         .btn.nav-anterior:hover { background-color: var(--background-color); border-color: var(--text-color); }
