@@ -130,14 +130,14 @@ function generateCssContent(): string {
         main {
             max-width: 56rem; /* 896px */
             margin: 0 auto;
-            padding: 3rem 1rem;
+            padding: 2rem 1rem; /* p-8 sm:p-12 md:p-12 */
         }
         
         .printable-content-wrapper {
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-            padding: 4rem;
+            padding: 2rem; /* p-8 sm:p-12 md:p-16 */
         }
 
         .module-section { margin-bottom: 4rem; page-break-after: always; }
@@ -227,7 +227,9 @@ function generateCssContent(): string {
         body.high-contrast .printable-content-wrapper { background-color: black; border: 1px solid white; }
         body.high-contrast .toolbar-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
         body.high-contrast .border-l, body.high-contrast .border-r { border-color: white; }
-
+        body.high-contrast .block-quiz-card { background-color: black; border-color: white; }
+        body.high-contrast .quiz-option { border-color: white; }
+        
         /* Loading Modal Styles */
         #loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
         #loading-modal-content { background: hsl(var(--card)); padding: 2rem; border-radius: 0.5rem; text-align: center; color: hsl(var(--card-foreground)); box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
