@@ -21,34 +21,28 @@ const getAppHtmlTemplate = (title: string, jsonData: string): string => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
     <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.4.0/lucide.min.css" />
 </head>
 <body>
-    <div id="app">
-        <nav class="sidebar">
-            <h2>${title}</h2>
-            <div class="toc-container"></div>
-            <div class="actions">
-                <button id="export-pdf">📄 Salvar PDF</button>
-                <button id="toggle-theme">🌙 Tema</button>
-            </div>
-        </nav>
-        <main class="content">
-            <div class="content-header">
-                <button id="prev-section">← Anterior</button>
-                <div class="progress-bar"></div>
-                <button id="next-section">Próximo →</button>
-            </div>
-            <div class="content-body" id="main-content">
-                <!-- Conteúdo dinâmico será inserido aqui -->
-            </div>
-        </main>
+    <div id="handbook-root-container">
+        <div class="bg-secondary/40 min-h-screen">
+            <header class="py-4 px-6 bg-primary text-primary-foreground no-print no-export">
+                <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
+                    <h1 class="text-xl font-bold">${title}</h1>
+                </div>
+            </header>
+            <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                    <!-- Conteúdo dinâmico será inserido aqui -->
+                </div>
+            </main>
+        </div>
     </div>
     
     <!-- Scripts -->
     <script id="course-data" type="application/json">
         ${jsonData}
     </script>
-    <script src="libs/html2pdf.min.js"></script>
     <script src="assets/app.js"></script>
 </body>
 </html>`;
@@ -60,7 +54,6 @@ const getAppJsTemplate = (): string => {
 class InteractiveCourse {
     constructor() {
         this.courseData = null;
-        this.currentSection = 0;
         this.init();
     }
     
@@ -68,9 +61,6 @@ class InteractiveCourse {
         this.courseData = this.loadCourseData();
         if (this.courseData) {
             this.renderContent();
-            // In future steps, we will add:
-            // this.renderTOC();
-            // this.bindEvents();
         }
     }
 
@@ -83,16 +73,65 @@ class InteractiveCourse {
             return JSON.parse(dataElement.textContent || '{}');
         } catch (error) {
             console.error('Falha ao carregar ou analisar os dados do curso:', error);
-            const mainContent = document.getElementById('main-content');
+            const mainContent = document.getElementById('handbook-root');
             if(mainContent) {
-                mainContent.innerHTML = '<p style="color: red; text-align: center; padding: 2rem;">Falha ao carregar os dados da apostila. Os dados embutidos não puderam ser lidos.</p>';
+                mainContent.innerHTML = '<p style="color: red; text-align: center; padding: 2rem;">Falha ao carregar os dados da apostila.</p>';
             }
             return null;
         }
     }
 
+    renderBlock(block) {
+        switch(block.type) {
+            case 'text':
+                return \`<div class="prose dark:prose-invert max-w-none">\${block.content.text || ''}</div>\`;
+            case 'image':
+                const width = block.content.width || 100;
+                return \`
+                    <div class='flex justify-center'>
+                        <figure class='flex flex-col items-center gap-2' style="width: \${width}%">
+                            <img 
+                              src="\${block.content.url || 'https://placehold.co/600x400.png'}" 
+                              alt="\${block.content.alt || 'Placeholder image'}" 
+                              class="rounded-md shadow-md max-w-full h-auto" 
+                            />
+                            \${block.content.caption ? \`<figcaption class="text-sm text-center text-muted-foreground italic mt-2">\${block.content.caption}</figcaption>\` : ''}
+                        </figure>
+                    </div>
+                \`;
+            case 'quote':
+                return \`
+                    <div class="relative">
+                        <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                            \${block.content.text}
+                        </blockquote>
+                    </div>
+                \`;
+             case 'quiz':
+                const optionsHtml = block.content.options?.map(option => \`
+                     <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all">
+                        <input type="radio" name="quiz-\${block.id}" value="\${option.id}" id="\${option.id}" class="radio-group-item" />
+                        <label for="\${option.id}" class="flex-1 cursor-pointer">\${option.text}</label>
+                     </div>
+                \`).join('');
+                return \`
+                    <div class="quiz-card bg-muted/30 rounded-lg border">
+                       <div class="p-6">
+                         <h3 class="font-semibold">\${block.content.question}</h3>
+                         <p class="text-sm text-muted-foreground">Selecione a resposta correta.</p>
+                       </div>
+                       <div class="p-6 pt-0">
+                         <div class="space-y-2">\${optionsHtml}</div>
+                       </div>
+                    </div>
+                \`;
+            default:
+                return \`<p class="text-muted-foreground">Bloco <strong>\${block.type}</strong> ainda não é renderizado.</p>\`;
+        }
+    }
+
     renderContent() {
-        const mainContent = document.getElementById('main-content');
+        const mainContent = document.getElementById('handbook-root');
         if (!mainContent || !this.courseData || !this.courseData.projects) {
             console.error('Main content area or project data not found.');
             return;
@@ -100,51 +139,21 @@ class InteractiveCourse {
 
         let html = '';
         this.courseData.projects.forEach(project => {
-            html += \`<section class="module-section">
-                        <header class="module-header">
-                            <h2>\${project.title}</h2>
-                            <p>\${project.description}</p>
-                        </header>\`;
+            html += \`<section class="module-section mb-12 last:mb-0">
+                        <header class='text-center mb-12'>
+                            <h2 class="text-3xl font-bold mb-2 pb-2">\${project.title}</h2>
+                            <p class="text-muted-foreground">\${project.description}</p>
+                        </header>
+                        <div class="space-y-8">\`;
             
             project.blocks.forEach(block => {
-                html += '<div class="block">';
-                switch (block.type) {
-                    case 'text':
-                        html += block.content.text || '';
-                        break;
-                    case 'image':
-                        html += \`<figure>
-                                    <img src="\${block.content.url}" alt="\${block.content.alt}" style="width: \${block.content.width || 100}%" />
-                                    \${block.content.caption ? \`<figcaption>\${block.content.caption}</figcaption>\` : ''}
-                                 </figure>\`;
-                        break;
-                    case 'quote':
-                        html += \`<blockquote>\${block.content.text}</blockquote>\`;
-                        break;
-                    // Add other block types here in the future
-                    default:
-                        html += \`<p><em>Bloco do tipo '\${block.type}' ainda não suportado.</em></p>\`;
-                }
-                html += '</div>';
+                html += \`<div data-block-id="\${block.id}">\${this.renderBlock(block)}</div>\`;
             });
-            html += '</section>';
+
+            html += \`</div></section>\`;
         });
 
         mainContent.innerHTML = html;
-    }
-    
-    async exportToPDF() {
-        // This will be implemented in a future step
-        alert('Funcionalidade "Salvar como PDF" em desenvolvimento.');
-        // const content = document.getElementById('main-content');
-        // const options = {
-        //     margin: [10, 10, 10, 10],
-        //     filename: \`\${this.courseData.title}.pdf\`,
-        //     image: { type: 'jpeg', quality: 0.98 },
-        //     html2canvas: { scale: 2 },
-        //     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        // };
-        // await html2pdf().set(options).from(content).save();
     }
 }
 
@@ -155,116 +164,123 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 const getAppCssTemplate = (): string => {
-    return `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+    // This will be a straight copy of the globals.css to ensure consistency
+    return \`
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-    --primary-color: #2563EB;
-    --background-color: #F9FAFB;
-    --card-background: #FFFFFF;
-    --text-color: #111827;
-    --muted-text-color: #6B7280;
-    --border-color: #E5E7EB;
-    --font-family: 'Inter', sans-serif;
+@layer base {
+  :root {
+    --background: 240 5% 96%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 31.8% 91.4%;
+    --input: 214 31.8% 91.4%;
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 32.6% 17.5%;
+  }
 }
 
-body {
-    font-family: var(--font-family);
-    background-color: var(--background-color);
-    color: var(--text-color);
-    margin: 0;
-    line-height: 1.6;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
 
-#app {
-    display: flex;
-    min-height: 100vh;
-}
+/* Basic component styles to match shadcn */
+.min-h-screen { min-height: 100vh; }
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.bg-secondary\/40 { background-color: hsla(var(--secondary), 0.4); }
+.bg-card { background-color: hsl(var(--card)); }
+.text-foreground { color: hsl(var(--foreground)); }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.max-w-4xl { max-width: 56rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.p-4 { padding: 1rem; }
+.p-8 { padding: 2rem; }
+.p-12 { padding: 3rem; }
+.p-16 { padding: 4rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.font-bold { font-weight: 700; }
+.rounded-xl { border-radius: 0.75rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+.mb-12 { margin-bottom: 3rem; }
+.last\\:mb-0:last-child { margin-bottom: 0; }
+.text-center { text-align: center; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.pb-2 { padding-bottom: 0.5rem; }
+.space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: 0.5rem; }
+.rounded-md { border-radius: 0.5rem; }
+.max-w-full { max-width: 100%; }
+.h-auto { height: auto; }
+.italic { font-style: italic; }
+.mt-2 { margin-top: 0.5rem; }
+.relative { position: relative; }
+.m-0 { margin: 0; }
+.bg-muted\\/50 { background-color: hsla(var(--muted), 0.5); }
+.border-l-4 { border-left-width: 4px; }
+.border-primary { border-color: hsl(var(--primary)); }
+.rounded-r-lg { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-foreground\\/80 { color: hsla(var(--foreground), 0.8); }
 
-.sidebar {
-    width: 280px;
-    background-color: var(--card-background);
-    border-right: 1px solid var(--border-color);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.sidebar h2 {
-    margin-top: 0;
-    color: var(--primary-color);
-}
-
-.content {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-}
-
-.content-body {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: var(--card-background);
-    padding: 3rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.module-section {
-    margin-bottom: 4rem;
-}
-
-.module-header {
-    text-align: center;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--primary-color);
-}
-
-.module-header h2 {
-    font-size: 2rem;
-    margin-bottom: 0.25rem;
-}
-
-.module-header p {
-    color: var(--muted-text-color);
-    font-size: 1rem;
-}
-
-.block {
-    margin-bottom: 1.5rem;
-}
-
-.block h1, .block h2, .block h3 {
-    color: var(--primary-color);
-}
-
-.block figure {
-    margin: 1rem 0;
-    text-align: center;
-}
-
-.block img {
-    max-width: 100%;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.block figcaption {
-    font-size: 0.9rem;
-    color: var(--muted-text-color);
-    margin-top: 0.5rem;
-    font-style: italic;
-}
-
-.block blockquote {
-    margin: 1.5rem 0;
-    padding: 1rem 1.5rem;
-    border-left: 4px solid var(--primary-color);
-    background-color: var(--background-color);
-    border-radius: 0 8px 8px 0;
-    font-style: italic;
-}
+/* Prose styles for text blocks */
+.prose { color: hsl(var(--foreground)); }
+.prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
+.prose a { color: hsl(var(--primary)); }
+.prose blockquote { border-left-color: hsl(var(--border)); }
+.prose strong { color: hsl(var(--foreground)); }
 `;
 }
 
@@ -303,21 +319,14 @@ export default function Header() {
 
         const jsonDataString = JSON.stringify(handbookData, null, 2);
 
-        // 1. HTML da aplicação (com dados embutidos)
         const htmlContent = getAppHtmlTemplate(handbookTitle, jsonDataString);
         zip.file('index.html', htmlContent);
 
-        // 2. CSS da Aplicação
         zip.file('assets/styles.css', getAppCssTemplate());
-
-        // 3. JS da Aplicação
         zip.file('assets/app.js', getAppJsTemplate());
         
-        // 4. README
         zip.file('README.md', 'Para usar esta apostila, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
         
-        // TODO: Adicionar assets (imagens, libs)
-
         const blob = await zip.generateAsync({ type: 'blob' });
         saveAs(blob, `apostila-${cleanTitle}.zip`);
 
