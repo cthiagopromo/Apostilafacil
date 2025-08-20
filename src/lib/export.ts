@@ -118,7 +118,19 @@ const getInteractiveScript = (): string => {
                 const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
                 const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
-                if (printBtn) printBtn.addEventListener('click', () => window.print());
+                
+                if (printBtn) {
+                    printBtn.addEventListener('click', () => {
+                        // Show all modules for printing
+                        modules.forEach(module => {
+                            module.style.display = 'block';
+                        });
+                        window.print();
+                        // Restore view after printing
+                        showModule(currentModuleIndex);
+                    });
+                }
+
                 if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
                 const handleFontSize = (increase) => {
                     const body = document.body;
@@ -240,7 +252,7 @@ const getGlobalCss = () => `
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
       @media print { 
-          @page { margin: 0; }
+          @page { margin: 1cm 0; }
           body, main { padding: 1.5cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
           .module-section { display: block !important; page-break-after: always; }
@@ -353,3 +365,5 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+    
