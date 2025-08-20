@@ -62,14 +62,11 @@ class InteractiveCourse {
     }
     
     async init() {
-        // Carregar dados do curso
         this.courseData = await this.loadCourseData();
-        console.log('Course data loaded:', this.courseData);
-        
-        // Renderizar interface
         if (this.courseData) {
+            this.renderContent();
+            // In future steps, we will add:
             // this.renderTOC();
-            // this.renderContent();
             // this.bindEvents();
         }
     }
@@ -86,23 +83,66 @@ class InteractiveCourse {
             console.error('There has been a problem with your fetch operation:', error);
             const mainContent = document.getElementById('main-content');
             if(mainContent) {
-                mainContent.innerHTML = '<p style="color: red;">Falha ao carregar os dados da apostila.</p>';
+                mainContent.innerHTML = '<p style="color: red; text-align: center; padding: 2rem;">Falha ao carregar os dados da apostila. Verifique se o arquivo "assets/course-data.json" existe e está acessível.</p>';
             }
             return null;
         }
     }
+
+    renderContent() {
+        const mainContent = document.getElementById('main-content');
+        if (!mainContent || !this.courseData || !this.courseData.projects) {
+            console.error('Main content area or project data not found.');
+            return;
+        }
+
+        let html = '';
+        this.courseData.projects.forEach(project => {
+            html += \`<section class="module-section">
+                        <header class="module-header">
+                            <h2>\${project.title}</h2>
+                            <p>\${project.description}</p>
+                        </header>\`;
+            
+            project.blocks.forEach(block => {
+                html += '<div class="block">';
+                switch (block.type) {
+                    case 'text':
+                        html += block.content.text || '';
+                        break;
+                    case 'image':
+                        html += \`<figure>
+                                    <img src="\${block.content.url}" alt="\${block.content.alt}" style="width: \${block.content.width || 100}%" />
+                                    \${block.content.caption ? \`<figcaption>\${block.content.caption}</figcaption>\` : ''}
+                                 </figure>\`;
+                        break;
+                    case 'quote':
+                        html += \`<blockquote>\${block.content.text}</blockquote>\`;
+                        break;
+                    // Add other block types here in the future
+                    default:
+                        html += \`<p><em>Bloco do tipo '\${block.type}' ainda não suportado.</em></p>\`;
+                }
+                html += '</div>';
+            });
+            html += '</section>';
+        });
+
+        mainContent.innerHTML = html;
+    }
     
     async exportToPDF() {
-        const content = document.getElementById('main-content');
-        const options = {
-            margin: [10, 10, 10, 10],
-            filename: \`\${this.courseData.title}.pdf\`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        
-        await html2pdf().set(options).from(content).save();
+        // This will be implemented in a future step
+        alert('Funcionalidade "Salvar como PDF" em desenvolvimento.');
+        // const content = document.getElementById('main-content');
+        // const options = {
+        //     margin: [10, 10, 10, 10],
+        //     filename: \`\${this.courseData.title}.pdf\`,
+        //     image: { type: 'jpeg', quality: 0.98 },
+        //     html2canvas: { scale: 2 },
+        //     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        // };
+        // await html2pdf().set(options).from(content).save();
     }
 }
 
@@ -110,6 +150,120 @@ document.addEventListener('DOMContentLoaded', () => {
     new InteractiveCourse();
 });
     `;
+}
+
+const getAppCssTemplate = (): string => {
+    return \`
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+:root {
+    --primary-color: #2563EB;
+    --background-color: #F9FAFB;
+    --card-background: #FFFFFF;
+    --text-color: #111827;
+    --muted-text-color: #6B7280;
+    --border-color: #E5E7EB;
+    --font-family: 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.6;
+}
+
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 280px;
+    background-color: var(--card-background);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.content-body {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--card-background);
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.module-section {
+    margin-bottom: 4rem;
+}
+
+.module-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.module-header h2 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.module-header p {
+    color: var(--muted-text-color);
+    font-size: 1rem;
+}
+
+.block {
+    margin-bottom: 1.5rem;
+}
+
+.block h1, .block h2, .block h3 {
+    color: var(--primary-color);
+}
+
+.block figure {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.block img {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.block figcaption {
+    font-size: 0.9rem;
+    color: var(--muted-text-color);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.block blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1.5rem;
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--background-color);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+\`;
 }
 
 export default function Header() {
@@ -149,8 +303,8 @@ export default function Header() {
         const htmlContent = getAppHtmlTemplate(handbookTitle);
         zip.file('index.html', htmlContent);
 
-        // 2. CSS (vazio por enquanto)
-        zip.file('assets/styles.css', '/* Estilos da aplicação aqui */');
+        // 2. CSS da Aplicação
+        zip.file('assets/styles.css', getAppCssTemplate());
 
         // 3. JS da Aplicação
         zip.file('assets/app.js', getAppJsTemplate());
