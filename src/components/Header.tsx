@@ -117,7 +117,7 @@ const getInteractiveScript = (): string => {
 const renderBlockToHtml = (block: Block): string => {
     // Sanitize text content
     const sanitizedText = (text: string | undefined) => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && DOMPurify) {
             return DOMPurify.sanitize(text || '');
         }
         return text || '';
@@ -321,10 +321,55 @@ export default function Header() {
                 <script src="https://cdn.tailwindcss.com"></script>
                 <style>
                     ${getGlobalCss()}
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                    body { font-family: 'Inter', sans-serif; }
                 </style>
+                 <script>
+                    tailwind.config = {
+                      theme: {
+                        extend: {
+                          colors: {
+                             border: 'hsl(var(--border))',
+                             input: 'hsl(var(--input))',
+                             ring: 'hsl(var(--ring))',
+                             background: 'hsl(var(--background))',
+                             foreground: 'hsl(var(--foreground))',
+                             primary: {
+                               DEFAULT: 'hsl(var(--primary))',
+                               foreground: 'hsl(var(--primary-foreground))',
+                             },
+                             secondary: {
+                               DEFAULT: 'hsl(var(--secondary))',
+                               foreground: 'hsl(var(--secondary-foreground))',
+                             },
+                             destructive: {
+                               DEFAULT: 'hsl(var(--destructive))',
+                               foreground: 'hsl(var(--destructive-foreground))',
+                             },
+                             muted: {
+                               DEFAULT: 'hsl(var(--muted))',
+                               foreground: 'hsl(var(--muted-foreground))',
+                             },
+                             accent: {
+                               DEFAULT: 'hsl(var(--accent))',
+                               foreground: 'hsl(var(--accent-foreground))',
+                             },
+                             popover: {
+                               DEFAULT: 'hsl(var(--popover))',
+                               foreground: 'hsl(var(--popover-foreground))',
+                             },
+                             card: {
+                               DEFAULT: 'hsl(var(--card))',
+                               foreground: 'hsl(var(--card-foreground))',
+                             },
+                          }
+                        }
+                      }
+                    }
+                  </script>
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
-            <body class="bg-secondary font-sans antialiased">
+            <body class="bg-background text-foreground font-sans antialiased">
                 <div id="handbook-root-container">
                      <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
                         <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
