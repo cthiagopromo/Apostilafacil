@@ -16,7 +16,7 @@ function sanitizeHtml(html: string): string {
     return html;
 }
 
-function getYoutubeEmbedUrl(url: string): string | null {
+function getYoutubeEmbedUrl(url: string, autoplay = false, controls = true): string | null {
     if (!url) return null;
     let videoId = null;
     try {
@@ -26,15 +26,15 @@ function getYoutubeEmbedUrl(url: string): string | null {
         } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
             videoId = urlObj.searchParams.get('v');
         }
-        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+        return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${controls ? 1 : 0}` : null;
     } catch (e) {
         console.error("URL do YouTube inválida:", e);
         return null;
     }
 }
 
-function getCloudflareEmbedUrl(videoId: string): string | null {
-    return videoId ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe` : null;
+function getCloudflareEmbedUrl(videoId: string, autoplay = false, controls = true): string | null {
+    return videoId ? `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${videoId}/iframe?autoplay=${autoplay}&controls=${controls}` : null;
 }
 
 
@@ -61,38 +61,41 @@ function renderBlockToHtml(block: Block): string {
         case 'video': {
             let embedUrl = null;
             let videoUrlForLink = '#';
+            const autoplay = block.content.autoplay ?? false;
+            const controls = block.content.showControls ?? true;
+
             if (block.content.videoType === 'youtube' && block.content.videoUrl) {
-                embedUrl = getYoutubeEmbedUrl(block.content.videoUrl);
+                embedUrl = getYoutubeEmbedUrl(block.content.videoUrl, autoplay, controls);
                 videoUrlForLink = block.content.videoUrl;
             } else if (block.content.videoType === 'cloudflare' && block.content.cloudflareVideoId) {
-                embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId);
+                embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId, autoplay, controls);
                 videoUrlForLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`;
             }
             
-            const interactiveContent = `
-                <div class="block-video" data-interactive-only>
+            const interactiveContent = embedUrl ? `
+                <div class="block-video interactive-content">
                     <iframe 
-                        src="${embedUrl}?autoplay=${block.content.autoplay ? 1:0}&controls=${block.content.showControls ? 1:0}" 
+                        src="${embedUrl}" 
                         title="${block.content.videoTitle || 'Player de vídeo'}" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
-                </div>`;
+                </div>` : '';
             
             const staticContent = `
-                 <div class="block-video-placeholder" data-pdf-only>
+                 <div class="block-video-placeholder print-only">
                     <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
                          <div class="play-icon-container">
                             <svg class="play-icon" viewBox="0 0 100 100">
                                 <path d="M 30,20 L 70,50 L 30,80 Z" fill="#2563EB"></path>
                             </svg>
                         </div>
-                        <span>Este conteúdo é interativo. Clique para assistir.</span>
+                        <span>Este conteúdo é interativo. Clique para assistir na versão online.</span>
                     </a>
                 </div>`;
 
-            return embedUrl ? (interactiveContent + staticContent) : staticContent;
+            return interactiveContent + staticContent;
         }
         case 'button':
              return `
@@ -256,7 +259,11 @@ function generateCssContent(): string {
         .modulo:first-of-type { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1.module-title-header { text-align: center; }
+        h1.module-title-header { text-align: center; font-size: 2rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.75rem; }
+        h3 { font-size: 1.5rem; }
+        h1, h2, h3, h4, h5, h6 { margin-bottom: 1rem; }
+
         .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
         .block { margin-bottom: 2rem; }
         .block-text p, .block-text ul, .block-text ol { margin-bottom: 1rem; }
@@ -297,7 +304,7 @@ function generateCssContent(): string {
         #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        [data-pdf-only] { display: none; }
+        .print-only { display: none !important; }
         
         @media print {
             html, body {
@@ -310,24 +317,19 @@ function generateCssContent(): string {
                  background-color: var(--background-color) !important;
                  color: var(--text-color) !important;
             }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, [data-interactive-only] { display: none !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .interactive-content { display: none !important; }
             main { max-width: none; margin: 0; padding: 0; }
             .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
             .modulo:first-of-type { page-break-before: auto; }
-            [data-pdf-only] { display: flex !important; }
+            .print-only { display: flex !important; }
         }
 
         @page {
             size: A4;
             margin: 18mm;
-            @top-center { content: string(doctitle); font-size: 9pt; color: #888; }
-            @bottom-right { content: "Página " counter(page); font-size: 9pt; color: #888; }
-        }
-        .main-title, .module-title-header { string-set: doctitle content(text); }
-        .pagedjs_pages {
-            background: var(--background-color) !important;
         }
         .pagedjs_page {
+             background: var(--background-color) !important;
              box-shadow: none !important;
              border: none !important;
         }
@@ -350,6 +352,8 @@ function getScriptContent(): string {
         const btnDarkMode = document.getElementById('btn-dark-mode');
         const body = document.body;
         const root = document.documentElement;
+        const mainTitle = document.querySelector('.main-title');
+        const mainContent = document.querySelector('main');
 
         function showModule(index) {
             if(index < 0 || index >= modules.length) return;
@@ -395,37 +399,29 @@ function getScriptContent(): string {
                 const modal = document.getElementById('loading-modal');
                 if (pdfButton) pdfButton.disabled = false;
                 if (modal) modal.style.display = 'none';
-
-                 // Cleanup Paged.js artifacts after print dialog is closed
-                 setTimeout(() => {
-                    const pagedArtifacts = document.querySelectorAll('.pagedjs_pages, style[data-pagedjs-inserted-styles]');
-                    pagedArtifacts.forEach(el => el.remove());
-                    document.body.classList.remove('pagedjs-body');
-                    showModule(currentModuleIndex); // Restore original view
-                }, 500);
             }
         }
         Paged.registerHandlers(MyHandler);
 
         async function generatePdfWithPagedJs() {
             const modal = document.getElementById('loading-modal');
-            const content = document.querySelector('main');
             
-            if (!content || !pdfButton) return;
+            if (!mainContent || !pdfButton) return;
 
             if (modal) modal.style.display = 'flex';
             if (pdfButton) pdfButton.disabled = true;
 
             try {
                 let paged = new Paged.Previewer();
-                let flow = await paged.preview(content.innerHTML, ['/path-to-print-styles.css'], document.body); // CSS path is placeholder, styles are embedded
+                // Pass a clone of the content to avoid altering the main view
+                let flow = await paged.preview(mainContent.outerHTML, [], document.body);
                 window.print();
             } catch (error) {
                 console.error("Erro durante a geração do PDF com Paged.js:", error);
                 alert('Ocorreu um erro ao gerar o PDF.');
+            } finally {
                  if (modal) modal.style.display = 'none';
                  if (pdfButton) pdfButton.disabled = false;
-                 showModule(currentModuleIndex);
             }
         }
 
@@ -519,6 +515,8 @@ function getScriptContent(): string {
 }
 
 function generateHtmlContent(projects: Project[], handbookTitle: string): string {
+  const cssContent = generateCssContent();
+  const scriptContent = getScriptContent();
   return `
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -528,7 +526,7 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
         <title>${handbookTitle}</title>
         <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
         <style>
-            ${generateCssContent()}
+            ${cssContent}
         </style>
     </head>
     <body>
@@ -546,7 +544,7 @@ function generateHtmlContent(projects: Project[], handbookTitle: string): string
         </main>
         ${generateFloatingNav(projects)}
         <script>
-            ${getScriptContent()}
+            ${scriptContent}
         </script>
     </body>
     </html>
@@ -564,5 +562,3 @@ export async function generateZip(projects: Project[], handbookTitle: string) {
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
-
-    
