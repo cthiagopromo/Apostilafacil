@@ -252,8 +252,8 @@ const getGlobalCss = () => `
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
       @media print { 
-          @page { margin: 0; }
-          body, main { padding: 1.5cm !important; margin: 0 !important; }
+          @page { size: A4; margin: 0; }
+          body, main { padding: 2cm 1.5cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
           .module-section { display: block !important; page-break-after: always; }
           .module-section:last-of-type { page-break-after: auto; }
