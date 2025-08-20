@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +14,10 @@ import { X } from 'lucide-react';
 interface PreviewModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  iframeRef?: React.RefObject<HTMLIFrameElement>;
 }
 
-export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
+export function PreviewModal({ isOpen, onOpenChange, iframeRef }: PreviewModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -30,6 +32,7 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
         </DialogHeader>
         <div className="flex-1 w-full h-full overflow-hidden">
            <iframe
+            ref={iframeRef}
             src="/preview"
             className="w-full h-full border-0"
             title="Pré-visualização da Apostila"

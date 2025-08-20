@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   FileDown,
   Hand,
@@ -18,15 +17,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { LoadingModal } from './LoadingModal';
 
-export function AccessibilityToolbar() {
-  const [isExporting, setIsExporting] = useState(false);
+interface AccessibilityToolbarProps {
+  setIsExporting: (isExporting: boolean) => void;
+}
+
+export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarProps) {
 
   const handlePdfExport = async () => {
     setIsExporting(true);
     // This now just triggers the browser's print dialog.
-    // Paged.js will have already formatted the page for printing.
     window.print();
     // We can't know when the user closes the print dialog, so we'll hide the loader after a short delay.
     setTimeout(() => setIsExporting(false), 2000);
@@ -51,13 +51,12 @@ export function AccessibilityToolbar() {
 
   return (
     <>
-      <LoadingModal isOpen={isExporting} text="Preparando documento para impressão..." />
       <div className="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={handlePdfExport} disabled={isExporting} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
-                {isExporting ? <Loader className="h-5 w-5 animate-spin"/> : <FileDown className="h-5 w-5" />}
+              <Button variant="ghost" size="icon" onClick={handlePdfExport} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
+                <FileDown className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent><p>Exportar para PDF</p></TooltipContent>
