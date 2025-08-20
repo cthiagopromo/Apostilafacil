@@ -31,6 +31,11 @@ function renderBlockToHtml(block: Block): string {
                 </div>
             </div>`;
     }
+    // This is a simplified server-side rendering of the component.
+    // It's not perfect and might not work for complex components with client-side interactivity,
+    // but it's the most effective way to ensure visual consistency without maintaining two render paths.
+    // Note: This won't work for components that rely heavily on client-side hooks without hydration.
+    // Our BlockRenderer is mostly presentational, so it works well here.
     return renderToString(<BlockRenderer block={block} />);
 }
 
@@ -125,6 +130,7 @@ function generateCssContent(): string {
         main {
             max-width: 56rem; /* 896px */
             margin: 0 auto;
+            padding: 3rem 1rem;
         }
         
         .printable-content-wrapper {
@@ -132,19 +138,25 @@ function generateCssContent(): string {
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
             padding: 4rem;
-            margin: 2rem 1rem;
         }
 
-        .module-section { page-break-after: always; }
-        .module-section:last-child { page-break-after: auto; }
+        .module-section { margin-bottom: 4rem; page-break-after: always; }
+        .module-section:last-child { margin-bottom: 0; page-break-after: auto; }
         .module-header { text-align: center; margin-bottom: 3rem; page-break-after: avoid; }
         .module-title { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
         .module-description { color: hsl(var(--muted-foreground)); }
         .module-content > *:not(:last-child) { margin-bottom: 2rem; }
         
+        /* Prose styles for rendered text blocks */
         .prose { max-width: none; }
-        .prose h1, .prose h2, .prose h3 { color: hsl(var(--foreground)); }
-        .dark .prose-invert { color: hsl(var(--foreground)); }
+        .prose h1 { font-size: 1.5em; font-weight: bold; }
+        .prose h2 { font-size: 1.25em; font-weight: bold; }
+        .prose h3 { font-size: 1.1em; font-weight: bold; }
+        .prose p, .prose ul, .prose ol, .prose blockquote { margin-top: 1em; margin-bottom: 1em; }
+        .prose ul { list-style-type: disc; padding-left: 2em; }
+        .prose ol { list-style-type: decimal; padding-left: 2em; }
+        .prose a { color: hsl(var(--primary)); text-decoration: underline; }
+        .prose blockquote { border-left: 4px solid hsl(var(--border)); padding-left: 1em; font-style: italic; }
 
         .flex { display: flex; }
         .flex-row { flex-direction: row; }
@@ -158,7 +170,7 @@ function generateCssContent(): string {
         .text-xl { font-size: 1.25rem; }
         
         figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-        img.rounded-md { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
+        img { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
         figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
         
         .relative { position: relative; }
@@ -188,12 +200,12 @@ function generateCssContent(): string {
         .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
 
         /* Quiz Styles */
-        .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; page-break-inside: avoid; }
-        .quiz-header { padding: 1rem 1.5rem; }
-        .quiz-question { font-weight: 700; color: hsl(var(--card-foreground)); }
-        .quiz-description { font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
+        .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; page-break-inside: avoid; border: 1px solid hsl(var(--border)); }
+        .quiz-header { padding: 1.5rem; }
+        .quiz-question { font-weight: 700; color: hsl(var(--card-foreground)); margin-bottom: 0.25rem; }
+        .quiz-description { font-size: 0.875rem; color: hsl(var(--muted-foreground)); margin-top: 0; }
         .quiz-options-container { padding: 0 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-        .quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid transparent; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
+        .quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid hsl(var(--border)); cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
         .quiz-option:hover { background-color: hsl(var(--muted) / 0.6); }
         .quiz-option .radio-button-wrapper { width: 1rem; height: 1rem; flex-shrink: 0; border-radius: 9999px; border: 1px solid hsl(var(--primary)); display: flex; align-items: center; justify-content: center; }
         .quiz-option .radio-button { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background-color: transparent; transition: background-color 0.2s; }
@@ -256,7 +268,7 @@ function getScriptContent(): string {
 
                 if(loadingModal) loadingModal.style.display = 'flex';
 
-                const content = document.getElementById('printable-content');
+                const content = document.querySelector('main');
                 
                 class Previewer extends Paged.Previewer {
                     afterPreview() {
@@ -388,7 +400,7 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
         <header class="preview-header no-print">
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
-        <main id="printable-content">
+        <main>
             <div class="printable-content-wrapper">
                  ${generateModulesHtml(projects)}
             </div>
@@ -412,7 +424,3 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
-
-    
-
-    
