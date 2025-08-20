@@ -3,8 +3,6 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project, Block } from './types';
 import DOMPurify from 'dompurify';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 function sanitizeHtml(html: string): string {
     if (typeof window !== 'undefined') {
@@ -80,34 +78,6 @@ function renderBlockToHtml(block: Block): string {
 }
 
 
-function generatePdfHtmlForProject(project: Project, mainTitle: string, css: string, allImagesBase64: Record<string, string>): string {
-    const projectHtml = project.blocks.map(block => {
-        let finalBlock = { ...block };
-        if (block.type === 'image' && block.content.url && allImagesBase64[block.content.url]) {
-            finalBlock.content = { ...block.content, url: allImagesBase64[block.content.url] };
-        }
-        return renderBlockToHtml(finalBlock);
-    }).join('\n');
-    
-    return `
-        <!DOCTYPE html>
-        <html lang="pt-br">
-        <head>
-            <meta charset="UTF-8">
-            <style>${css}</style>
-        </head>
-        <body>
-            <div id="render-me">
-                <h2 class="module-main-title">${mainTitle}</h2>
-                <h1 class="module-title-header">${project.title}</h1>
-                <div class="divider"></div>
-                ${projectHtml}
-            </div>
-        </body>
-        </html>
-    `;
-}
-
 function generateModulesHtml(projects: Project[], mainTitle: string): string {
     return projects.map((project, index) => `
           <section id="modulo-${index}" class="modulo">
@@ -159,166 +129,131 @@ function generateHeaderNavHtml(projects: Project[], handbookTitle: string): stri
     `;
 }
 
-async function imageToBase64(url: string): Promise<string> {
-    try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (e) {
-        console.error(`Failed to fetch and convert image to base64: ${url}`, e);
-        return 'error'; // Return a specific string to indicate failure
-    }
-}
-
-async function generatePdf(projects: Project[], handbookTitle: string) {
-    const modal = document.getElementById('loading-modal');
-    if (modal) modal.style.display = 'flex';
-
-    try {
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4'
-        });
-        const css = generateCss(true);
-
-        const imageUrls = projects.flatMap(p => p.blocks)
-            .filter(b => b.type === 'image' && b.content.url)
-            .map(b => b.content.url!);
-
-        const uniqueImageUrls = [...new Set(imageUrls)];
+function generateCss(): string {
+    const interactiveStyles = `
+        :root {
+            --primary-color: #2563EB;
+            --primary-color-dark: #1D4ED8;
+            --background-color: #F4F5F7;
+            --text-color: #111827;
+            --card-background: #FFFFFF;
+            --header-height: 70px;
+            --border-color: #E5E7EB;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        html { font-size: 16px; }
+        body { font-family: var(--font-family); line-height: 1.6; background-color: var(--background-color); color: var(--text-color); margin: 0; padding-top: var(--header-height); transition: background-color 0.3s, color 0.3s; }
+        .main-header { position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); background: var(--primary-color); color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .header-container { max-width: 1200px; height: 100%; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .main-title { margin: 0; font-size: 1.5rem; font-weight: 700; }
+        .header-nav { display: flex; gap: 8px; }
+        .btn-acessibilidade { display: flex; align-items: center; gap: 8px; background-color: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s ease-in-out; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-acessibilidade:hover { background-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .btn-acessibilidade:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+        .btn-acessibilidade .material-icons { font-size: 20px; }
+        main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
+        .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
+        h1, h2, h3, h4, h5, h6 { text-align: left; }
+        .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
+        .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
+        .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
+        .block { margin-bottom: 2.5rem; }
+        img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .block-image { text-align: center; }
+        .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
+        .block-quote { position: relative; padding: 1.5rem; background-color: var(--background-color); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
+        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .block-video .pdf-video-placeholder { display: none; }
+        .block-button { text-align: center; }
+        .btn-block { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-block:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .block-quiz { padding: 1.5rem; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color); }
+        .block-quiz .pdf-quiz-placeholder { display: none; }
+        .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
+        .quiz-option { display: flex; align-items: center; padding: 0.75rem; margin: 0.5rem 0; background: var(--card-background); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .quiz-option:not(.answered):hover { border-color: var(--primary-color); background: var(--primary-color); color: white; }
+        .quiz-option .radio-button { width: 18px; height: 18px; border: 2px solid var(--border-color); border-radius: 50%; margin-right: 12px; flex-shrink: 0; transition: all 0.2s ease-in-out; }
+        .quiz-option:hover .radio-button { border-color: white; }
+        .quiz-option.correct .radio-button, .quiz-option.incorrect .radio-button { border-width: 6px; }
+        .quiz-option.answered { cursor: default; opacity: 0.8; }
+        .quiz-option.correct { border-color: #16A34A; background: #F0FDF4; opacity: 1; }
+        .quiz-option.correct .radio-button { border-color: #16A34A; }
+        .quiz-option.incorrect { border-color: #DC2626; background: #FEF2F2; opacity: 1; }
+        .quiz-option.incorrect .radio-button { border-color: #DC2626; }
+        .quiz-feedback { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-weight: bold; display: none; }
+        .quiz-feedback.correct { color: #15803D; background: #DCFCE7; }
+        .quiz-feedback.incorrect { color: #B91C1C; background: #FEE2E2; }
+        .quiz-retry-btn { margin-top: 1rem; }
+        .module-navigation { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color); }
+        .btn { background-color: var(--primary-color); color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 0 0.5rem; transition: all 0.2s ease-in-out; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn.nav-anterior { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
+        .btn.nav-anterior:hover { background-color: var(--background-color); border-color: var(--text-color); color: var(--text-color); }
+        #floating-nav-button { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 1001; transition: background-color 0.2s, transform 0.2s; }
+        #floating-nav-button:hover { background-color: var(--primary-color-dark); transform: scale(1.05); }
+        #floating-nav-menu { position: fixed; bottom: 85px; right: 20px; background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s, visibility 0.2s, transform 0.2s; min-width: 250px; max-height: 300px; overflow-y: auto; padding: 0.5rem; }
+        #floating-nav-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #floating-nav-menu p { padding: 0.5rem 1rem; margin: 0; font-weight: bold; font-size: 0.9rem; color: var(--text-color); opacity: 0.7; }
+        #floating-nav-menu ul { list-style: none; padding: 0; margin: 0; }
+        #floating-nav-menu li a { display: block; padding: 0.75rem 1rem; color: var(--text-color); text-decoration: none; border-radius: 4px; transition: background-color 0.2s; }
+        #floating-nav-menu li a:hover { background-color: var(--background-color); }
+        #floating-nav-menu li a.active { background-color: var(--primary-color); color: white; font-weight: bold; }
+        .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        .animatable.revealed { opacity: 1; transform: translateY(0); }
         
-        const base64Promises = uniqueImageUrls.map(url => imageToBase64(url));
-        const base64Results = await Promise.all(base64Promises);
+        #loading-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+        #loading-modal .modal-content { background-color: #fff; padding: 30px 50px; border-radius: 12px; text-align: center; color: #333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        #loading-modal .modal-content p { font-size: 1.1rem; margin-top: 1rem; }
+        #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid #2563EB; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        const allImagesBase64: Record<string, string> = {};
-        uniqueImageUrls.forEach((url, index) => {
-            if(base64Results[index] !== 'error') {
-                allImagesBase64[url] = base64Results[index];
-            }
-        });
-
-        for (let i = 0; i < projects.length; i++) {
-            const project = projects[i];
-            const htmlContent = generatePdfHtmlForProject(project, handbookTitle, css, allImagesBase64);
-
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'absolute';
-            iframe.style.width = '210mm'; // A4 width
-            iframe.style.height = '297mm'; // A4 height
-            iframe.style.top = '-9999px';
-            iframe.style.left = '-9999px';
-            document.body.appendChild(iframe);
-
-            const iframeDoc = iframe.contentWindow?.document;
-            if (!iframeDoc) {
-                console.error("Could not access iframe document.");
-                iframe.remove();
-                continue;
-            }
-
-            iframeDoc.open();
-            iframeDoc.write(htmlContent);
-            iframeDoc.close();
-
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for content to render
-
-            const elementToRender = iframeDoc.getElementById('render-me');
-            if (!elementToRender) {
-                console.error("Could not find element to render in iframe.");
-                iframe.remove();
-                continue;
-            }
-
-            const canvas = await html2canvas(elementToRender, {
-                scale: 2, // Higher scale for better quality
-                useCORS: true, // Should not be needed with base64 but good to have
-                logging: false,
-            });
-
-            iframe.remove();
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            if (i > 0) {
-                pdf.addPage();
-            }
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        @media (max-width: 768px) {
+            body { padding-top: 120px; }
+            .header-container { flex-direction: column; justify-content: center; gap: 15px; padding: 1rem; }
+            .main-header { height: auto; }
+            .main-title { font-size: 1.2rem; }
+            .header-nav { transform: scale(0.9); gap: 5px; }
+            main { margin: 1rem auto; padding: 0 1rem; }
+            .modulo { padding: 1.5rem; }
+            .module-title-header { font-size: 1.8rem; }
         }
 
-        pdf.output('dataurlnewwindow');
+        @media print {
+            body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; }
+            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #btn-pdf, #btn-zip { display: none !important; }
+            main { max-width: none; margin: 0; padding: 0; }
+            
+            #apostila-completa { display: block !important; }
+            .modulo { 
+                display: block !important; 
+                page-break-before: always; 
+                box-shadow: none !important; 
+                border: none !important;
+                padding: 1rem;
+            }
+            .modulo:first-of-type { page-break-before: auto; }
 
-    } catch (error) {
-        console.error("Error generating PDF:", error);
-        alert("Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.");
-    } finally {
-        if (modal) modal.style.display = 'none';
-    }
+            h1, h2, h3, h4, h5, h6 { text-align: center !important; }
+            .module-title-header, .module-main-title { text-align: center !important; }
+            .block-text { text-align: left; }
+            
+            .block-video iframe { display: none !important; }
+            .pdf-video-placeholder { display: flex !important; }
+            .pdf-quiz-placeholder { display: block !important; }
+            .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn { display: none !important; }
+        }
+    `;
+    
+    return interactiveStyles;
 }
 
 
-function generateZip(projects: Project[], handbookTitle: string) {
+export function generateZip(projects: Project[], handbookTitle: string) {
     const zip = new JSZip();
 
-    // The main HTML file with interactive content
-    const mainHtmlContent = `
-        <!DOCTYPE html>
-        <html lang="pt-br">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${handbookTitle}</title>
-            <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="style.css">
-        </head>
-        <body>
-            <div id="loading-modal">
-                <div class="modal-content">
-                    <div class="spinner"></div>
-                    <p>Gerando PDF, aguarde...</p>
-                </div>
-            </div>
-            <header class="main-header">
-                <div class="header-container">
-                    <h1 class="main-title">${handbookTitle}</h1>
-                    ${generateHeaderNavHtml(projects, handbookTitle)}
-                </div>
-            </header>
-            <main>
-                <div id="apostila-completa">
-                    ${generateModulesHtml(projects, handbookTitle)}
-                </div>
-            </main>
-            ${generateFloatingNav(projects)}
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-            <script>${generateZipScript()}</script>
-        </body>
-        </html>
-    `;
-
-    zip.file('index.html', mainHtmlContent);
-    zip.file('style.css', generateCss(false));
-    
-    const content = zip.generateAsync({ type: 'blob' });
-    content.then(blob => {
-        saveAs(blob, `apostila-interativa.zip`);
-    });
-}
-
-
-function generateZipScript(): string {
-    return `
+    const scriptContent = `
 document.addEventListener('DOMContentLoaded', () => {
     let currentModuleIndex = 0;
     const modules = document.querySelectorAll('.modulo');
@@ -420,19 +355,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- PDF / ZIP Generation Listeners ---
     if (pdfButton) {
-        pdfButton.addEventListener('click', () => {
-            // The generatePdf function is now defined in the main export script
-            // and will be called from there, not from inside the zip.
-            // This button in the zip export is effectively a placeholder.
-            alert('A geração de PDF está disponível na aplicação principal.');
-        });
+        pdfButton.addEventListener('click', () => window.print());
     }
      if (zipButton) {
         zipButton.addEventListener('click', () => {
              alert('Este arquivo já é um ZIP. Para exportar novamente, use a aplicação principal.');
         });
     }
-
 
     // --- Floating Nav ---
     floatingNavButton.addEventListener('click', (event) => {
@@ -473,179 +402,42 @@ document.addEventListener('DOMContentLoaded', () => {
     showModule(0);
 });
     `;
-}
 
-
-function generateCss(isForPdf: boolean): string {
-    const printStyles = `
-        @media print {
-            body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, #btn-pdf, #btn-zip { display: none !important; }
-            main { max-width: none; margin: 0; padding: 0; }
-            
-            #apostila-completa { display: block !important; }
-            .modulo { 
-                display: block !important; 
-                page-break-before: always; 
-                box-shadow: none !important; 
-                border: none !important;
-                padding: 1rem;
-            }
-            .modulo:first-of-type { page-break-before: auto; }
-
-            h1, h2, h3, h4, h5, h6 { text-align: center !important; }
-            .module-title-header, .module-main-title { text-align: center !important; }
-            .block-text { text-align: left; }
-            
-            .block-video iframe { display: none !important; }
-            .pdf-video-placeholder { display: flex !important; }
-            .pdf-quiz-placeholder { display: block !important; }
-            .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn { display: none !important; }
-        }
+    const mainHtmlContent = `
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${handbookTitle}</title>
+            <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="style.css">
+        </head>
+        <body>
+            <header class="main-header">
+                <div class="header-container">
+                    <h1 class="main-title">${handbookTitle}</h1>
+                    ${generateHeaderNavHtml(projects, handbookTitle)}
+                </div>
+            </header>
+            <main>
+                <div id="apostila-completa">
+                    ${generateModulesHtml(projects, handbookTitle)}
+                </div>
+            </main>
+            ${generateFloatingNav(projects)}
+            <script>${scriptContent}</script>
+        </body>
+        </html>
     `;
 
-    const pdfOnlyStyles = `
-        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #111827; margin: 0; background: #fff; }
-        #render-me { padding: 15mm; }
-        .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-        .module-title-header { color: #111827; font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
-        .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
-        .block { margin-bottom: 2rem; }
-        img { max-width: 100%; height: auto; border-radius: 8px; }
-        .block-text { text-align: left; }
-        .block-image { text-align: center; }
-        .block-image figcaption { font-size: 0.9rem; color: #555; margin-top: 0.5rem; text-align: center; }
-        .block-quote { position: relative; padding: 1.5rem; background-color: #F4F5F7; border-left: 4px solid #2563EB; border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-        .block-button { text-align: center; }
-        .btn-block { display: inline-block; background-color: #2563EB; color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold; text-decoration: none; }
-        
-        .pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
-        .pdf-video-placeholder a { color: #2563EB; text-decoration: none; font-weight: 500; }
-        .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
-        .pdf-video-placeholder-icon svg { fill: #374151; }
-        .pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
-        .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
-
-        .pdf-quiz-placeholder { padding: 1rem; background: #f3f4f6; border-radius: 6px; text-align: center; margin-top: 1rem; border: 1px solid #d1d5db; }
-        .block-quiz .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
-    `;
-
-    const interactiveStyles = `
-        :root {
-            --primary-color: #2563EB;
-            --primary-color-dark: #1D4ED8;
-            --background-color: #F4F5F7;
-            --text-color: #111827;
-            --card-background: #FFFFFF;
-            --header-height: 70px;
-            --border-color: #E5E7EB;
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        html { font-size: 16px; }
-        body { font-family: var(--font-family); line-height: 1.6; background-color: var(--background-color); color: var(--text-color); margin: 0; padding-top: var(--header-height); transition: background-color 0.3s, color 0.3s; }
-        .main-header { position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); background: var(--primary-color); color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .header-container { max-width: 1200px; height: 100%; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .main-title { margin: 0; font-size: 1.5rem; font-weight: 700; }
-        .header-nav { display: flex; gap: 8px; }
-        .btn-acessibilidade { display: flex; align-items: center; gap: 8px; background-color: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s ease-in-out; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .btn-acessibilidade:hover { background-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .btn-acessibilidade:focus-visible { outline: 2px solid white; outline-offset: 2px; }
-        .btn-acessibilidade .material-icons { font-size: 20px; }
-        main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
-        .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
-        h1, h2, h3, h4, h5, h6 { text-align: left; }
-        .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-        .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
-        .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
-        .block { margin-bottom: 2.5rem; }
-        img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .block-image { text-align: center; }
-        .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.5rem; }
-        .block-quote { position: relative; padding: 1.5rem; background-color: var(--background-color); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .block-video .pdf-video-placeholder { display: none; }
-        .block-button { text-align: center; }
-        .btn-block { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn-block:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .block-quiz { padding: 1.5rem; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color); }
-        .block-quiz .pdf-quiz-placeholder { display: none; }
-        .quiz-question { font-weight: bold; font-size: 1.1rem; margin-top: 0; text-align: left; }
-        .quiz-option { display: flex; align-items: center; padding: 0.75rem; margin: 0.5rem 0; background: var(--card-background); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease-in-out; }
-        .quiz-option:not(.answered):hover { border-color: var(--primary-color); background: var(--primary-color); color: white; }
-        .quiz-option .radio-button { width: 18px; height: 18px; border: 2px solid var(--border-color); border-radius: 50%; margin-right: 12px; flex-shrink: 0; transition: all 0.2s ease-in-out; }
-        .quiz-option:hover .radio-button { border-color: white; }
-        .quiz-option.correct .radio-button, .quiz-option.incorrect .radio-button { border-width: 6px; }
-        .quiz-option.answered { cursor: default; opacity: 0.8; }
-        .quiz-option.correct { border-color: #16A34A; background: #F0FDF4; opacity: 1; }
-        .quiz-option.correct .radio-button { border-color: #16A34A; }
-        .quiz-option.incorrect { border-color: #DC2626; background: #FEF2F2; opacity: 1; }
-        .quiz-option.incorrect .radio-button { border-color: #DC2626; }
-        .quiz-feedback { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-weight: bold; display: none; }
-        .quiz-feedback.correct { color: #15803D; background: #DCFCE7; }
-        .quiz-feedback.incorrect { color: #B91C1C; background: #FEE2E2; }
-        .quiz-retry-btn { margin-top: 1rem; }
-        .module-navigation { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color); }
-        .btn { background-color: var(--primary-color); color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 0 0.5rem; transition: all 0.2s ease-in-out; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .btn.nav-anterior { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
-        .btn.nav-anterior:hover { background-color: var(--background-color); border-color: var(--text-color); color: var(--text-color); }
-        #floating-nav-button { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 1001; transition: background-color 0.2s, transform 0.2s; }
-        #floating-nav-button:hover { background-color: var(--primary-color-dark); transform: scale(1.05); }
-        #floating-nav-menu { position: fixed; bottom: 85px; right: 20px; background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s, visibility 0.2s, transform 0.2s; min-width: 250px; max-height: 300px; overflow-y: auto; padding: 0.5rem; }
-        #floating-nav-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        #floating-nav-menu p { padding: 0.5rem 1rem; margin: 0; font-weight: bold; font-size: 0.9rem; color: var(--text-color); opacity: 0.7; }
-        #floating-nav-menu ul { list-style: none; padding: 0; margin: 0; }
-        #floating-nav-menu li a { display: block; padding: 0.75rem 1rem; color: var(--text-color); text-decoration: none; border-radius: 4px; transition: background-color 0.2s; }
-        #floating-nav-menu li a:hover { background-color: var(--background-color); }
-        #floating-nav-menu li a.active { background-color: var(--primary-color); color: white; font-weight: bold; }
-        .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
-        .animatable.revealed { opacity: 1; transform: translateY(0); }
-        
-        #loading-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        #loading-modal .modal-content { background-color: #fff; padding: 30px 50px; border-radius: 12px; text-align: center; color: #333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        #loading-modal .modal-content p { font-size: 1.1rem; margin-top: 1rem; }
-        #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid #2563EB; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        @media (max-width: 768px) {
-            body { padding-top: 120px; }
-            .header-container { flex-direction: column; justify-content: center; gap: 15px; padding: 1rem; }
-            .main-header { height: auto; }
-            .main-title { font-size: 1.2rem; }
-            .header-nav { transform: scale(0.9); gap: 5px; }
-            main { margin: 1rem auto; padding: 0 1rem; }
-            .modulo { padding: 1.5rem; }
-            .module-title-header { font-size: 1.8rem; }
-        }
-    `;
+    zip.file('index.html', mainHtmlContent);
+    zip.file('style.css', generateCss());
     
-    return isForPdf ? pdfOnlyStyles : interactiveStyles + printStyles;
-}
-
-
-export async function exportToZip(projects: Project[], handbookTitle: string) {
-    const { handbookTitle: currentTitle, projects: currentProjects } = useProjectStore.getState();
-
-    const button = document.getElementById('btn-zip');
-    if (!button) { // Assuming a zip button exists with this ID
-        // Create a temporary one if needed, or find a better way to handle this
-        const tempButton = document.createElement('button');
-        tempButton.onclick = () => generateZip(currentProjects, currentTitle);
-        tempButton.click();
-        return;
-    }
-    
-    button.addEventListener('click', () => {
-        generateZip(currentProjects, currentTitle);
+    zip.generateAsync({ type: 'blob' }).then(blob => {
+        saveAs(blob, `apostila-interativa.zip`);
     });
-
-    const pdfButton = document.getElementById('btn-pdf');
-     if (pdfButton) {
-        pdfButton.addEventListener('click', () => {
-            generatePdf(currentProjects, currentTitle);
-        });
-    }
-
 }
