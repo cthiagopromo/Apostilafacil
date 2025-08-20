@@ -15,6 +15,8 @@ interface PreviewModalProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+// This component is no longer used, as preview is handled in a separate page.
+// It is kept for potential future use or alternative preview strategies.
 export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
   if (!isOpen) return null;
 

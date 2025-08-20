@@ -9,14 +9,14 @@ import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { generateZip } from '@/lib/export';
-import { PreviewModal } from './PreviewModal';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
-  const { handbookTitle, activeProject, saveData, isDirty, projects } = useProjectStore();
+  const { handbookTitle, handbookDescription, activeProject, saveData, isDirty, projects } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleExport = async () => {
     if (!projects || projects.length === 0) {
@@ -30,7 +30,7 @@ export default function Header() {
 
     setIsExporting(true);
     try {
-      await generateZip(projects, handbookTitle);
+      await generateZip(projects, handbookTitle, handbookDescription);
       toast({
         title: "Exportação Concluída",
         description: "Seu projeto foi exportado como um arquivo ZIP.",
@@ -69,12 +69,13 @@ export default function Header() {
       });
       return;
     }
-    setIsPreviewModalOpen(true);
+    // Opens the preview page in a new tab
+    const previewUrl = '/preview';
+    window.open(previewUrl, '_blank');
   }
 
   return (
     <>
-      <PreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
             <Button variant="outline" asChild>

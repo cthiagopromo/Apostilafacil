@@ -41,64 +41,56 @@ function getCloudflareEmbedUrl(videoId: string, autoplay = false, controls = tru
 function renderBlockToHtml(block: Block): string {
     switch (block.type) {
         case 'text':
-            return `<div class="block block-text">${sanitizeHtml(block.content.text || '')}</div>`;
+            return `<div class="prose">${sanitizeHtml(block.content.text || '')}</div>`;
         case 'image':
             const width = block.content.width ?? 100;
             return `
-                <div class="block block-image" style="display: flex; justify-content: center;">
+                <div class="block-image" style="display: flex; justify-content: center;">
                     <figure style="width: ${width}%;">
-                        <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" style="max-width: 100%; height: auto; display: block; border-radius: 8px;" />
-                        ${block.content.caption ? `<figcaption>${block.content.caption}</figcaption>` : ''}
+                        <img src="${block.content.url || ''}" alt="${block.content.alt || ''}" class="rounded-md shadow-md" />
+                        ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
                     </figure>
                 </div>
             `;
         case 'quote':
              return `
-                <div class="block block-quote">
-                    <p>${block.content.text || ''}</p>
-                </div>
+                 <div class="relative p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg">
+                    <svg class="absolute -top-3 -left-4 h-10 w-10 text-primary/20" fill="currentColor" viewBox="0 0 20 20"><path d="M13 8V0H0v12h5v8h8V8h-5zM5 2h6v4H5V2zm5 14H7v-4h3v4z"></path></svg>
+                    <blockquote class="text-lg italic text-foreground/80 m-0 p-0 border-none">
+                        ${block.content.text}
+                    </blockquote>
+                 </div>
             `;
         case 'video': {
             let embedUrl = null;
-            let videoUrlForLink = '#';
             const autoplay = block.content.autoplay ?? false;
             const controls = block.content.showControls ?? true;
 
             if (block.content.videoType === 'youtube' && block.content.videoUrl) {
                 embedUrl = getYoutubeEmbedUrl(block.content.videoUrl, autoplay, controls);
-                videoUrlForLink = block.content.videoUrl;
             } else if (block.content.videoType === 'cloudflare' && block.content.cloudflareVideoId) {
                 embedUrl = getCloudflareEmbedUrl(block.content.cloudflareVideoId, autoplay, controls);
-                videoUrlForLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${block.content.cloudflareVideoId}/watch`;
             }
             
-            const interactiveContent = embedUrl ? `
-                <div class="block block-video interactive-content">
+            if (!embedUrl) {
+                return '<p class="text-muted-foreground">Vídeo não configurado.</p>';
+            }
+
+            return `
+                <div class="block-video">
                     <iframe 
+                        class="w-full aspect-video rounded-md"
                         src="${embedUrl}" 
                         title="${block.content.videoTitle || 'Player de vídeo'}" 
-                        frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
-                </div>` : '<p>Vídeo não configurado.</p>';
-            
-            const staticContent = `
-                 <div class="block-video-placeholder print-only">
-                    <a href="${videoUrlForLink}" target="_blank" rel="noopener noreferrer" class="video-placeholder-link">
-                         <div class="play-icon-container">
-                            <svg class="play-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                        </div>
-                        <span>Este conteúdo é interativo. Clique para assistir na versão online.</span>
-                    </a>
                 </div>`;
-
-            return interactiveContent + staticContent;
         }
         case 'button':
              return `
-                <div class="block block-button">
-                    <a href="${block.content.buttonUrl || '#'}" class="btn-block" target="_blank" rel="noopener noreferrer">
+                <div class="flex justify-center">
+                    <a href="${block.content.buttonUrl || '#'}" class="btn-primary" target="_blank" rel="noopener noreferrer">
                         ${block.content.buttonText || 'Botão'}
                     </a>
                 </div>
@@ -106,289 +98,196 @@ function renderBlockToHtml(block: Block): string {
         case 'quiz':
             const quizOptionsHtml = block.content.options?.map(opt => `
                 <div class="quiz-option" data-correct="${opt.isCorrect}">
-                    <div class="radio-button"></div>
+                     <div class="radio-button-wrapper">
+                        <div class="radio-button"></div>
+                    </div>
                     <label>${opt.text}</label>
                 </div>
             `).join('') || '';
 
              return `
-                <div class="block block-quiz">
-                    <h3 class="quiz-question">${block.content.question || ''}</h3>
+                <div class="block-quiz-card">
+                    <div class="quiz-header">
+                        <h3 class="quiz-question">${block.content.question || ''}</h3>
+                        <p class="quiz-description">Selecione a resposta correta.</p>
+                    </div>
                     <div class="quiz-options-container">${quizOptionsHtml}</div>
-                    <div class="quiz-feedback"></div>
-                    <button class="btn quiz-retry-btn" style="display: none;">Tentar Novamente</button>
+                    <div class="quiz-footer">
+                        <div class="quiz-feedback"></div>
+                        <button class="btn-outline quiz-retry-btn" style="display: none;">Tentar Novamente</button>
+                    </div>
                 </div>`;
         default:
             return '';
     }
 }
 
-
-function generateModulesHtml(projects: Project[], handbookTitle: string): string {
-    return projects.map((project, index) => `
-          <section id="modulo-${index}" class="modulo">
-              <div class="module-content">
-                  <p class="module-breadcrumb">${handbookTitle.toUpperCase()}</p>
-                  <h1 class="module-title-header">${project.title}</h1>
-                  <div class="divider"></div>
-                  ${project.blocks.map(renderBlockToHtml).join('\n')}
-              </div>
-               <div class="module-navigation">
-                  <button class="btn nav-anterior">Módulo Anterior</button>
-                  <button class="btn nav-proximo">Próximo Módulo</button>
-              </div>
-          </section>
-      `).join('');
+function generateModulesHtml(projects: Project[]): string {
+    return projects.map((project) => `
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-2 border-b-2 border-primary pb-2">${project.title}</h2>
+            <p class="text-muted-foreground mb-8">${project.description}</p>
+            <div class="space-y-8">
+                ${project.blocks.map(renderBlockToHtml).join('\n')}
+            </div>
+        </section>
+    `).join('');
 }
 
-function generateFloatingNav(projects: Project[]): string {
-    const moduleList = projects.map((project, index) => 
-        `<li><a href="#" class="module-link" data-index="${index}">${project.title}</a></li>`
-    ).join('');
-
-    return `
-        <div id="floating-nav-button" title="Navegar entre módulos">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-        </div>
-        <nav id="floating-nav-menu">
-            <p>Módulos</p>
-            <ul>
-                ${moduleList}
-            </ul>
-        </nav>
-    `;
-}
 
 function generateHeaderNavHtml(handbookTitle: string): string {
     return `
-      <div class="header-container">
-          <h1 class="main-title">${handbookTitle}</h1>
-          <div class="toolbar">
-              <button id="btn-pdf" class="toolbar-btn" title="Exportar para PDF">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                  <span>PDF</span>
-              </button>
-              <div class="toolbar-separator"></div>
-              <button id="btn-font-increase" class="toolbar-btn" title="Aumentar fonte">A+</button>
-              <button id="btn-font-decrease" class="toolbar-btn" title="Diminuir fonte">A-</button>
-              <div class="toolbar-separator"></div>
-              <button id="btn-contrast" class="toolbar-btn" title="Alto Contraste">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg>
-                  <span>Contraste</span>
-              </button>
-              <button id="btn-dark-mode" class="toolbar-btn" title="Modo Escuro">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
-                  <span>Escuro</span>
-              </button>
-              <button id="btn-audio" class="toolbar-btn" title="Leitor de Áudio (Em breve)" disabled>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                  <span>Áudio</span>
-              </button>
-          </div>
-      </div>
+      <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-white">${handbookTitle}</h1>
+        </div>
+        <div id="accessibility-toolbar" class="flex items-center gap-1 bg-card p-1 rounded-lg border">
+            <button id="export-pdf" title="Exportar para PDF" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg></button>
+            <button id="libras" title="Libras (Em desenvolvimento)" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path><path d="M4 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path></svg></button>
+            <div class="flex items-center border-l border-r mx-1 px-1">
+                 <button id="font-decrease" title="Diminuir Fonte" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                 <button id="font-increase" title="Aumentar Fonte" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+            </div>
+            <button id="contrast" title="Alto Contraste" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg></button>
+            <button id="acessibilidade" title="Acessibilidade (Em desenvolvimento)" class="toolbar-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="m11.23 13.08.05-.05a4.2 4.2 0 0 1-1.18-5.06l-1.42-1.42a6.25 6.25 0 0 0-5.43 8.95l1.42-1.42a4.2 4.2 0 0 1 5.06-1.18Zm1.9-1.9.05-.05a4.2 4.2 0 0 0 1.18 5.06l1.42 1.42a6.25 6.25 0 0 1 5.43-8.95l-1.42 1.42a4.2 4.2 0 0 0-5.06 1.18Z"></path><path d="M16 22a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"></path><path d="m15.5 15.5-3-3"></path><path d="M22 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="m3.5 15.5 7-7"></path><path d="M8 2a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"></path></svg></button>
+        </div>
+    </div>
     `;
 }
 
 function generateCssContent(): string {
     return `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
-        
         :root {
-            --primary-color: #2563EB;
-            --primary-color-dark: #1D4ED8;
-            --background-color: #F4F5F7;
-            --text-color: #1F2937;
-            --text-color-light: #6B7280;
-            --card-background: #FFFFFF;
-            --header-height: 64px;
-            --border-color: #E5E7EB;
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            --base-font-size: 16px;
+            --background: 240 5% 96%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 0 0% 3.9%;
+            --primary: 221 83% 53%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 210 40% 98%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 214 31.8% 91.4%;
+            --input: 214 31.8% 91.4%;
+            --ring: 221 83% 53%;
+            --radius: 0.75rem;
         }
 
-        .dark-mode {
-            --background-color: #111827;
-            --text-color: #F9FAFB;
-            --text-color-light: #9CA3AF;
-            --card-background: #1F2937;
-            --border-color: #374151;
+        body {
+            background-color: hsl(var(--secondary));
+            font-family: Inter, sans-serif;
+            transition: font-size 0.2s, background-color 0.3s, color 0.3s;
         }
-
-        .high-contrast-mode {
-            --background-color: #000000;
-            --text-color: #FFFFFF;
-            --text-color-light: #CCCCCC;
-            --card-background: #000000;
-            --primary-color: #FFFF00;
-            --primary-color-dark: #DDDD00;
-            --border-color: #FFFFFF;
-        }
-        .high-contrast-mode .main-header { border-bottom: 2px solid var(--border-color); background: #000; }
-        .high-contrast-mode .toolbar-btn { color: #000000; background-color: #FFFFFF; border: 1px solid #000; }
-        .high-contrast-mode .toolbar-btn span { color: #000; }
-        .high-contrast-mode .toolbar-btn svg { stroke: #000; }
-        .high-contrast-mode .main-title { color: #FFFFFF; }
-        .high-contrast-mode #floating-nav-button { background-color: #FFFF00; color: #000; }
-        .high-contrast-mode .modulo { border: 2px solid #FFF; }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { font-size: var(--base-font-size); scroll-behavior: smooth; }
-        body { font-family: var(--font-family); line-height: 1.7; background-color: var(--background-color); color: var(--text-color); margin: 0; padding-top: var(--header-height); transition: background-color 0.3s, color 0.3s; }
         
-        .main-header { position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height); background: var(--primary-color); color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; transition: background-color 0.3s; }
-        .header-container { max-width: 1280px; height: 100%; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .main-title { font-size: 1.25rem; font-weight: 700; }
+        .bg-card { background-color: hsl(var(--card)); }
+        .text-primary { color: hsl(var(--primary)); }
+        .text-muted-foreground { color: hsl(var(--muted-foreground)); }
+        .border-primary { border-color: hsl(var(--primary)); }
 
-        .toolbar { display: flex; align-items: center; gap: 0.5rem; }
-        .toolbar-btn { display: flex; align-items: center; gap: 0.5rem; background: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: background-color 0.2s; }
-        .toolbar-btn:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
-        .toolbar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .toolbar-btn svg { width: 16px; height: 16px; stroke: white;}
-        .toolbar-btn span { color: white; }
-        .toolbar-separator { width: 1px; height: 24px; background-color: rgba(255, 255, 255, 0.3); margin: 0 0.5rem; }
-        
-        main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-        .modulo { display: none; animation: fadeIn 0.5s ease-in-out; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 3rem 4rem; margin-bottom: 2rem; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
-        .modulo:first-of-type { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .module-breadcrumb { color: var(--primary-color); font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 0.5rem; }
-        h1.module-title-header { font-size: 2.75rem; font-weight: 900; margin-bottom: 1.5rem; color: var(--text-color); line-height: 1.2; }
-        .divider { height: 1px; background-color: var(--border-color); margin: 2rem 0; }
-        
-        .block { margin-bottom: 2rem; }
-        .block-text { color: var(--text-color-light); }
-        .block-text h1, .block-text h2, .block-text h3 { color: var(--text-color); margin-bottom: 1rem; }
+        .font-bold { font-weight: 700; }
+        .text-xl { font-size: 1.25rem; }
+        .text-3xl { font-size: 1.875rem; }
+        .text-5xl { font-size: 3rem; }
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mb-12 { margin-bottom: 3rem; }
+        .mb-16 { margin-bottom: 4rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .p-4 { padding: 1rem; }
+        .p-8 { padding: 2rem; }
+        .p-12 { padding: 3rem; }
+        .p-16 { padding: 4rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1); }
 
-        .block-image figure { margin: 0; }
-        .block-image figcaption { font-size: 0.9rem; color: var(--text-color); opacity: 0.7; margin-top: 0.75rem; text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .max-w-4xl { max-width: 56rem; }
+        .max-w-5xl { max-width: 64rem; }
+        .inline-block { display: inline-block; }
+        .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
 
-        .block-quote { position: relative; padding: 1.5rem; background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--primary-color); border-radius: 4px; font-style: italic; font-size: 1.1rem; }
-        .dark-mode .block-quote { background-color: rgba(255,255,255,0.05); }
+        .bg-primary\\/10 { background-color: rgba(37, 99, 235, 0.1); }
+        .bg-muted\\/50 { background-color: hsla(var(--muted) / 0.5); }
+        .text-primary\\/20 { color: hsla(var(--primary) / 0.2); }
+        .text-foreground\\/80 { color: hsla(var(--foreground) / 0.8); }
 
-        .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: #000; }
-        .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;}
+        .border-b-2 { border-bottom-width: 2px; }
+        .border-l-4 { border-left-width: 4px; }
+        .sticky { position: sticky; }
+        .top-0 { top: 0; }
+        .z-10 { z-index: 10; }
 
-        .video-placeholder-link { display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f3f4f6; border: 2px dashed #d1d5db; padding: 2rem; border-radius: 12px; min-height: 250px; text-align: center; text-decoration: none; color: #4b5563; font-weight: 500; gap: 1rem; transition: background-color 0.2s, border-color 0.2s; }
-        .dark-mode .video-placeholder-link { background-color: #374151; color: #d1d5db; border-color: #4b5563;}
-        .video-placeholder-link:hover { background-color: #e5e7eb; border-color: #9ca3af; }
-        .video-placeholder-link .play-icon-container { width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .dark-mode .video-placeholder-link .play-icon-container { background-color: rgba(0, 0, 0, 0.2); }
-        .video-placeholder-link .play-icon { width: 24px; height: 24px; color: var(--primary-color); }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-1 { gap: 0.25rem; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .-top-3 { top: -0.75rem; }
+        .-left-4 { left: -1rem; }
+        .h-10 { height: 2.5rem; }
+        .w-10 { width: 2.5rem; }
 
-        .block-button { text-align: center; margin: 2rem 0; }
-        .btn-block { display: inline-block; background-color: #1F2937; color: white; padding: 1rem 2.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .dark-mode .btn-block { background-color: #ffffff; color: #1F2937; }
-        .btn-block:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .prose { max-width: none; }
+        .prose h1, .prose h2, .prose h3 { font-weight: bold; }
+
+        .toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
+        .toolbar-btn:hover { background-color: rgba(255,255,255,0.1); }
+        .toolbar-btn svg { height: 1.25rem; width: 1.25rem; }
+
+        .header { background-color: hsl(var(--primary)); }
         
-        .btn { display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn:hover { background-color: var(--primary-color-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .module-navigation { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-        .btn.nav-anterior { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
-        .btn.nav-anterior:hover { background-color: var(--background-color); border-color: var(--text-color); }
+        .btn-primary { display: inline-block; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
+        .btn-outline { display: inline-block; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; text-align: center; }
+        
+        /* Quiz Styles */
+        .block-quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; overflow: hidden; }
+        .quiz-header { padding: 1rem 1.5rem; }
+        .quiz-question { font-weight: 700; color: hsl(var(--card-foreground)); }
+        .quiz-description { font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
+        .quiz-options-container { padding: 0 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid transparent; cursor: pointer; transition: background-color 0.2s; }
+        .quiz-option:hover { background-color: hsl(var(--muted) / 0.6); }
+        .quiz-option .radio-button-wrapper { width: 1rem; height: 1rem; border-radius: 9999px; border: 1px solid hsl(var(--primary)); display: flex; align-items: center; justify-content: center; }
+        .quiz-option .radio-button { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background-color: transparent; transition: background-color 0.2s; }
+        .quiz-option.selected .radio-button { background-color: hsl(var(--primary)); }
+        .quiz-option.correct { background-color: hsla(var(--primary) / 0.1); border-color: hsla(var(--primary) / 0.5); }
+        .quiz-option.incorrect { background-color: hsla(var(--destructive) / 0.1); border-color: hsla(var(--destructive) / 0.5); }
+        .quiz-footer { padding: 1rem 1.5rem; }
+        .quiz-feedback { margin-bottom: 0.5rem; font-weight: 500; min-height: 1.5rem; }
+        .quiz-feedback.correct { color: hsl(var(--primary)); }
+        .quiz-feedback.incorrect { color: hsl(var(--destructive)); }
 
-        #floating-nav-button { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 1001; transition: all 0.2s; }
-        #floating-nav-button:hover { background-color: var(--primary-color-dark); transform: scale(1.05); }
-        #floating-nav-menu { position: fixed; bottom: 85px; right: 20px; background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s, visibility 0.2s, transform 0.2s; min-width: 250px; max-height: 300px; overflow-y: auto; padding: 0.5rem; }
-        #floating-nav-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        #floating-nav-menu p { padding: 0.5rem 1rem; margin: 0; font-weight: bold; font-size: 0.9rem; color: var(--text-color); opacity: 0.7; }
-        #floating-nav-menu ul { list-style: none; }
-        #floating-nav-menu li a { display: block; padding: 0.75rem 1rem; color: var(--text-color); text-decoration: none; border-radius: 4px; transition: background-color 0.2s; font-weight: 500; }
-        #floating-nav-menu li a:hover { background-color: var(--background-color); }
-        #floating-nav-menu li a.active { background-color: var(--primary-color); color: white; font-weight: bold; }
-        
-        #loading-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        #loading-modal .modal-content { background-color: #fff; padding: 30px 50px; border-radius: 12px; text-align: center; color: #333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        #loading-modal .spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .print-only { display: none !important; }
-        
+        body.high-contrast { background-color: black; color: white; }
+        body.high-contrast .bg-card { background-color: black; border: 1px solid white; }
+        body.high-contrast .text-primary { color: yellow; }
+        body.high-contrast .text-muted-foreground { color: lightgray; }
+        body.high-contrast .border-primary { border-color: yellow; }
+        body.high-contrast .header { background-color: black; border-bottom: 1px solid white; }
+        body.high-contrast .toolbar-btn { color: white; }
+        body.high-contrast .toolbar-btn svg { stroke: white; }
+
         @media print {
-            html, body {
-                --background-color: #FFF !important;
-                --text-color: #000 !important;
-                --card-background: #FFF !important;
-                --border-color: #ddd !important;
-                --primary-color: #000 !important;
-                --base-font-size: 11pt;
-                 background-color: var(--background-color) !important;
-                 color: var(--text-color) !important;
-                 padding-top: 0;
-            }
-            .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .interactive-content { display: none !important; }
-            main { max-width: none; margin: 0; padding: 0; box-shadow: none !important; border: none !important; }
-            .modulo { display: block !important; box-shadow: none !important; border: none !important; padding: 1rem 0; page-break-before: always; }
-            .modulo:first-of-type { page-break-before: auto; }
-            .print-only { display: flex !important; }
-        }
-
-        @page {
-            size: A4;
-            margin: 18mm;
-        }
-        .pagedjs_page {
-             background: var(--background-color) !important;
-             box-shadow: none !important;
-             border: none !important;
-        }
-
-        .block-quiz {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1.5rem;
-        }
-        .dark-mode .block-quiz {
-            background-color: #2c2c2c;
-            border-color: #444;
-        }
-        .quiz-question {
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-        .quiz-options-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .quiz-option {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            border-radius: 6px;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .quiz-option:hover {
-            background-color: #f0f0f0;
-        }
-        .dark-mode .quiz-option:hover {
-            background-color: #383838;
-        }
-        .quiz-option .radio-button {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid var(--text-color-light);
-        }
-        .quiz-option.correct {
-            border-color: #28a745;
-            background-color: #e9f5ec;
-        }
-        .quiz-option.incorrect {
-            border-color: #dc3545;
-            background-color: #f8d7da;
-        }
-        .quiz-feedback {
-            margin-top: 1rem;
-            font-weight: bold;
-        }
-        .quiz-retry-btn {
-            margin-top: 1rem;
+          .no-print, .no-print * { display: none !important; }
+          body, .printable-content { background: white !important; color: black !important; font-size: 11pt; width: 100%; margin: 0; padding: 0; box-shadow: none; }
+          main { max-width: 100% !important; padding: 0 !important; }
+          .bg-card { box-shadow: none !important; border: none !important; padding: 0 !important; page-break-after: always; }
+          @page { size: A4; margin: 2cm; }
         }
     `;
 }
@@ -396,145 +295,45 @@ function generateCssContent(): string {
 function getScriptContent(): string {
     return `
     document.addEventListener('DOMContentLoaded', () => {
-        let currentModuleIndex = 0;
-        const modules = document.querySelectorAll('.modulo');
-        const floatingNavButton = document.getElementById('floating-nav-button');
-        const floatingNavMenu = document.getElementById('floating-nav-menu');
-        const moduleLinks = document.querySelectorAll('.module-link');
-        const pdfButton = document.getElementById('btn-pdf');
+        const exportPdfBtn = document.getElementById('export-pdf');
+        const fontIncreaseBtn = document.getElementById('font-increase');
+        const fontDecreaseBtn = document.getElementById('font-decrease');
+        const contrastBtn = document.getElementById('contrast');
+        const librasBtn = document.getElementById('libras');
+        const acessibilidadeBtn = document.getElementById('acessibilidade');
         
-        const btnFontIncrease = document.getElementById('btn-font-increase');
-        const btnFontDecrease = document.getElementById('btn-font-decrease');
-        const btnContrast = document.getElementById('btn-contrast');
-        const btnDarkMode = document.getElementById('btn-dark-mode');
-        const body = document.body;
-        const root = document.documentElement;
-        const mainContent = document.querySelector('main');
-
-        function showModule(index) {
-            if(index < 0 || index >= modules.length) return;
-            modules.forEach((module, i) => {
-                module.style.display = i === index ? 'block' : 'none';
-            });
-            currentModuleIndex = index;
-            updateNavButtons();
-            updateActiveModuleLink();
-            window.scrollTo(0, 0);
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', () => window.print());
         }
 
-        function updateNavButtons() {
-            const currentModule = modules[currentModuleIndex];
-            if (!currentModule) return;
-            
-            const prevBtn = currentModule.querySelector('.nav-anterior');
-            const nextBtn = currentModule.querySelector('.nav-proximo');
-
-            if(prevBtn) prevBtn.style.display = currentModuleIndex > 0 ? 'inline-block' : 'none';
-            if(nextBtn) nextBtn.style.display = currentModuleIndex < modules.length - 1 ? 'inline-block' : 'none';
-        }
-        
-        function updateActiveModuleLink() {
-            if (!moduleLinks.length) return;
-            moduleLinks.forEach((link, i) => {
-                link.classList.toggle('active', i === currentModuleIndex);
-            });
-        }
-
-        modules.forEach(module => {
-            const nextBtn = module.querySelector('.nav-proximo');
-            const prevBtn = module.querySelector('.nav-anterior');
-            if(nextBtn) nextBtn.addEventListener('click', () => showModule(currentModuleIndex + 1));
-            if(prevBtn) prevBtn.addEventListener('click', () => showModule(currentModuleIndex - 1));
-        });
-
-        class MyHandler extends Paged.Handler {
-            constructor(chunker, polisher, caller) {
-                super(chunker, polisher, caller);
-            }
-             afterPreview(pages) {
-                const modal = document.getElementById('loading-modal');
-                if (pdfButton) pdfButton.disabled = false;
-                if (modal) modal.style.display = 'none';
-            }
-        }
-        Paged.registerHandlers(MyHandler);
-
-        async function generatePdfWithPagedJs() {
-            const modal = document.getElementById('loading-modal');
-            
-            if (!mainContent || !pdfButton) return;
-
-            if (modal) modal.style.display = 'flex';
-            if (pdfButton) pdfButton.disabled = true;
-
-            try {
-                let paged = new Paged.Previewer();
-                let flow = await paged.preview(mainContent.outerHTML, [], document.body);
-                window.print();
-            } catch (error) {
-                console.error("Erro durante a geração do PDF com Paged.js:", error);
-                alert('Ocorreu um erro ao gerar o PDF.');
-            } finally {
-                 if (modal) modal.style.display = 'none';
-                 if (pdfButton) pdfButton.disabled = false;
-            }
-        }
-
-        if(pdfButton) {
-            pdfButton.addEventListener('click', generatePdfWithPagedJs);
-        }
-        
-        if(floatingNavButton && floatingNavMenu){
-            floatingNavButton.addEventListener('click', (event) => {
-                event.stopPropagation();
-                floatingNavMenu.classList.toggle('show');
-            });
-        }
-
-        document.addEventListener('click', (event) => {
-            if (floatingNavMenu && !floatingNavMenu.contains(event.target) && floatingNavButton && !floatingNavButton.contains(event.target)) {
-                floatingNavMenu.classList.remove('show');
-            }
-        });
-
-        if (moduleLinks.length > 0) {
-            moduleLinks.forEach((link) => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
-                    showModule(index);
-                    if(floatingNavMenu) floatingNavMenu.classList.remove('show');
-                });
-            });
-        }
-
-
-        if(btnFontIncrease && btnFontDecrease) {
-            btnFontIncrease.addEventListener('click', () => {
-                let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--base-font-size'));
-                root.style.setProperty('--base-font-size', (currentSize + 1) + 'px');
-            });
-            btnFontDecrease.addEventListener('click', () => {
-                let currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--base-font-size'));
-                if (currentSize > 10) {
-                    root.style.setProperty('--base-font-size', (currentSize - 1) + 'px');
+        if (fontIncreaseBtn && fontDecreaseBtn) {
+             const body = document.body;
+             const handleFontSize = (increase) => {
+                const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
+                const newSize = increase ? currentSize + 1 : currentSize - 1;
+                if (newSize >= 12 && newSize <= 24) {
+                  body.style.fontSize = \`\${newSize}px\`;
                 }
+             };
+             fontIncreaseBtn.addEventListener('click', () => handleFontSize(true));
+             fontDecreaseBtn.addEventListener('click', () => handleFontSize(false));
+        }
+
+        if (contrastBtn) {
+            contrastBtn.addEventListener('click', () => {
+                document.body.classList.toggle('high-contrast');
             });
         }
         
-        if(btnContrast) {
-            btnContrast.addEventListener('click', () => body.classList.toggle('high-contrast-mode'));
+        const showAlert = (feature) => alert(feature + ' - Funcionalidade em desenvolvimento.');
+        if (librasBtn) {
+            librasBtn.addEventListener('click', () => showAlert('Libras'));
+        }
+        if (acessibilidadeBtn) {
+            acessibilidadeBtn.addEventListener('click', () => showAlert('Acessibilidade'));
         }
 
-        if(btnDarkMode) {
-            btnDarkMode.addEventListener('click', () => body.classList.toggle('dark-mode'));
-        }
-        
-        if (modules.length > 0) {
-            showModule(0);
-        }
-
-        document.querySelectorAll('.block-quiz').forEach(quizBlock => {
+        document.querySelectorAll('.block-quiz-card').forEach(quizBlock => {
             const options = quizBlock.querySelectorAll('.quiz-option');
             const feedbackEl = quizBlock.querySelector('.quiz-feedback');
             const retryBtn = quizBlock.querySelector('.quiz-retry-btn');
@@ -543,14 +342,21 @@ function getScriptContent(): string {
             options.forEach(option => {
                 option.addEventListener('click', () => {
                     if (answered) return;
+                    
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+
                     answered = true;
                     const isCorrect = option.getAttribute('data-correct') === 'true';
 
                     option.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    
                     if(feedbackEl) {
                        feedbackEl.textContent = isCorrect ? 'Resposta correta!' : 'Resposta incorreta.';
-                       feedbackEl.style.color = isCorrect ? 'green' : 'red';
+                       feedbackEl.className = 'quiz-feedback ' + (isCorrect ? 'correct' : 'incorrect');
                     }
+
+                    options.forEach(opt => opt.style.cursor = 'default');
 
                     if (retryBtn) retryBtn.style.display = 'inline-block';
                 });
@@ -559,8 +365,14 @@ function getScriptContent(): string {
             if(retryBtn) {
                 retryBtn.addEventListener('click', () => {
                     answered = false;
-                    options.forEach(opt => opt.classList.remove('correct', 'incorrect'));
-                    if(feedbackEl) feedbackEl.textContent = '';
+                    options.forEach(opt => {
+                        opt.classList.remove('correct', 'incorrect', 'selected');
+                        opt.style.cursor = 'pointer';
+                    });
+                    if(feedbackEl) {
+                        feedbackEl.textContent = '';
+                        feedbackEl.className = 'quiz-feedback';
+                    }
                     retryBtn.style.display = 'none';
                 });
             }
@@ -569,7 +381,7 @@ function getScriptContent(): string {
     `;
 }
 
-export function generateHtmlContent(projects: Project[], handbookTitle: string): string {
+export function generateHtmlContent(projects: Project[], handbookTitle: string, handbookDescription: string): string {
   const cssContent = generateCssContent();
   const scriptContent = getScriptContent();
   return `
@@ -579,25 +391,29 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${handbookTitle}</title>
-        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
         <style>
             ${cssContent}
         </style>
     </head>
-    <body>
-        <div id="loading-modal">
-            <div class="modal-content">
-                <div class="spinner"></div>
-                <p>Gerando PDF...</p>
-            </div>
-        </div>
-        <header class="main-header">
+    <body class="printable-content">
+        <header class="header p-4 shadow-sm sticky top-0 z-10 no-print">
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
-        <main id="apostila-completa">
-            ${generateModulesHtml(projects, handbookTitle)}
+        <main class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+            <div class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+              <header class="text-center mb-12">
+                <div class="inline-block p-4 bg-primary/10 rounded-2xl mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10 text-primary"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                </div>
+                <h1 class="text-5xl font-bold text-primary">${handbookTitle}</h1>
+                <p class="text-xl text-muted-foreground mt-2">${handbookDescription}</p>
+              </header>
+              ${generateModulesHtml(projects)}
+            </div>
         </main>
-        ${generateFloatingNav(projects)}
         <script>
             ${scriptContent}
         </script>
@@ -606,11 +422,11 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string):
   `;
 }
 
-export async function generateZip(projects: Project[], handbookTitle: string) {
+export async function generateZip(projects: Project[], handbookTitle: string, handbookDescription: string) {
     const zip = new JSZip();
     const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\\s+/g, '-');
 
-    const htmlContent = generateHtmlContent(projects, handbookTitle);
+    const htmlContent = generateHtmlContent(projects, handbookTitle, handbookDescription);
     zip.file('index.html', htmlContent);
     zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
     
