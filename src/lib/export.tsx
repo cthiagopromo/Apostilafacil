@@ -71,11 +71,11 @@ function generateHeaderNavHtml(handbookTitle: string): string {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path><path d="M4 10s.5-1 2-1 2 1 2 1v4s-.5 1-2 1-2-1-2-1V5s0-1 1.5-1 1.5 1 1.5 1"></path></svg>
             </button>
             <div class="flex items-center border-l border-r mx-1 px-1">
-                <button id="font-decrease" title="Diminuir Fonte" class="toolbar-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                 <button id="font-decrease" title="Diminuir Fonte" class="toolbar-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
                 <button id="font-increase" title="Aumentar Fonte" class="toolbar-btn">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
             </div>
             <button id="contrast" title="Alto Contraste" class="toolbar-btn">
@@ -133,9 +133,13 @@ function generateCssContent(): string {
             max-width: 56rem; /* 896px */
             margin: 0 auto;
             padding: 2rem 3rem 4rem; /* p-8 sm:p-12 md:p-16 */
+        }
+        
+        #printable-content-wrapper {
             background-color: hsl(var(--card));
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            padding: 2rem 3rem; /* Corresponds to p-8 sm:p-12 */
         }
 
         .header-content {
@@ -219,10 +223,17 @@ function generateCssContent(): string {
         body.high-contrast .text-muted-foreground { color: lightgray !important; }
         body.high-contrast .border-primary { border-color: yellow !important; }
         body.high-contrast .toolbar-btn svg { stroke: white; }
+        body.high-contrast #printable-content-wrapper { background-color: black; border: 1px solid white; }
+
+        /* Loading Modal Styles */
+        #loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        #loading-modal-content { background: white; padding: 2rem; border-radius: 0.5rem; text-align: center; color: black; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
 
         @media print {
           .no-print, .no-print * { display: none !important; }
-          body, main { background: white !important; color: black !important; font-size: 11pt; width: 100%; margin: 0; padding: 0; box-shadow: none; border: none; }
+          body, main, #printable-content-wrapper { background: white !important; color: black !important; font-size: 11pt; width: 100%; margin: 0; padding: 0; box-shadow: none; border: none; }
           main { max-width: 100% !important; }
           @page { size: A4; margin: 2cm; }
         }
@@ -230,8 +241,6 @@ function generateCssContent(): string {
 }
 
 function getScriptContent(): string {
-    // This script is identical to the one in `AccessibilityToolbar.tsx`
-    // but without the React/JSX parts.
     return `
     document.addEventListener('DOMContentLoaded', () => {
         const exportPdfBtn = document.getElementById('export-pdf');
@@ -240,9 +249,50 @@ function getScriptContent(): string {
         const contrastBtn = document.getElementById('contrast');
         const librasBtn = document.getElementById('libras');
         const acessibilidadeBtn = document.getElementById('acessibilidade');
+        const loadingModal = document.getElementById('loading-modal');
         
         if (exportPdfBtn) {
-            exportPdfBtn.addEventListener('click', () => window.print());
+            exportPdfBtn.addEventListener('click', async () => {
+                const content = document.getElementById('printable-content');
+                if (!content || !window.html2canvas || !window.jspdf) {
+                    alert('Erro: Bibliotecas de exportação não carregaram.');
+                    return;
+                }
+
+                if(loadingModal) loadingModal.style.display = 'flex';
+
+                try {
+                    const canvas = await html2canvas(content, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: null,
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'p',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height],
+                        hotfixes: ['px_scaling']
+                    });
+
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    
+                    const pdfBlob = pdf.output('blob');
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                    window.open(pdfUrl, '_blank');
+                    URL.revokeObjectURL(pdfUrl);
+
+                } catch (error) {
+                    console.error("Erro ao gerar PDF:", error);
+                    alert("Ocorreu um erro ao gerar o PDF. Tente novamente.");
+                } finally {
+                    if(loadingModal) loadingModal.style.display = 'none';
+                }
+            });
         }
 
         if (fontIncreaseBtn && fontDecreaseBtn) {
@@ -339,13 +389,22 @@ export function generateHtmlContent(projects: Project[], handbookTitle: string, 
         <style>
             ${cssContent}
         </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoVBL5gI9kDXrd3NHZrqzsoVRgePartnersA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </head>
     <body>
+        <div id="loading-modal">
+            <div id="loading-modal-content">
+                <div class="spinner"></div>
+                <p>Gerando PDF, por favor aguarde...</p>
+            </div>
+        </div>
+
         <header class="no-print">
             ${generateHeaderNavHtml(handbookTitle)}
         </header>
         <main id="printable-content">
-            <div class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+            <div id="printable-content-wrapper">
                  ${generateModulesHtml(projects)}
             </div>
         </main>
@@ -368,5 +427,3 @@ export async function generateZip(projects: Project[], handbookTitle: string, ha
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
-
-    
