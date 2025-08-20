@@ -82,6 +82,15 @@ function renderBlockToHtml(block: Block): string {
                 <div ${animationClass}>
                     <div class="block block-video">
                         ${embedHtml}
+                         <div class="pdf-video-placeholder">
+                            <div class="pdf-video-placeholder-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                            </div>
+                            <div class="pdf-video-placeholder-text">
+                                <p class="video-title">${videoTitle || 'Vídeo'}</p>
+                                <p>Assista ao vídeo em: <a href="${videoLink}" target="_blank">${videoLink}</a></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -126,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const floatingNavMenu = document.getElementById('floating-nav-menu');
     const moduleLinks = document.querySelectorAll('.module-link');
     const pdfButton = document.getElementById('btn-pdf');
-    const modal = document.getElementById('loading-modal');
     
     function showModule(index) {
         modules.forEach((module, i) => {
@@ -219,69 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- PDF Generation ---
-    pdfButton.addEventListener('click', async () => {
-        modal.style.display = 'flex';
-        
-        try {
-            const pdfContainer = document.getElementById('apostila-pdf-export');
-            const htmlContent = pdfContainer.innerHTML;
-            const fullHtml = \`
-                <!DOCTYPE html>
-                <html lang="pt-br">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Export PDF</title>
-                    <style>
-                        body { font-family: 'Inter', sans-serif; color: #111827; }
-                        h1, h2, h3, h4, h5, h6 { text-align: center; color: #111827; }
-                        .module-main-title { font-size: 1rem; font-weight: 500; color: #2563EB; text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
-                        .module-title-header { font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
-                        .divider { height: 1px; background-color: #E5E7EB; margin: 1.5rem 0; }
-                        .modulo-pdf { page-break-before: always; padding: 2rem; }
-                        .modulo-pdf:first-child { page-break-before: auto; }
-                        .pdf-video-placeholder { padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; page-break-inside: avoid; display: flex; align-items: center; gap: 1em; }
-                        .pdf-video-placeholder-icon svg { width: 24px; height: 24px; fill: #374151; }
-                        .pdf-video-placeholder-text { font-size: 0.9rem; }
-                        .pdf-video-placeholder-text p { margin: 0; }
-                        .pdf-video-placeholder-text .video-title { font-weight: bold; margin-bottom: 0.25em; }
-                        .pdf-video-placeholder-text a { color: #2563EB; text-decoration: none; }
-                        .pdf-quiz-placeholder { padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; page-break-inside: avoid; }
-                        .pdf-quiz-options { list-style-type: none; padding-left: 1rem; margin-top: 0.5rem; }
-                        img { max-width: 100%; height: auto; }
-                    </style>
-                </head>
-                <body>\${htmlContent}</body>
-                </html>
-            \`;
-
-            const response = await fetch('https://html-to-pdf-converter-alpha.vercel.app/api/convert', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ html: fullHtml })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to generate PDF');
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'apostila.pdf';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-
-        } catch (error) {
-            console.error('Error during PDF generation process:', error);
-            alert('Ocorreu um erro ao gerar o PDF: ' + error.message);
-        } finally {
-            modal.style.display = 'none';
-        }
+    pdfButton.addEventListener('click', () => {
+        window.print();
     });
 
     // --- Accessibility Buttons ---
@@ -377,60 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 }
 
-function generatePdfHtmlForProject(project: Project, mainTitle: string): string {
-    const content = project.blocks.map(block => {
-        if (block.type === 'video') {
-            const { videoType, videoUrl, cloudflareVideoId, videoTitle } = block.content;
-            let videoLink = '#';
-            if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoLink = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/watch`;
-            } else if (videoType === 'youtube' && videoUrl) {
-                videoLink = videoUrl;
-            }
-            return `
-                 <div class="pdf-video-placeholder">
-                     <div class="pdf-video-placeholder-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                    </div>
-                    <div class="pdf-video-placeholder-text">
-                        <p class="video-title">${videoTitle || 'Vídeo'}</p>
-                        <p>Assista ao vídeo em: <a href="${videoLink}" target="_blank">${videoLink}</a></p>
-                    </div>
-                </div>`;
-        }
-        if (block.type === 'quiz') {
-             return `
-                <div class="pdf-quiz-placeholder">
-                    <strong>Quiz:</strong> ${block.content.question || ''}
-                    <ul class="pdf-quiz-options">
-                        ${block.content.options?.map(o => `<li>${o.text} ${o.isCorrect ? '(Correta)' : ''}</li>`).join('') || ''}
-                    </ul>
-                    <small>(Interativo na versão web)</small>
-                </div>
-            `;
-        }
-        // Fallback for other block types to render for PDF
-        const blockHtml = renderBlockToHtml(block);
-        // Ensure no iframes from video blocks slip through
-        return blockHtml.replace(/<iframe[^>]*>.*?<\/iframe>/g, '');
-
-    }).join('\n');
-
-    return `
-      <section id="modulo-pdf-${project.id}" class="modulo-pdf">
-          <div class="module-content">
-              <h2 class="module-main-title">${mainTitle}</h2>
-              <h1 class="module-title-header">${project.title}</h1>
-              <div class="divider"></div>
-              ${content}
-          </div>
-      </section>
-    `;
-}
-
-
 function generateModulesHtml(projects: Project[], mainTitle: string): string {
-    const interactiveModules = projects.map((project, index) => `
+    return projects.map((project, index) => `
           <section id="modulo-${index}" class="modulo">
               <div class="module-content">
                   <h2 class="module-main-title animatable">${mainTitle}</h2>
@@ -444,10 +339,6 @@ function generateModulesHtml(projects: Project[], mainTitle: string): string {
               </div>
           </section>
       `).join('');
-
-    const pdfExportContainer = `<div id="apostila-pdf-export" style="display: none;">${projects.map(p => generatePdfHtmlForProject(p, mainTitle)).join('')}</div>`;
-
-    return interactiveModules + pdfExportContainer;
 }
 
 
@@ -519,12 +410,6 @@ function generateHtml(projects: Project[], handbookTitle: string): string {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loading-modal" class="modal">
-        <div class="modal-content">
-            <div class="spinner"></div>
-            <p>Gerando PDF, por favor aguarde...</p>
-        </div>
-    </div>
     <header class="main-header">
         <div class="header-container">
             <h1 class="main-title">${handbookTitle}</h1>
@@ -620,7 +505,7 @@ main { max-width: 800px; margin: 2rem auto; padding: 0 2rem; }
 .modulo { display: none; background-color: var(--card-background); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 2rem 3rem; margin-bottom: 2rem; border: 1px solid var(--border-color); }
 body.modo-escuro .modulo { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
-h1, h2, h3, h4, h5, h6 { text-align: center; }
+h1, h2, h3, h4, h5, h6 { text-align: left; }
 .module-main-title { font-size: 1rem; font-weight: 500; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-align: center; }
 .module-title-header { color: var(--text-color); font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0 0 0; text-align: center; }
 .divider { height: 1px; background-color: var(--border-color); margin: 1.5rem 0; }
@@ -634,6 +519,7 @@ img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px 
 body.modo-escuro .block-quote { background-color: rgba(96, 165, 250, 0.1); border-left-color: var(--primary-color); }
 .block-video { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .block-video iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.block-video .pdf-video-placeholder { display: none; }
 .block-button { text-align: center; }
 .btn-block {
     display: inline-block; background-color: var(--primary-color); color: white; padding: 0.8rem 2rem; border: none;
@@ -687,51 +573,12 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 .animatable { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
 .animatable.revealed { opacity: 1; transform: translateY(0); }
 
-/* PDF and Modal Styles */
-.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-.modal-content { background-color: #fff; color: #333; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 20px; }
-.spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-.modulo-pdf {
-    background-color: #fff;
-    color: #000;
-    padding: 2rem;
-    page-break-before: always;
-}
-.modulo-pdf:first-child {
-    page-break-before: auto;
-}
-
-.pdf-video-placeholder, .pdf-quiz-placeholder {
-    display: block;
-    align-items: center;
-    gap: 1em;
-    padding: 1rem;
-    margin: 1.5rem 0;
-    background-color: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    page-break-inside: avoid;
-    text-align: left;
-}
-.pdf-quiz-placeholder { text-align: left; }
-.pdf-video-placeholder { display: flex; }
-
-.pdf-video-placeholder a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-}
+.pdf-video-placeholder { display: flex; align-items: center; gap: 1em; padding: 1rem; margin: 1.5rem 0; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; }
+.pdf-video-placeholder a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
 .pdf-video-placeholder-icon { flex-shrink: 0; width: 24px; height: 24px; }
-.pdf-video-placeholder-icon svg { fill: #000; }
-.pdf-video-placeholder-text p { margin: 0; padding: 0; }
+.pdf-video-placeholder-icon svg { fill: #374151; }
+.pdf-video-placeholder-text p { margin: 0; padding: 0; color: #111827;}
 .pdf-video-placeholder-text p.video-title { font-weight: bold; margin-bottom: 0.25em; }
-
-.pdf-quiz-options { list-style-type: none; padding-left: 1rem; margin-top: 0.5rem; }
-.pdf-quiz-options li { margin-bottom: 0.25rem; }
-.pdf-quiz-placeholder small { display: block; margin-top: 0.75rem; color: #555; }
-
 
 @media (max-width: 768px) {
     body { padding-top: 120px; }
@@ -745,25 +592,37 @@ body.modo-escuro #floating-nav-menu li a:hover { background-color: rgba(255,255,
 }
 
 @media print {
-    body { padding-top: 0 !important; background-color: #fff !important; }
-    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu, .btn-block, .block-quiz .quiz-options-container, .block-quiz .quiz-feedback, .block-quiz .quiz-retry-btn, .block-video iframe { 
-        display: none !important; 
-    }
-    
-    #apostila-completa { display: none !important; }
-    #apostila-pdf-export {
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-    }
-
-    .block-video .pdf-video-placeholder, .block-quiz .pdf-quiz-placeholder {
-        display: block !important;
-    }
+    body { padding-top: 0 !important; background-color: #fff !important; color: #000 !important; }
+    .main-header, .module-navigation, #floating-nav-button, #floating-nav-menu { display: none !important; }
+    main { max-width: none; margin: 0; padding: 0; }
     
     .animatable { opacity: 1 !important; transform: translateY(0) !important; }
-    .modulo { display: block !important; page-break-before: always; box-shadow: none !important; border: none !important; }
+    #apostila-completa { display: block !important; }
+    .modulo { 
+        display: block !important; 
+        page-break-before: always; 
+        box-shadow: none !important; 
+        border: none !important;
+        padding: 1rem;
+    }
     .modulo:first-of-type { page-break-before: auto; }
+
+    h1, h2, h3, h4, h5, h6 { text-align: center !important; }
+    .module-title-header, .module-main-title { text-align: center !important; }
+
+    .block-video iframe { display: none !important; }
+    .block-video .pdf-video-placeholder { display: flex !important; }
+
+    .block-quiz .quiz-options-container { display: none !important; }
+    .block-quiz::after { 
+        content: 'Quiz interativo disponível na versão online.'; 
+        display: block; 
+        padding: 1rem; 
+        background: #f3f4f6; 
+        border-radius: 6px; 
+        text-align: center;
+        margin-top: 1rem;
+    }
 }
     `;
 }
