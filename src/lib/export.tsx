@@ -4,282 +4,342 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Project } from './types';
-import { renderToString } from 'react-dom/server';
-import { PrintableHandbook } from '@/components/PrintableHandbook';
-import { PreviewHeader } from '@/components/PreviewHeader';
 
-function getCssContent(): string {
-    return `
-        /* TailwindCSS base styles */
-        h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}:host,:root{--background: 240 5% 96%;--foreground: 222.2 84% 4.9%;--card: 0 0% 100%;--card-foreground: 222.2 84% 4.9%;--popover: 0 0% 100%;--popover-foreground: 0 0% 3.9%;--primary: 221 83% 53%;--primary-foreground: 0 0% 98%;--secondary: 210 40% 98%;--secondary-foreground: 222.2 47.4% 11.2%;--muted: 210 40% 96.1%;--muted-foreground: 215 20.2% 65.1%;--accent: 210 40% 96.1%;--accent-foreground: 222.2 47.4% 11.2%;--destructive: 0 84.2% 60.2%;--destructive-foreground: 0 0% 98%;--border: 214 31.8% 91.4%;--input: 214 31.8% 91.4%;--ring: 221 83% 53%;--radius: 0.75rem}*,:after,:before{border:0 solid #e5e7eb;box-sizing:border-box}
-        
-        /* Custom App Styles */
-        body { background-color: hsl(var(--secondary) / 0.4); color: hsl(var(--foreground)); font-family: 'Inter', sans-serif; transition: font-size 0.2s, background-color 0.3s, color 0.3s; margin: 0;}
-        body.high-contrast { background-color: black; color: white; }
-        body.high-contrast #preview-header { background-color: black !important; border-bottom: 1px solid yellow; }
-        body.high-contrast #preview-header h1 { color: yellow !important; }
-        body.high-contrast #preview-header button { color: white !important; }
-        body.high-contrast .printable-content-wrapper { background-color: black !important; border: 1px solid white; }
-        body.high-contrast .module-header h2 { color: yellow !important; }
-        body.high-contrast .text-muted-foreground { color: lightgray !important; }
-        body.high-contrast .quiz-card { background-color: #111; border-color: white;}
-        body.high-contrast .quiz-option { border-color: #555;}
-        body.high-contrast .quote-block { border-color: yellow !important; }
+// This is a simplified, transpiled-like version of React components
+// to be used in the exported standalone application.
 
-        #preview-header { padding: 1rem 1.5rem; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); display: flex; justify-content: space-between; align-items: center; }
-        #preview-header h1 { font-size: 1.25rem; font-weight: 700; }
-        #accessibility-toolbar { display: flex; align-items: center; gap: 0.25rem; }
-        #accessibility-toolbar button { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
-        #accessibility-toolbar button:hover { background-color: hsla(0, 0%, 98%, 0.1); }
-        #accessibility-toolbar svg { height: 1.25rem; width: 1.25rem; stroke: currentColor; }
+const getAppScript = () => `
+const e = React.createElement;
 
-        main { padding: 3rem 1rem; }
-        .printable-content-wrapper { background-color: hsl(var(--card)); border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); padding: 4rem; max-width: 56rem; margin: auto; }
-        .module-section:not(:last-child) { margin-bottom: 4rem; }
-        .module-header { text-align: center; margin-bottom: 3rem; }
-        .module-header h2 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .module-header p { color: hsl(var(--muted-foreground)); }
-        .blocks-container > * + * { margin-top: 2rem; }
+// --- UTILITY FUNCTIONS ---
+const cn = (...args) => args.filter(Boolean).join(' ');
 
-        .prose { max-width: none; }
-        .prose h1, .prose h2, .prose h3 { font-weight: bold; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; }
-        .prose ol { list-style-type: decimal; padding-left: 1.5rem; }
-        .prose blockquote { border-left: 4px solid hsl(var(--border)); padding-left: 1rem; margin-left: 0; font-style: italic; }
+// --- COMPONENTS ---
 
-        figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-        figure img { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); }
-        figure figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
+const AccessibilityToolbar = () => {
+  const handlePrint = () => {
+    document.getElementById('loading-modal')?.style.setProperty('display', 'flex', 'important');
+    // Using the browser's native print functionality after pagedjs has done its work.
+    window.print();
+    // Hide the loader after a short delay, as we can't know when the print dialog closes.
+    setTimeout(() => {
+        document.getElementById('loading-modal')?.style.setProperty('display', 'none', 'important');
+    }, 2000);
+  };
 
-        .quote-block { position: relative; }
-        .quote-block blockquote { margin: 0; padding: 1.5rem; background-color: hsl(var(--muted) / 0.5); border-left: 4px solid hsl(var(--primary)); border-radius: 0 0.5rem 0.5rem 0; font-style: italic; }
-        .quote-icon { position: absolute; top: -0.75rem; left: -0.5rem; height: 2.5rem; width: 2.5rem; color: hsl(var(--primary) / 0.2); }
+  const handleFontSize = (increase) => {
+    const body = document.body;
+    const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
+    const newSize = increase ? currentSize + 1 : currentSize - 1;
+    if (newSize >= 12 && newSize <= 24) body.style.fontSize = \`\${newSize}px\`;
+  };
 
-        .video-block iframe { width: 100%; aspect-ratio: 16 / 9; border-radius: 0.375rem; border: none; }
+  const toggleContrast = () => document.body.classList.toggle('high-contrast');
 
-        .button-block { display: flex; justify-content: center; }
-        .button-block a { display: inline-flex; justify-content: center; align-items: center; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; font-size: 1rem; background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-
-        .quiz-card { background-color: hsl(var(--muted) / 0.3); border-radius: 0.75rem; border: 1px solid hsl(var(--border)); page-break-inside: avoid; }
-        .quiz-card-header { padding: 1.5rem; }
-        .quiz-card-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.25rem; }
-        .quiz-card-desc { font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
-        .quiz-card-content { padding: 0 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
-        .quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid hsl(var(--border)); cursor: pointer; transition: all 0.2s; }
-        .quiz-option:hover { background-color: hsl(var(--muted) / 0.6); }
-        .quiz-option input[type="radio"] { opacity: 0; position: absolute; }
-        .quiz-option.selected.correct { background-color: hsl(var(--primary) / 0.1); border-color: hsl(var(--primary) / 0.5); }
-        .quiz-option.selected.incorrect { background-color: hsl(var(--destructive) / 0.1); border-color: hsl(var(--destructive) / 0.5); }
-        .quiz-option .result-icon { margin-left: auto; }
-        .quiz-card-footer { padding: 1rem 1.5rem 1.5rem; min-height: 40px; }
-        .retry-btn { display: none; background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; }
-        .retry-btn.visible { display: inline-block; }
-
-        #loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        #loading-modal-content { background: hsl(var(--card)); padding: 2rem; border-radius: 0.5rem; text-align: center; color: hsl(var(--card-foreground)); display: flex; align-items: center; gap: 1rem; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner { width: 24px; height: 24px; border: 3px solid hsl(var(--secondary)); border-top: 3px solid hsl(var(--primary)); border-radius: 50%; animation: spin 1s linear infinite; }
-        
-        @media print {
-            .no-print, .no-print * { display: none !important; }
-            body, main, .printable-content-wrapper { background: white !important; color: black !important; font-size: 11pt; box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
-            main { max-width: 100% !important; }
-            .module-section { page-break-after: always; }
-            .module-section:last-of-type { page-break-after: auto; }
-            .quiz-card, figure, .quote-block { page-break-inside: avoid; }
-            @page { size: A4; margin: 2cm; }
-        }
-    `;
-}
-
-function getScriptContent(): string {
-    return `
-    document.addEventListener('DOMContentLoaded', () => {
-        const exportPdfBtn = document.getElementById('export-pdf');
-        const fontIncreaseBtn = document.getElementById('font-increase');
-        const fontDecreaseBtn = document.getElementById('font-decrease');
-        const contrastBtn = document.getElementById('contrast');
-        const loadingModal = document.getElementById('loading-modal');
-
-        const showAlert = (feature) => alert(feature + ' - Funcionalidade em desenvolvimento.');
-        document.getElementById('libras-btn')?.addEventListener('click', () => showAlert('Libras'));
-        document.getElementById('acessibilidade-btn')?.addEventListener('click', () => showAlert('Acessibilidade'));
-
-        if (exportPdfBtn) {
-            exportPdfBtn.addEventListener('click', () => {
-                if (typeof Paged === 'undefined') {
-                    alert('Erro: Biblioteca de paginação não carregou. Tente novamente em alguns segundos.');
-                    return;
-                }
-                if(loadingModal) loadingModal.style.display = 'flex';
-
-                class Previewer extends Paged.Previewer {
-                    afterPreview() {
-                        if(loadingModal) loadingModal.style.display = 'none';
-                        window.print();
-                    }
-                }
-                const content = document.querySelector('main');
-                const paged = new Previewer();
-                paged.preview(content.innerHTML, [], document.body).catch(error => {
-                    console.error("Paged.js error:", error);
-                    if(loadingModal) loadingModal.style.display = 'none';
-                    alert('Ocorreu um erro ao gerar o PDF.');
-                });
-            });
-        }
-
-        if (fontIncreaseBtn && fontDecreaseBtn) {
-             const body = document.body;
-             const handleFontSize = (increase) => {
-                const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
-                const newSize = increase ? currentSize + 1 : currentSize - 1;
-                if (newSize >= 12 && newSize <= 24) { body.style.fontSize = \`\${newSize}px\`; }
-             };
-             fontIncreaseBtn.addEventListener('click', () => handleFontSize(true));
-             fontDecreaseBtn.addEventListener('click', () => handleFontSize(false));
-        }
-
-        if (contrastBtn) {
-            contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
-        }
-
-        document.querySelectorAll('.quiz-card').forEach(quizBlock => {
-            const options = quizBlock.querySelectorAll('.quiz-option');
-            const retryBtn = quizBlock.querySelector('.retry-btn');
-            let isAnswered = false;
-
-            const resetQuiz = () => {
-                isAnswered = false;
-                options.forEach(opt => {
-                    opt.classList.remove('correct', 'incorrect', 'selected');
-                    opt.style.cursor = 'pointer';
-                    const resultIcon = opt.querySelector('.result-icon');
-                    if (resultIcon) resultIcon.remove();
-                });
-                if(retryBtn) retryBtn.classList.remove('visible');
-            };
-
-            options.forEach(option => {
-                option.addEventListener('click', () => {
-                    if (isAnswered) return;
-                    isAnswered = true;
-
-                    // Clear previous selections
-                    options.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-
-                    const isCorrect = option.getAttribute('data-correct') === 'true';
-                     if (isCorrect) {
-                        option.classList.add('correct');
-                    } else {
-                        option.classList.add('incorrect');
-                    }
-
-                    options.forEach(opt => {
-                        opt.style.cursor = 'default';
-                        const resultIcon = document.createElement('div');
-                        resultIcon.className = 'result-icon';
-                        const isOptCorrect = opt.getAttribute('data-correct') === 'true';
-
-                        if (isOptCorrect) {
-                            if (opt.classList.contains('selected')) {
-                                resultIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:green;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
-                            }
-                        } else if (opt.classList.contains('selected')) {
-                            resultIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:red;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
-                        }
-                        opt.appendChild(resultIcon);
-                    });
-
-                    if (retryBtn) retryBtn.classList.add('visible');
-                });
-            });
-
-            if(retryBtn) {
-                retryBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    resetQuiz();
-                });
-            }
-        });
-    });
-    `;
-}
-
-function generateHtmlContent(projects: Project[], handbookTitle: string): string {
-  const headerHtml = renderToString(<PreviewHeader />);
-  const handbookHtml = renderToString(<PrintableHandbook projects={projects} />);
-
-  const finalHeaderHtml = headerHtml.replace(
-      /(<div class="flex items-center gap-1[^>]*>)/,
-      '<div id="accessibility-toolbar" class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"\/><polyline points="7 10 12 15 17 10"\/><line x1="12" x2="12" y1="15" y2="3"\/><\/svg><\/button>/,
-      '<button$1 id="export-pdf"><svg$2><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></button>'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><path d="M18 16.5V15a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v1.5"\/><path d="M22 13.5V15a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-1.5"\/><path d="M7 10a2 2 0 0 0-2 2v5"\/><path d="M11 10a2 2 0 0 1 2 2v5"\/><path d="M12 1a7 7 0 0 1 7 7c0 3-2 5-2 5H7s-2-2-2-5a7 7 0 0 1 7-7Z"\/><\/svg><\/button>/,
-      '<button$1 id="libras-btn"><svg$2><path d="M18 16.5V15a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v1.5"/><path d="M22 13.5V15a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-1.5"/><path d="M7 10a2 2 0 0 0-2 2v5"/><path d="M11 10a2 2 0 0 1 2 2v5"/><path d="M12 1a7 7 0 0 1 7 7c0 3-2 5-2 5H7s-2-2-2-5a7 7 0 0 1 7-7Z"/></svg></button>'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><circle cx="12" cy="12" r="10"\/><path d="M8 12h8"\/><\/svg><\/button>/,
-      '<button$1 id="font-decrease"><svg$2><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg></button>'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><circle cx="12" cy="12" r="10"\/><path d="M8 12h8"\/><path d="M12 8v8"\/><\/svg><\/button>/,
-      '<button$1 id="font-increase"><svg$2><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></button>'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><circle cx="12" cy="12" r="10"\/><path d="M12 18a6 6 0 0 0 0-12v12Z"\/><\/svg><\/button>/,
-      '<button$1 id="contrast"><svg$2><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12Z"/></svg></button>'
-  ).replace(
-      /<button([^>]*?)><svg([^>]*)><path d="M18.3 12.7a5 5 0 0 0-1.3-6.9"\/><path d="M14.6 3.2a5 5 0 0 0-6.9 1.3"\/><path d="M11.3 20.8a5 5 0 0 0 6.9-1.3"\/><path d="M7.4 14.8a5 5 0 0 0 1.3 6.9"\/><path d="M2 12h2"\/><path d="m5.6 5.6 1.4 1.4"\/><path d="M12 2v2"\/><path d="m18.4 5.6-1.4 1.4"\/><path d="M22 12h-2"\/><path d="m18.4 18.4 1.4 1.4"\/><path d="M12 22v-2"\/><path d="m5.6 18.4-1.4 1.4"\/><circle cx="12" cy="12" r="2"\/><\/svg><\/button>/,
-      '<button$1 id="acessibilidade-btn"><svg$2><path d="M18.3 12.7a5 5 0 0 0-1.3-6.9"/><path d="M14.6 3.2a5 5 0 0 0-6.9 1.3"/><path d="M11.3 20.8a5 5 0 0 0 6.9-1.3"/><path d="M7.4 14.8a5 5 0 0 0 1.3 6.9"/><path d="M2 12h2"/><path d="m5.6 5.6 1.4 1.4"/><path d="M12 2v2"/><path d="m18.4 5.6-1.4 1.4"/><path d="M22 12h-2"/><path d="m18.4 18.4 1.4 1.4"/><path d="M12 22v-2"/><path d="m5.6 18.4-1.4 1.4"/><circle cx="12" cy="12" r="2"/></svg></button>'
-  ).replace(
-      /(<h1[^>]*>).*?(<\/h1>)/, `$1${handbookTitle}$2`
+  return e('div', { className: 'flex items-center gap-1' },
+    e('button', { onClick: handlePrint, title: 'Exportar para PDF', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('path', {d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'}), e('polyline', {points: '7 10 12 15 17 10'}), e('line', {x1: 12, y1: 15, x2: 12, y2: 3}))),
+    e('button', { onClick: () => alert('Funcionalidade em desenvolvimento.'), title: 'Libras', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('path', {d: 'M18 16.5V15a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v1.5'}), e('path', {d: 'M22 13.5V15a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-1.5'}), e('path', {d: 'M7 10a2 2 0 0 0-2 2v5'}), e('path', {d: 'M11 10a2 2 0 0 1 2 2v5'}), e('path', {d: 'M12 1a7 7 0 0 1 7 7c0 3-2 5-2 5H7s-2-2-2-5a7 7 0 0 1 7-7Z'}))),
+    e('div', { className: 'font-zoom-controls' },
+      e('button', { onClick: () => handleFontSize(false), title: 'Diminuir Fonte', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('circle', {cx:12, cy:12, r:10}), e('path', {d: 'M8 12h8'}))),
+      e('button', { onClick: () => handleFontSize(true), title: 'Aumentar Fonte', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('circle', {cx:12, cy:12, r:10}), e('path', {d: 'M8 12h8'}), e('path', {d: 'M12 8v8'})))
+    ),
+    e('button', { onClick: toggleContrast, title: 'Alto Contraste', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('circle', {cx:12, cy:12, r:10}), e('path', {d: 'M12 18a6 6 0 0 0 0-12v12Z'}))),
+    e('button', { onClick: () => alert('Funcionalidade em desenvolvimento.'), title: 'Acessibilidade', className: 'toolbar-btn' }, e('svg', {width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round'}, e('path', {d: 'M18.3 12.7a5 5 0 0 0-1.3-6.9'}),e('path', {d: 'M14.6 3.2a5 5 0 0 0-6.9 1.3'}),e('path', {d: 'M11.3 20.8a5 5 0 0 0 6.9-1.3'}),e('path', {d: 'M7.4 14.8a5 5 0 0 0 1.3 6.9'}),e('path', {d: 'M2 12h2'}),e('path', {d: 'm5.6 5.6 1.4 1.4'}),e('path', {d: 'M12 2v2'}),e('path', {d: 'm18.4 5.6-1.4 1.4'}),e('path', {d: 'M22 12h-2'}),e('path', {d: 'm18.4 18.4 1.4 1.4'}),e('path', {d: 'M12 22v-2'}),e('path', {d: 'm5.6 18.4-1.4 1.4'}),e('circle', {cx:12, cy:12, r:2}))))
   );
+};
 
-  const css = getCssContent();
-  const script = getScriptContent();
+const PreviewHeader = ({ title }) => {
+  return e('header', { className: 'py-4 px-6 bg-primary text-primary-foreground no-print' },
+    e('div', { className: 'max-w-4xl mx-auto flex flex-row justify-between items-center' },
+      e('h1', { className: 'text-xl font-bold' }, title),
+      e(AccessibilityToolbar)
+    )
+  );
+};
+
+const QuizBlock = ({ block }) => {
+  const [userAnswerId, setUserAnswerId] = React.useState(null);
+  const isAnswered = userAnswerId !== null;
+
+  const handleSelect = (optionId) => {
+    if (!isAnswered) setUserAnswerId(optionId);
+  };
   
-  return `
-    <!DOCTYPE html>
-    <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${handbookTitle}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-        <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js" defer></script>
-        <style>${css}</style>
-    </head>
-    <body>
-        <div id="loading-modal">
-            <div id="loading-modal-content">
-                <div class="spinner"></div>
-                <p>Preparando documento para impressão...</p>
-            </div>
-        </div>
-        <header id="preview-header" class="no-print">${finalHeaderHtml}</header>
-        <main>
-            <div class="printable-content-wrapper">
-                ${handbookHtml}
-            </div>
-        </main>
-        <script>${script}</script>
-    </body>
-    </html>
-  `;
+  const handleRetry = () => setUserAnswerId(null);
+
+  return e('div', { className: 'quiz-card bg-muted/30' },
+    e('div', { className: 'quiz-card-header' },
+      e('h3', { className: 'quiz-card-title' }, block.content.question),
+      e('p', { className: 'quiz-card-desc' }, 'Selecione a resposta correta.')
+    ),
+    e('div', { className: 'quiz-card-content' },
+      block.content.options.map(option => {
+        const isSelected = userAnswerId === option.id;
+        const showResult = isAnswered && isSelected;
+        const isCorrect = option.isCorrect;
+        
+        const optionClasses = cn(
+          'quiz-option flex items-center space-x-3 p-3 rounded-md transition-all',
+          isAnswered && isCorrect && 'correct',
+          showResult && !isCorrect && 'incorrect',
+          isSelected && 'selected'
+        );
+
+        return e('div', { key: option.id, className: optionClasses, onClick: () => handleSelect(option.id) },
+          e('div', { className: 'radio-custom' }),
+          e('label', { className: 'flex-1' }, option.text),
+          showResult && isCorrect && e('span', {className: 'result-icon correct-icon'}, '✓'),
+          showResult && !isCorrect && e('span', {className: 'result-icon incorrect-icon'}, '✗')
+        );
+      })
+    ),
+    e('div', {className: 'quiz-card-footer'},
+       isAnswered && e('button', { className: 'retry-btn', onClick: handleRetry }, 'Tentar Novamente')
+    )
+  );
+};
+
+const BlockRenderer = ({ block }) => {
+    const createSanitizedHtml = (html) => ({ __html: html });
+
+    switch(block.type) {
+        case 'text':
+            return e('div', { className: 'prose dark:prose-invert max-w-none', dangerouslySetInnerHTML: createSanitizedHtml(block.content.text) });
+        case 'image':
+            return e('div', { className: 'flex justify-center' },
+                e('figure', { className: 'flex flex-col items-center gap-2', style: { width: \`\${block.content.width || 100}%\` } },
+                    e('img', { src: block.content.url, alt: block.content.alt, className: "rounded-md shadow-md max-w-full h-auto" }),
+                    block.content.caption && e('figcaption', { className: "text-sm text-center text-muted-foreground italic mt-2" }, block.content.caption)
+                )
+            );
+        case 'quote':
+             return e('div', { className: "relative" },
+                e('blockquote', { className: "p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0" }, 
+                    e('svg', { className: 'absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon', fill: 'currentColor', viewBox: '0 0 24 24' }, e('path', { d: 'M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-9.57v7.219c-4.726 0-4.983 3.33-4.983 4.544v5.198h-4zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-9.57v7.219c-4.726 0-4.983 3.33-4.983 4.544v5.198h-4z'})),
+                    block.content.text
+                )
+             );
+        case 'video':
+            let src = '';
+            if (block.content.videoType === 'youtube' && block.content.videoUrl) {
+                try {
+                    const urlObj = new URL(block.content.videoUrl);
+                    let videoId = urlObj.searchParams.get('v');
+                    if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
+                    if (videoId) src = \`https://www.youtube.com/embed/\${videoId}?autoplay=\${block.content.autoplay ? 1:0}&controls=\${block.content.showControls ? 1:0}\`;
+                } catch (e) { /* invalid url */ }
+            } else if (block.content.videoType === 'cloudflare' && block.content.cloudflareVideoId) {
+                src = \`https://customer-mhnunnb897evy1sb.cloudflarestream.com/\${block.content.cloudflareVideoId}/iframe?autoplay=\${block.content.autoplay ? 1:0}&controls=\${block.content.showControls ? 1:0}\`;
+            }
+            if (!src) return e('p', {className: "text-muted-foreground"}, 'Vídeo inválido ou não configurado.');
+            return e('iframe', { className: "w-full aspect-video rounded-md", src, title: block.content.videoTitle, allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture", allowFullScreen: true });
+        case 'button':
+            return e('div', { className: 'flex justify-center' },
+                e('a', { href: block.content.buttonUrl, target: '_blank', rel: 'noopener noreferrer', className: 'btn btn-primary' }, block.content.buttonText || 'Botão')
+            );
+        case 'quiz':
+            return e(QuizBlock, { block });
+        default:
+            return e('p', {className: "text-muted-foreground"}, \`Bloco \${block.type} não renderizado.\`);
+    }
 }
+
+const PrintableHandbook = ({ projects }) => {
+  return e(React.Fragment, null,
+    projects.map(project => e('section', { key: project.id, className: 'module-section' },
+      e('header', { className: 'text-center' },
+        e('h2', { className: 'text-3xl font-bold mb-2 pb-2' }, project.title),
+        e('p', { className: 'text-muted-foreground' }, project.description)
+      ),
+      e('div', { className: 'space-y-8' },
+        project.blocks.map(block => e(BlockRenderer, { key: block.id, block }))
+      )
+    ))
+  );
+};
+
+const App = () => {
+    const handbookData = window.apostilaData;
+    if (!handbookData) {
+        return e('p', null, 'Erro: Dados da apostila não encontrados.');
+    }
+
+    React.useEffect(() => {
+        // Run paged.js after the component mounts to format for printing
+        const paged = new Paged.Previewer();
+        const content = document.getElementById('printable-content');
+        const css = document.getElementById('handbook-styles').innerText;
+        // The preview function takes the HTML content and an array of CSS strings
+        paged.preview(content.innerHTML, [css], document.body).then((flow) => {
+            console.log("Paged.js preview rendered, total pages:", flow.pages.length);
+        });
+    }, []);
+    
+    return e(React.Fragment, null,
+        e(PreviewHeader, { title: handbookData.title }),
+        e('main', { id: 'printable-content', className: 'max-w-4xl mx-auto p-4 sm:p-8 md:p-12' },
+          e('div', { className: 'bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16' },
+            e(PrintableHandbook, { projects: handbookData.projects })
+          )
+        )
+    );
+};
+
+ReactDOM.render(e(App), document.getElementById('root'));
+`;
+
+const getCssContent = () => `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+:root {
+    --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: 221 83% 53%; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: 221 83% 53%; --radius: 0.75rem;
+}
+*,:after,:before{border:0 solid hsl(var(--border));box-sizing:border-box}
+html { font-family: 'Inter', sans-serif; }
+body { background-color: hsl(var(--secondary) / 0.4); color: hsl(var(--foreground)); transition: font-size 0.2s, background-color 0.3s, color 0.3s; margin: 0;}
+body.high-contrast { background-color: black; color: white; }
+body.high-contrast .bg-primary { background-color: black !important; border-bottom: 1px solid yellow; }
+body.high-contrast .text-primary-foreground { color: yellow !important; }
+body.high-contrast .bg-card { background-color: black !important; border: 1px solid white; }
+body.high-contrast .text-muted-foreground { color: lightgray !important; }
+body.high-contrast .quiz-card { background-color: #111; border-color: white;}
+body.high-contrast .border-primary { border-color: yellow !important; }
+body.high-contrast .toolbar-btn { color: yellow !important; }
+
+.no-print { }
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+header { padding: 1rem 1.5rem; }
+header h1 { font-size: 1.25rem; font-weight: 700; }
+.max-w-4xl { max-width: 56rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.gap-1 { gap: 0.25rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.toolbar-btn { background: transparent; border: none; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; color: hsl(var(--primary-foreground)); }
+.toolbar-btn:hover { background-color: hsla(0, 0%, 98%, 0.1); }
+.font-zoom-controls { display: flex; align-items: center; border-left: 1px solid hsla(0,0%,98%,.2); border-right: 1px solid hsla(0,0%,98%,.2); margin: 0 0.25rem; padding: 0 0.25rem;}
+main { padding: 2rem; }
+.bg-card { background-color: hsl(var(--card)); }
+.rounded-xl { border-radius: 0.75rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); }
+.p-8 { padding: 2rem; }
+.sm\\:p-12 { padding: 3rem; }
+.md\\:p-16 { padding: 4rem; }
+.module-section { page-break-after: always; }
+.module-section:last-of-type { page-break-after: auto; }
+.text-center { text-align: center; }
+.mb-12 { margin-bottom: 3rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.pb-2 { padding-bottom: 0.5rem; }
+.text-3xl { font-size: 1.875rem; }
+.font-bold { font-weight: 700; }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+.prose { max-width: none; }
+.prose h1, .prose h2, .prose h3 { font-weight: bold; }
+.prose ul { list-style-type: disc; padding-left: 1.5rem; }
+.prose ol { list-style-type: decimal; padding-left: 1.5rem; }
+.prose blockquote { border-left: 4px solid hsl(var(--border)); padding-left: 1rem; margin-left: 0; font-style: italic; }
+.justify-center { justify-content: center; }
+figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; page-break-inside: avoid; }
+figure img { border-radius: 0.375rem; max-width: 100%; height: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); }
+figcaption { font-size: 0.875rem; text-align: center; color: hsl(var(--muted-foreground)); font-style: italic; margin-top: 0.5rem; }
+.relative { position: relative; }
+blockquote { margin: 0; padding: 1.5rem; background-color: hsl(var(--muted) / 0.5); border-left: 4px solid hsl(var(--primary)); border-radius: 0 0.5rem 0.5rem 0; font-style: italic; }
+.absolute { position: absolute; }
+.-top-3 { top: -0.75rem; }
+.-left-2 { left: -0.5rem; }
+.h-10 { height: 2.5rem; }
+.w-10 { width: 2.5rem; }
+.text-primary\\/20 { color: hsl(var(--primary) / 0.2); }
+.w-full { width: 100%; }
+.aspect-video { aspect-ratio: 16/9; }
+.rounded-md { border-radius: 0.375rem; }
+.btn { display: inline-flex; justify-content: center; align-items: center; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; font-size: 1rem; }
+.btn-primary { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.quiz-card { border-radius: 0.75rem; border: 1px solid hsl(var(--border)); page-break-inside: avoid; }
+.bg-muted\\/30 { background-color: hsl(var(--muted) / 0.3); }
+.quiz-card-header, .quiz-card-content, .quiz-card-footer { padding: 1.5rem; }
+.quiz-card-content { padding-top: 0; }
+.quiz-card-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.25rem; }
+.quiz-card-desc { font-size: 0.875rem; color: hsl(var(--muted-foreground)); }
+.space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-left: 0.75rem; }
+.p-3 { padding: 0.75rem; }
+.transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+.quiz-option { cursor: pointer; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid hsl(var(--border)); }
+.quiz-option:hover { background-color: hsl(var(--muted) / 0.6); }
+.radio-custom { height: 1em; width: 1em; border: 1px solid hsl(var(--primary)); border-radius: 50%; display: inline-block; position: relative; }
+.quiz-option.selected .radio-custom::after { content: ''; position: absolute; top: 50%; left: 50%; width: 0.6em; height: 0.6em; border-radius: 50%; background: hsl(var(--primary)); transform: translate(-50%, -50%); }
+.quiz-option.correct { background-color: hsl(var(--primary) / 0.1); border-color: hsl(var(--primary) / 0.5); }
+.quiz-option.incorrect { background-color: hsl(var(--destructive) / 0.1); border-color: hsl(var(--destructive) / 0.5); }
+.result-icon { margin-left: auto; font-weight: bold; }
+.correct-icon { color: green; }
+.incorrect-icon { color: red; }
+.retry-btn { background-color: transparent; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; }
+.quiz-card-footer { min-height: 40px; display: flex; align-items: center; justify-content: center; }
+#loading-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+#loading-modal-content { background: hsl(var(--card)); padding: 2rem; border-radius: 0.5rem; text-align: center; color: hsl(var(--card-foreground)); display: flex; align-items: center; gap: 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 24px; height: 24px; border: 3px solid hsl(var(--secondary)); border-top: 3px solid hsl(var(--primary)); border-radius: 50%; animation: spin 1s linear infinite; }
+.pagedjs_page { background: white; }
+@media print { .no-print { display: none !important; } body, main, #printable-content, .bg-card { background: white !important; color: black !important; font-size: 11pt; box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; border-radius: 0 !important; max-width: 100% !important; } main { padding-top: 0 !important; } .pagedjs_page_content { padding: 0 !important; } }
+`;
+
+const getIndexHtml = (handbookTitle: string) => `<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${handbookTitle}</title>
+    <style id="handbook-styles">${getCssContent()}</style>
+    <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+</head>
+<body>
+    <div id="loading-modal">
+        <div id="loading-modal-content">
+            <div class="spinner"></div>
+            <p>Preparando documento para impressão...</p>
+        </div>
+    </div>
+    <div id="root"></div>
+    <script src="react.production.min.js"></script>
+    <script src="react-dom.production.min.js"></script>
+    <script src="data.js"></script>
+    <script>${getAppScript()}</script>
+</body>
+</html>`;
 
 export async function generateZip(projects: Project[], handbookTitle: string, handbookDescription: string) {
     const zip = new JSZip();
     const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
+    const handbookData = { title: handbookTitle, description: handbookDescription, projects };
 
-    const htmlContent = generateHtmlContent(projects, handbookTitle);
+    const dataScript = `window.apostilaData = ${JSON.stringify(handbookData)};`;
 
-    zip.file('index.html', htmlContent);
-    zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP e abra o arquivo index.html em seu navegador.');
+    // Fetch React and ReactDOM from CDN
+    const reactResponse = await fetch("https://unpkg.com/react@17/umd/react.production.min.js");
+    const reactDomResponse = await fetch("https://unpkg.com/react-dom@17/umd/react-dom.production.min.js");
+    const pagedJsResponse = await fetch("https://unpkg.com/pagedjs/dist/paged.polyfill.js");
+
+    if (!reactResponse.ok || !reactDomResponse.ok || !pagedJsResponse.ok) {
+        throw new Error("Failed to fetch required libraries");
+    }
+
+    const reactScript = await reactResponse.text();
+    const reactDomScript = await reactDomResponse.text();
+    const pagedJsScript = await pagedJsResponse.text();
+    
+    zip.file('index.html', getIndexHtml(handbookTitle));
+    zip.file('data.js', dataScript);
+    zip.file('react.production.min.js', reactScript);
+    zip.file('react-dom.production.min.js', reactDomScript);
+    zip.file('paged.polyfill.js', pagedJsScript);
+    zip.file('README.md', 'Para usar esta apostila offline, extraia o conteúdo deste ZIP, certifique-se de que todos os arquivos estão na mesma pasta e abra o arquivo index.html em seu navegador.');
     
     const blob = await zip.generateAsync({ type: 'blob' });
     saveAs(blob, `${cleanTitle}.zip`);
 }
-
-    
