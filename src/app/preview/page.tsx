@@ -9,88 +9,198 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
+import type { HandbookData } from '@/lib/types';
 
-const PrintableHandbook = ({ projects }: { projects: ReturnType<typeof useProjectStore>['projects'] }) => (
-    <>
-      {projects.map((project) => (
-        <section key={project.id} className="module-section">
-          <header className='text-center mb-12'>
-            <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
-            <p className="text-muted-foreground">{project.description}</p>
-          </header>
-          <div className="space-y-8">
-            {project.blocks.map((block) => (
-              <BlockRenderer key={block.id} block={block} />
-            ))}
-          </div>
-        </section>
-      ))}
-    </>
-);
+const getOfflineScript = (handbookData: HandbookData) => {
+    const interactiveScript = `
+        document.addEventListener('DOMContentLoaded', () => {
+            const data = window.apostilaData;
+            if (!data) return;
+
+            // --- Quiz Interactivity ---
+            const quizCards = document.querySelectorAll('.quiz-card');
+            quizCards.forEach(card => {
+                const options = card.querySelectorAll('.quiz-option');
+                const radioButtons = card.querySelectorAll('.radio-group-item');
+                const retryBtn = card.querySelector('.retry-btn');
+                const blockId = card.closest('[data-block-id]')?.dataset.blockId;
+
+                const getBlockData = () => {
+                   for (const project of data.projects) {
+                       const block = project.blocks.find(b => b.id === blockId);
+                       if (block) return block;
+                   }
+                   return null;
+                }
+                
+                const handleAnswer = (e) => {
+                    const selectedOptionEl = e.currentTarget.closest('.quiz-option');
+                    if (!selectedOptionEl) return;
+
+                    options.forEach(opt => {
+                        const isCorrect = opt.dataset.correct === 'true';
+                        opt.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border', 'bg-red-100', 'dark:bg-red-900/50', 'border-red-500');
+                        
+                        const checkIcon = opt.querySelector('.lucide-check-circle');
+                        const xIcon = opt.querySelector('.lucide-x-circle');
+                        if(checkIcon) checkIcon.style.display = 'none';
+                        if(xIcon) xIcon.style.display = 'none';
+                    });
+
+                    radioButtons.forEach(rb => rb.disabled = true);
+
+                    const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
+                    if (isSelectedCorrect) {
+                        selectedOptionEl.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
+                        const icon = selectedOptionEl.querySelector('.lucide-check-circle');
+                        if (icon) icon.style.display = 'inline-block';
+                    } else {
+                        selectedOptionEl.classList.add('bg-red-100', 'dark:bg-red-900/50', 'border-red-500', 'border');
+                        const icon = selectedOptionEl.querySelector('.lucide-x-circle');
+                        if (icon) icon.style.display = 'inline-block';
+                        
+                        const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
+                        if(correctOption) {
+                           correctOption.classList.add('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border');
+                           const correctIcon = correctOption.querySelector('.lucide-check-circle');
+                           if(correctIcon) correctIcon.style.display = 'inline-block';
+                        }
+                    }
+
+                    if (retryBtn) retryBtn.style.display = 'inline-flex';
+                };
+
+                radioButtons.forEach(radio => {
+                    radio.addEventListener('change', handleAnswer);
+                });
+
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => {
+                        radioButtons.forEach(rb => {
+                            rb.disabled = false;
+                            rb.checked = false;
+                        });
+                        options.forEach(opt => {
+                           opt.classList.remove('bg-primary/10', 'dark:bg-primary/20', 'border-primary/50', 'border', 'bg-red-100', 'dark:bg-red-900/50', 'border-red-500');
+                           const checkIcon = opt.querySelector('.lucide-check-circle');
+                           const xIcon = opt.querySelector('.lucide-x-circle');
+                           if(checkIcon) checkIcon.style.display = 'none';
+                           if(xIcon) xIcon.style.display = 'none';
+                        });
+                        retryBtn.style.display = 'none';
+                    });
+                }
+            });
+
+            // --- Accessibility Toolbar ---
+            const toolbar = document.querySelector('.accessibility-toolbar');
+            if (toolbar) {
+                const printBtn = toolbar.querySelector('[data-action="print"]');
+                const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
+                const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
+                const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
+                
+                if (printBtn) printBtn.addEventListener('click', () => window.print());
+                if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
+                
+                const handleFontSize = (increase) => {
+                    const body = document.body;
+                    const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
+                    const newSize = increase ? currentSize + 1 : currentSize - 1;
+                    if (newSize >= 12 && newSize <= 24) { 
+                      body.style.fontSize = \`\${newSize}px\`;
+                    }
+                };
+
+                if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
+                if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
+            }
+        });
+    `;
+
+    return `
+        <script id="apostila-data" type="application/json">${JSON.stringify(handbookData)}</script>
+        <script>${interactiveScript}</script>
+    `;
+};
+
+const getGlobalStyles = () => {
+  // A simple way to grab all the styles from the current document.
+  // This is better than fetching globals.css as it includes all dynamic styles.
+  if (typeof document === 'undefined') return '';
+  
+  const styleSheets = Array.from(document.styleSheets);
+  let cssText = '';
+
+  for (const sheet of styleSheets) {
+    try {
+      if (sheet.cssRules) {
+        cssText += Array.from(sheet.cssRules).map(rule => rule.cssText).join('\\n');
+      }
+    } catch (e) {
+      console.warn("Could not read stylesheet rules (likely CORS):", sheet.href);
+    }
+  }
+  return cssText;
+}
+
+
+const OfflineHandout = ({ handbookData }: { handbookData: HandbookData }) => {
+    // This is the structure for the offline HTML file
+    return (
+        <html lang="pt-BR">
+            <head>
+                <meta charSet="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>{handbookData.title}</title>
+                <style dangerouslySetInnerHTML={{ __html: getGlobalStyles() }} />
+            </head>
+            <body className='font-sans antialiased' suppressHydrationWarning>
+                <div id="handbook-root-container">
+                    <div className="bg-secondary/40 min-h-screen">
+                        <PreviewHeader setIsExporting={() => {}} />
+                        <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                            <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                                {handbookData.projects.map((project) => (
+                                    <section key={project.id} className="module-section mb-12 last:mb-0">
+                                        <header className='text-center mb-12'>
+                                            <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
+                                            <p className="text-muted-foreground">{project.description}</p>
+                                        </header>
+                                        <div className="space-y-8">
+                                            {project.blocks.map((block) => (
+                                                <div key={block.id} data-block-id={block.id}>
+                                                     <BlockRenderer block={block} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ))}
+                            </div>
+                        </main>
+                    </div>
+                    <div dangerouslySetInnerHTML={{ __html: getOfflineScript(handbookData) }} />
+                </div>
+            </body>
+        </html>
+    );
+};
+
 
 export default function PreviewPage() {
   const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
   const router = useRouter();
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
 
-  // This script is crucial for the ZIP export to function offline.
-  // It embeds the data and a minimal renderer into the exported HTML.
-  const getOfflineScript = () => {
-    const handbookData = { 
-        id: handbookId, 
-        title: handbookTitle, 
-        description: handbookDescription, 
-        updatedAt: handbookUpdatedAt,
-        projects 
-    };
-    
-    // This is a minimal, dependency-free script to render the handbook content.
-    // It's designed to be embedded in the final exported HTML.
-    const rendererScript = `
-      // Minimal React-like createElement function
-      const e = (type, props, ...children) => {
-        // Simple type mapping for basic elements
-        const el = document.createElement(type);
-        if (props) {
-          for (const key in props) {
-            if (key === 'className') el.className = props[key];
-            else if (key === 'style') Object.assign(el.style, props[key]);
-            else if (key === 'onClick') el.addEventListener('click', props[key]);
-            else if (key === 'dangerouslySetInnerHTML') el.innerHTML = props[key].__html;
-            else if (key.startsWith('data-')) el.setAttribute(key, props[key]);
-            else el[key] = props[key];
-          }
-        }
-        children.flat().forEach(child => {
-          if (typeof child === 'string' || typeof child === 'number') {
-            el.appendChild(document.createTextNode(child));
-          } else if (child) {
-            el.appendChild(child);
-          }
-        });
-        return el;
-      };
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-      // The core rendering logic
-      document.addEventListener('DOMContentLoaded', () => {
-        const root = document.getElementById('root');
-        const data = window.apostilaData;
-        if (!root || !data) {
-            console.error('Root element or handbook data not found.');
-            if(root) root.innerText = 'Erro: Não foi possível carregar os dados da apostila.';
-            return;
-        }
-        // Simplified rendering logic goes here, mirroring React components
-        // This is a placeholder for the full dynamic rendering logic
-        root.appendChild(e('h1', { className: 'text-2xl font-bold' }, data.title));
-      });
-    `;
 
-    return `
-        <script id="apostila-data" type="application/json">${JSON.stringify(handbookData)}</script>
-        <script>${rendererScript}</script>
-    `;
-  };
+  if (!isClient) {
+    return <LoadingModal isOpen={true} text="Carregando visualização..." />
+  }
 
   if (!projects || projects.length === 0) {
     return (
@@ -103,20 +213,14 @@ export default function PreviewPage() {
       </div>
     );
   }
+  
+  const handbookData: HandbookData = { 
+    id: handbookId, 
+    title: handbookTitle, 
+    description: handbookDescription, 
+    updatedAt: handbookUpdatedAt,
+    projects 
+  };
 
-  return (
-    <>
-      <LoadingModal isOpen={isExporting} text="Preparando documento para impressão..."/>
-      <div className="bg-secondary/40 min-h-screen">
-        <PreviewHeader setIsExporting={setIsExporting} />
-        <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
-          <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
-            <PrintableHandbook projects={projects} />
-          </div>
-        </main>
-      </div>
-      {/* This script is not rendered but used by the export function */}
-      <div id="offline-script-container" dangerouslySetInnerHTML={{ __html: getOfflineScript() }} style={{ display: 'none' }} />
-    </>
-  );
+  return <OfflineHandout handbookData={handbookData} />;
 }

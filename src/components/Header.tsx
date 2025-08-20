@@ -22,38 +22,26 @@ export default function Header() {
 
   const getPreviewContentAsHtml = async (): Promise<string | null> => {
     const iframe = previewIframeRef.current;
-    if (!iframe?.contentWindow?.document) {
+    if (!iframe?.contentWindow?.document?.getElementById('handbook-root-container')) {
       toast({
         variant: 'destructive',
         title: 'Erro ao Acessar Conteúdo',
-        description: 'Não foi possível acessar o conteúdo da pré-visualização. Tente abrir o modal primeiro.',
+        description: 'Não foi possível acessar o conteúdo da pré-visualização. Aguarde o carregamento e tente novamente.',
       });
       return null;
     }
 
     const doc = iframe.contentWindow.document;
-    const originalHtml = doc.documentElement.outerHTML;
-    
-    // Create a new document in memory to manipulate
-    const newDoc = new DOMParser().parseFromString(originalHtml, 'text/html');
+    const clone = doc.cloneNode(true) as Document;
 
-    // Inline all stylesheets
-    const styleSheets = Array.from(doc.styleSheets);
-    for (const sheet of styleSheets) {
-        try {
-            const cssRules = Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-            const styleElement = newDoc.createElement('style');
-            styleElement.textContent = cssRules;
-            newDoc.head.appendChild(styleElement);
-        } catch (e) {
-            console.warn("Could not inline stylesheet due to CORS:", sheet.href);
-        }
-    }
+    // Remover elementos que não devem estar no export final
+    clone.querySelector('.no-export')?.remove();
+    clone.querySelector('script[src*="next/dist"]')?.remove();
+
+    // Extrair o HTML final
+    const finalHtml = clone.documentElement.outerHTML;
     
-    // Remove original <link> tags
-    newDoc.querySelectorAll('link[rel="stylesheet"]').forEach(link => link.remove());
-    
-    return newDoc.documentElement.outerHTML;
+    return `<!DOCTYPE html>${finalHtml}`;
   }
 
   const handleExportZip = async () => {
@@ -68,11 +56,9 @@ export default function Header() {
 
     setIsExporting(true);
     
-    // We need the preview modal to be open to access its content
     if (!isPreviewModalOpen) {
       setIsPreviewModalOpen(true);
-      // Give the iframe a moment to load its content
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     try {
@@ -167,7 +153,6 @@ export default function Header() {
         </div>
 
         <div className="flex-1 flex justify-center items-center gap-2">
-          {/* Espaço central para futuros botões de edição de módulo */}
         </div>
         
         <div className="flex items-center gap-2">

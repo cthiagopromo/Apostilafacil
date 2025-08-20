@@ -64,9 +64,6 @@ const QuizBlock = ({ block }: { block: Block }) => {
         }
     };
 
-    // This component is used in both the live preview and the static export.
-    // For the static export, the interactivity is handled by `script.js`.
-    // The data attributes `data-correct` are essential for that script.
     return (
         <Card className="quiz-card bg-muted/30">
             <CardHeader className="quiz-card-header">
@@ -90,8 +87,8 @@ const QuizBlock = ({ block }: { block: Block }) => {
                             >
                                 <RadioGroupItem value={option.id} id={option.id} className="radio-group-item" />
                                 <Label htmlFor={option.id} className="flex-1 cursor-pointer">{option.text}</Label>
-                                {showResult && option.isCorrect && <CheckCircle className="text-primary" />}
-                                {showResult && !option.isCorrect && <XCircle className="text-red-600" />}
+                                <CheckCircle className="lucide-check-circle text-primary" style={{ display: (isAnswered && option.isCorrect) || (showResult && option.isCorrect) ? 'inline-block' : 'none' }} />
+                                <XCircle className="lucide-x-circle text-red-600" style={{ display: showResult && !option.isCorrect ? 'inline-block' : 'none' }} />
                             </div>
                         )
                     })}

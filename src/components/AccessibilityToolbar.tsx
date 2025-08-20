@@ -8,7 +8,7 @@ import {
   ZoomOut,
   Contrast,
   Droplets,
-  Loader
+  Printer,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import {
@@ -17,19 +17,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useState } from 'react';
+import { LoadingModal } from './LoadingModal';
 
 interface AccessibilityToolbarProps {
   setIsExporting: (isExporting: boolean) => void;
 }
 
 export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarProps) {
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePdfExport = async () => {
-    setIsExporting(true);
+  const handlePdfExport = () => {
+    setIsLoading(true);
     // This now just triggers the browser's print dialog.
+    // The @media print styles will handle the layout.
     window.print();
     // We can't know when the user closes the print dialog, so we'll hide the loader after a short delay.
-    setTimeout(() => setIsExporting(false), 2000);
+    setTimeout(() => setIsLoading(false), 2000);
   };
 
   const handleFontSize = (increase: boolean) => {
@@ -51,15 +55,16 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20">
+      <LoadingModal isOpen={isLoading} text="Preparando para impressão..." />
+      <div className="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={handlePdfExport} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
-                <FileDown className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={handlePdfExport} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' data-action="print">
+                <Printer className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>Exportar para PDF</p></TooltipContent>
+            <TooltipContent><p>Imprimir ou Salvar como PDF</p></TooltipContent>
           </Tooltip>
           
           <Tooltip>
@@ -74,7 +79,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
           <div className="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleFontSize(false)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
+                <Button variant="ghost" size="icon" onClick={() => handleFontSize(false)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' data-action="zoom-out">
                   <ZoomOut className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
@@ -82,7 +87,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleFontSize(true)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
+                <Button variant="ghost" size="icon" onClick={() => handleFontSize(true)} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' data-action="zoom-in">
                   <ZoomIn className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
@@ -92,7 +97,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={toggleContrast} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
+              <Button variant="ghost" size="icon" onClick={toggleContrast} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' data-action="contrast">
                 <Contrast className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -105,7 +110,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
                 <Droplets className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>Acessibilidade (Em desenvolvimento)</p></TooltipContent>
+            <TooltipContent><p>Verificador de Cores (Em desenvolvimento)</p></TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
