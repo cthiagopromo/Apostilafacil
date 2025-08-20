@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import type { HandbookData, Block as BlockType } from '@/lib/types';
+import type { HandbookData, Block, Project } from '@/lib/types';
 import DOMPurify from 'dompurify';
 
 
@@ -21,6 +21,13 @@ const getInteractiveScript = (): string => {
     // It will be embedded directly into the exported HTML.
     return `
         document.addEventListener('DOMContentLoaded', () => {
+            const dataElement = document.getElementById('handbook-data');
+            if (!dataElement) {
+                console.error('Handbook data script tag not found.');
+                return;
+            }
+            const handbookData = JSON.parse(dataElement.textContent || '{}');
+
             // --- Quiz Interactivity ---
             document.querySelectorAll('.quiz-card').forEach(card => {
                 const retryBtn = card.querySelector('.retry-btn');
@@ -38,18 +45,17 @@ const getInteractiveScript = (): string => {
                     const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
 
                     if (isSelectedCorrect) {
-                        selectedOptionEl.classList.add('bg-primary/10', 'border-primary/50');
+                        selectedOptionEl.classList.add('bg-primary-light', 'border-primary');
                         const icon = selectedOptionEl.querySelector('.lucide-check-circle');
                         if (icon) icon.style.display = 'inline-block';
                     } else {
-                        selectedOptionEl.classList.add('bg-red-100', 'border-red-500');
+                        selectedOptionEl.classList.add('bg-destructive-light', 'border-destructive');
                         const icon = selectedOptionEl.querySelector('.lucide-x-circle');
                         if (icon) icon.style.display = 'inline-block';
                         
-                        // Also show the correct answer
                         const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
                         if(correctOption) {
-                           correctOption.classList.add('bg-primary/10', 'border-primary/50');
+                           correctOption.classList.add('bg-primary-light', 'border-primary');
                            const correctIcon = correctOption.querySelector('.lucide-check-circle');
                            if(correctIcon) correctIcon.style.display = 'inline-block';
                         }
@@ -69,7 +75,7 @@ const getInteractiveScript = (): string => {
                             rb.checked = false;
                         });
                         options.forEach(opt => {
-                           opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-red-100', 'border-red-500');
+                           opt.classList.remove('bg-primary-light', 'border-primary', 'bg-destructive-light', 'border-destructive');
                            const checkIcon = opt.querySelector('.lucide-check-circle');
                            const xIcon = opt.querySelector('.lucide-x-circle');
                            if(checkIcon) checkIcon.style.display = 'none';
@@ -108,6 +114,178 @@ const getInteractiveScript = (): string => {
 };
 
 
+const renderBlockToHtml = (block: Block): string => {
+    switch (block.type) {
+        case 'text':
+            return `<div class="prose dark:prose-invert max-w-none">${DOMPurify.sanitize(block.content.text || '')}</div>`;
+        case 'image':
+            const width = block.content.width || 100;
+            return `
+                <div class="flex justify-center">
+                    <figure class="flex flex-col items-center gap-2" style="width: ${width}%">
+                        <img src="${block.content.url || 'https://placehold.co/600x400.png'}" alt="${block.content.alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
+                        ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
+                    </figure>
+                </div>`;
+        case 'quote':
+             return `
+                <div class="relative">
+                    <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2S6 3.75 6 5v6H4c-1 1 0 5 3 5z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2s-2 1.25-2 3v6h-2c-1 1 0 5 3 5z"></path></svg>
+                        ${block.content.text}
+                    </blockquote>
+                 </div>`;
+        case 'video':
+             const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            let videoEmbedUrl = '';
+            if (videoType === 'youtube' && videoUrl) {
+                try {
+                    const urlObj = new URL(videoUrl);
+                    let videoId = urlObj.searchParams.get('v');
+                    if (urlObj.hostname === 'youtu.be') {
+                        videoId = urlObj.pathname.substring(1);
+                    }
+                    if (videoId) {
+                       videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                    }
+                } catch(e) { /* Invalid URL */ }
+            } else if (videoType === 'cloudflare' && cloudflareVideoId) {
+                videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+            }
+
+            if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
+            return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
+        case 'button':
+            return `
+                <div class="flex justify-center">
+                    <a href="${block.content.buttonUrl || '#'}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
+                        ${block.content.buttonText || 'Botão'}
+                    </a>
+                </div>`;
+        case 'quiz':
+            const optionsHtml = block.content.options?.map(option => `
+                <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all border" data-correct="${option.isCorrect}">
+                    <input type="radio" name="quiz-${block.id}" id="${option.id}" class="radio-group-item" />
+                    <label for="${option.id}" class="flex-1 cursor-pointer">${option.text}</label>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-check-circle text-primary" style="display:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-x-circle text-red-600" style="display:none;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                </div>`).join('') || '';
+
+            return `
+                <div class="quiz-card rounded-lg border bg-card text-card-foreground shadow-sm bg-muted/30">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold">${block.content.question || ''}</h3>
+                        <p class="text-sm text-muted-foreground">Selecione a resposta correta.</p>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="grid gap-2">${optionsHtml}</div>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" style="display:none;">Tentar Novamente</button>
+                    </div>
+                </div>`;
+        default:
+            return `<!-- Bloco do tipo ${block.type} não suportado para exportação -->`;
+    }
+};
+
+const renderProjectsToHtml = (projects: Project[]): string => {
+    return projects.map(project => `
+        <section class="module-section mb-12 last:mb-0">
+            <header class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                <p class="text-muted-foreground">${project.description}</p>
+            </header>
+            <div class="space-y-8">
+                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+            </div>
+        </section>
+    `).join('');
+};
+
+const getGlobalCss = () => {
+    // This is a simplified version of globals.css. In a real scenario, you'd fetch this.
+    // For this environment, we are hardcoding it.
+    return \`
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 5% 96%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 31.8% 91.4%;
+    --input: 214 31.8% 91.4%;
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 32.6% 17.5%;
+  }
+
+  body.high-contrast {
+    background-color: black;
+    color: white;
+  }
+  body.high-contrast .bg-card {
+      background-color: black;
+      border: 1px solid white;
+  }
+  body.high-contrast .text-primary { color: yellow; }
+  body.high-contrast .text-muted-foreground { color: lightgray; }
+  body.high-contrast .border-primary { border-color: yellow; }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+.prose { color: hsl(var(--foreground)); }
+.prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
+    \`;
+};
+
+
 export default function Header() {
   const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
@@ -117,78 +295,62 @@ export default function Header() {
 
   const handleExportZip = async () => {
     if (!projects || projects.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Nenhum projeto para exportar',
-        description: 'Adicione pelo menos um módulo antes de exportar.',
-      });
-      return;
+        toast({ variant: 'destructive', title: 'Nenhum projeto para exportar' });
+        return;
     }
     setIsExporting(true);
     
     try {
         const zip = new JSZip();
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
+
+        const handbookData: HandbookData = {
+            id: handbookId,
+            title: handbookTitle,
+            description: handbookDescription,
+            updatedAt: handbookUpdatedAt,
+            projects
+        };
         
-        // 1. Fetch the preview page content
-        const previewResponse = await fetch('/preview');
-        let previewHtml = await previewResponse.text();
+        const contentHtml = renderProjectsToHtml(projects);
+        const tailwindCssCdn = '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
 
-        // 2. Sanitize and extract the root container and find CSS links
-        const doc = new DOMParser().parseFromString(previewHtml, 'text/html');
-        const rootContainer = doc.getElementById('handbook-root-container');
-        let contentHtml = rootContainer ? rootContainer.outerHTML : '<p>Erro ao carregar conteúdo.</p>';
-        
-        // 3. Find all CSS <link> tags from the original page
-        const cssLinks = Array.from(doc.head.querySelectorAll('link[rel="stylesheet"]'))
-                            .map(link => link.getAttribute('href'))
-                            .filter((href): href is string => !!href);
-
-        let cssContent = '';
-        // Fetch all CSS content and concatenate it
-        for (const link of cssLinks) {
-          // Resolve relative URLs
-          const cssUrl = new URL(link, window.location.origin);
-          try {
-            const cssResponse = await fetch(cssUrl.href);
-            if (cssResponse.ok) {
-              cssContent += await cssResponse.text();
-            }
-          } catch(e) {
-            console.warn(`Could not fetch CSS from ${cssUrl.href}`, e);
-          }
-        }
-
-        // 4. Create the final HTML file
-        const finalHtml = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${handbookTitle}</title>
-    <style>
-        /* Inlining all fetched CSS */
-        ${cssContent}
-    </style>
-</head>
-<body class="font-sans antialiased">
-    ${contentHtml}
-    <script>
-        ${getInteractiveScript()}
-    </script>
-</body>
-</html>`;
+        const finalHtml = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${handbookTitle}</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                 <style type="text/tailwindcss">
+                    ${getGlobalCss()}
+                 </style>
+                <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
+            </head>
+            <body class="bg-secondary/40 font-sans antialiased">
+                <div id="handbook-root-container">
+                    <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
+                      <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
+                        <h1 class="text-xl font-bold">${handbookTitle}</h1>
+                      </div>
+                    </header>
+                    <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                        <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                            ${contentHtml}
+                        </div>
+                    </main>
+                </div>
+                <script>${getInteractiveScript()}</script>
+            </body>
+            </html>`;
 
         zip.file('index.html', finalHtml);
         
         const blob = await zip.generateAsync({ type: 'blob' });
         saveAs(blob, `apostila-${cleanTitle}.zip`);
 
-        toast({
-            title: 'Exportação Concluída',
-            description: 'Sua apostila interativa foi exportada como um arquivo ZIP.',
-        });
-
+        toast({ title: 'Exportação Concluída' });
     } catch (error) {
         console.error('Falha ao exportar o projeto', error);
         toast({
@@ -199,7 +361,7 @@ export default function Header() {
     } finally {
         setIsExporting(false);
     }
-  };
+};
 
 
   const handleSave = () => {
@@ -287,3 +449,4 @@ export default function Header() {
     </>
   );
 }
+
