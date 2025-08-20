@@ -253,11 +253,14 @@ const getGlobalCss = () => {
         background-color: black !important;
         color: white !important;
       }
-      body.high-contrast .bg-card, body.high-contrast .quiz-card {
+      body.high-contrast .bg-card, body.high-contrast .quiz-card, body.high-contrast .bg-primary {
         background-color: black !important;
         border: 1px solid white;
         color: white;
       }
+       body.high-contrast .text-primary-foreground {
+          color: white;
+       }
       body.high-contrast .text-primary { color: yellow; }
       body.high-contrast .text-muted-foreground { color: lightgray; }
       body.high-contrast .border-primary { border-color: yellow; }
@@ -267,6 +270,12 @@ const getGlobalCss = () => {
       .border-destructive { border-color: hsl(var(--destructive)); }
       .prose { color: hsl(var(--foreground)); }
       .prose h1, .prose h2, .prose h3 { color: hsl(var(--primary)); }
+      .no-print { display: block; }
+      @media print {
+        .no-print, .no-print * {
+          display: none !important;
+        }
+      }
     `;
 };
 
@@ -384,6 +393,21 @@ export const handleExportZip = async ({
             </head>
             <body class="bg-background text-foreground font-sans antialiased">
                 <div id="handbook-root-container">
+                     <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
+                        <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
+                            <h1 class="text-xl font-bold">${handbookTitle}</h1>
+                            <div class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
+                                <button data-action="print" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg></button>
+                                <button data-action="libras" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg></button>
+                                <div class="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
+                                    <button data-action="zoom-out" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
+                                    <button data-action="zoom-in" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
+                                </div>
+                                <button data-action="contrast" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg></button>
+                                <button data-action="color-check" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"></path><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"></path></svg></button>
+                            </div>
+                        </div>
+                    </header>
                      <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
                         <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                             ${contentHtml}
@@ -411,3 +435,6 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+
+    
