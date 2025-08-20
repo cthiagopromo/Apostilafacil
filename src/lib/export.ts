@@ -240,16 +240,19 @@ const getGlobalCss = () => `
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
       @media print { 
+          @page { margin: 0; }
+          body, main { padding: 1.5cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
-          .module-section { page-break-after: always; }
+          .module-section { display: block !important; page-break-after: always; }
           .module-section:last-of-type { page-break-after: auto; }
-          body, main { padding: 0 !important; margin: 1cm !important; }
+          #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
       }
 `;
 
 const getFloatingNavHtml = (projects: Project[]) => `
-    <div class="fixed bottom-5 right-5 no-print">
-        <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 space-y-1 w-60">
+    <div class="fixed bottom-5 right-5 z-50 no-print">
+        <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 space-y-1 w-64">
+             <p class="font-semibold text-sm px-2 py-1">Módulos</p>
             ${projects.map((p, i) => `<button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-accent rounded-md">${i+1}. ${p.title}</button>`).join('')}
         </div>
         <button id="floating-nav-toggle" class="bg-primary text-primary-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-lg">
@@ -303,7 +306,7 @@ export const handleExportZip = async ({
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
-                <script src="https://cdn.tailwindcss.com"></script>
+                <script src="https://cdn.tailwindcss.com"><\/script>
                 <style>${getGlobalCss()}</style>
                 <script>
                     tailwind.config = {
