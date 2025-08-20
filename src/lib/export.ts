@@ -228,15 +228,18 @@ document.addEventListener('DOMContentLoaded', () => {
             format: 'a4'
         });
 
-        const content = document.getElementById('pdf-source');
-        const allModules = Array.from(content.querySelectorAll('.pdf-module-page'));
+        const allModules = Array.from(document.querySelectorAll('.pdf-module-page'));
 
-        // Pre-process all images to convert them to base64
         const imagePromises = [];
         allModules.forEach(moduleEl => {
             moduleEl.querySelectorAll('img').forEach(img => {
                 const promise = fetch(img.src)
-                    .then(response => response.blob())
+                    .then(response => {
+                        if (!response.ok) {
+                           throw new Error('Network response was not ok');
+                        }
+                        return response.blob();
+                    })
                     .then(blob => new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onloadend = () => {
@@ -248,9 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }))
                     .catch(error => {
                         console.error('Error converting image to base64:', img.src, error);
-                        // Replace failing image with a placeholder text to avoid breaking the canvas
                         const p = document.createElement('p');
-                        p.innerText = '[Image not available]';
+                        p.innerText = '[Imagem não disponível]';
+                        p.style.textAlign = 'center';
+                        p.style.padding = '2rem';
+                        p.style.color = '#888';
                         img.parentNode.replaceChild(p, img);
                     });
                 imagePromises.push(promise);
@@ -259,16 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await Promise.all(imagePromises);
         
-        async function addModuleToPdf(index) {
-            if (index >= allModules.length) {
-                pdf.output('dataurlnewwindow');
-                modal.style.display = 'none';
-                return;
-            }
+        for (let i = 0; i < allModules.length; i++) {
+            const moduleEl = allModules[i];
             
-            const moduleEl = allModules[index];
-
-            if (index > 0) {
+            if (i > 0) {
               pdf.addPage();
             }
 
@@ -286,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const imgData = canvas.toDataURL('image/png', 0.95);
                 if (!imgData || imgData === 'data:,') {
-                    console.error('html2canvas returned an empty canvas. Skipping module ' + index);
+                    console.error('html2canvas returned an empty canvas. Skipping module ' + i);
                     pdf.text("Error rendering this module.", 20, 20);
                 } else {
                     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -309,16 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch(err) {
-                 console.error("Error generating PDF part for module " + index + ":", err);
-                 if (index > 0) pdf.addPage();
+                 console.error("Error generating PDF part for module " + i + ":", err);
+                 if (i > 0) pdf.addPage();
                  pdf.text("Error rendering content for this module.", 20, 20);
             }
-            
-            // Process next module
-            await addModuleToPdf(index + 1);
         }
         
-        await addModuleToPdf(0);
+        pdf.output('dataurlnewwindow');
+        modal.style.display = 'none';
     });
 
     // --- Accessibility Buttons ---
@@ -809,9 +806,9 @@ function generatePdfHtmlForProject(projects: Project[], mainTitle: string): stri
 
     return `
         ${projects.map(project => `
-            <div class="pdf-module-page" style="background-color: white; color: black;">
-                <h2 class="module-main-title">${mainTitle}</h2>
-                <h1 class="module-title-header">${project.title}</h1>
+            <div class="pdf-module-page" style="background-color: white; color: black; page-break-inside: avoid;">
+                <h2 class="module-main-title" style="text-align: center;">${mainTitle}</h2>
+                <h1 class="module-title-header" style="text-align: center;">${project.title}</h1>
                 <div class="divider"></div>
                 ${project.blocks.map(renderBlockForPdf).join('\n')}
             </div>
@@ -828,7 +825,7 @@ export async function exportToZip(projects: Project[], handbookTitle: string) {
     const mainHtmlContent = generateHtml(projects, handbookTitle)
       .replace(
         '</body>',
-        `<div id="pdf-source" style="position: absolute; left: -9999px; top: -9999px;">${pdfHtmlContent}</div></body>`
+        `<div id="pdf-source" style="position: absolute; left: -9999px; top: 0; width: 800px;">${pdfHtmlContent}</div></body>`
       );
 
 
@@ -841,5 +838,3 @@ export async function exportToZip(projects: Project[], handbookTitle: string) {
     
     saveAs(content, fileName);
 }
-
-    
