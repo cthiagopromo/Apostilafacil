@@ -10,7 +10,7 @@ import { Check } from 'lucide-react';
 
 const colorOptions = [
   { name: 'Azul', hsl: '221 83% 53%', className: 'bg-blue-600' },
-  { name: 'Amarelo', hsl: '48 96% 53%', className: 'bg-yellow-500' },
+  { name: 'Laranja', hsl: '32 100% 47%', className: 'bg-orange-500' },
   { name: 'Roxo', hsl: '262 84% 53%', className: 'bg-purple-600' },
   { name: 'Rosa', hsl: '322 84% 53%', className: 'bg-pink-600' },
 ];
