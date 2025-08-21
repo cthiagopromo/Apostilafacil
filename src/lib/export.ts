@@ -2,7 +2,6 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
-import DOMPurify from 'dompurify';
 
 const getInteractiveScript = (theme: Theme): string => {
     return `
@@ -136,10 +135,10 @@ const getInteractiveScript = (theme: Theme): string => {
 
                 if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
                 const handleFontSize = (increase) => {
-                    const body = document.body;
-                    const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
+                    const html = document.documentElement;
+                    const currentSize = parseFloat(window.getComputedStyle(html).fontSize);
                     const newSize = increase ? currentSize + 1 : currentSize - 1;
-                    if (newSize >= 12 && newSize <= 24) { body.style.fontSize = newSize + 'px'; }
+                    if (newSize >= 12 && newSize <= 24) { html.style.fontSize = newSize + 'px'; }
                 };
                 if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
@@ -151,11 +150,10 @@ const getInteractiveScript = (theme: Theme): string => {
 };
 
 const renderBlockToHtml = (block: Block): string => {
-    const sanitizedText = (text: string | undefined) => (typeof window !== 'undefined' && text) ? DOMPurify.sanitize(text) : text || '';
     
     switch (block.type) {
         case 'text':
-            return `<div class="prose max-w-none">${sanitizedText(block.content.text)}</div>`;
+            return `<div class="prose max-w-none">${block.content.text || ''}</div>`;
         case 'image':
             const { url, alt, caption, width } = block.content;
             return `
@@ -170,7 +168,7 @@ const renderBlockToHtml = (block: Block): string => {
                 <div class="relative">
                     <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2S6 3.75 6 5v6H4c-1 1 0 5 3 5z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2s-2 1.25-2 3v6h-2c-1 1 0 5 3 5z"></path></svg>
-                        ${sanitizedText(block.content.text)}
+                        ${block.content.text || ''}
                     </blockquote>
                  </div>`;
         case 'video':
@@ -270,12 +268,12 @@ const getGlobalCss = (theme: Theme) => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
       body.high-contrast { background-color: black !important; color: white !important; }
-      body.high-contrast .bg-card, body.high-contrast .quiz-card, body.high-contrast .bg-primary { background-color: black !important; border: 1px solid white; color: white; }
+      body.high-contrast .bg-card, body.high-contrast .bg-primary, body.high-contrast .bg-muted\\/30 { background-color: black !important; border: 1px solid white; color: white; }
       body.high-contrast .text-primary-foreground { color: white; }
       body.high-contrast .text-primary { color: yellow; }
       body.high-contrast .text-muted-foreground { color: lightgray; }
       body.high-contrast .border-primary { border-color: yellow; }
-
+      
       .module-section {
           display: none;
       }
