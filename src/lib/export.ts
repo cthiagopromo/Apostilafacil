@@ -158,13 +158,12 @@ const renderBlockToHtml = (block: Block): string => {
         case 'text':
             return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
         case 'image':
-            const { url } = block.content;
-            const width = block.content.width || 100;
+            const { url, alt, caption, width } = block.content;
             return `
                 <div class="flex justify-center">
-                    <figure class="flex flex-col items-center gap-2" style="width: ${width}%">
-                        <img src="${url || 'https://placehold.co/600x400.png'}" alt="${block.content.alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
-                        ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
+                    <figure class="flex flex-col items-center gap-2" style="width: ${width || 100}%">
+                        <img src="${url || 'https://placehold.co/600x400.png'}" alt="${alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
+                        ${caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${caption}</figcaption>` : ''}
                     </figure>
                 </div>`;
         case 'quote':
@@ -246,14 +245,12 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}">
-            <div class="module-content-wrapper">
-                <header class="text-center mb-12">
-                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                    <p class="text-muted-foreground">${project.description}</p>
-                </header>
-                <div class="space-y-8 flex-grow">
-                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
-                </div>
+            <header class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                <p class="text-muted-foreground">${project.description}</p>
+            </header>
+            <div class="space-y-8">
+                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
@@ -279,33 +276,17 @@ const getGlobalCss = (theme: Theme) => `
       body.high-contrast .text-primary { color: yellow; }
       body.high-contrast .text-muted-foreground { color: lightgray; }
       body.high-contrast .border-primary { border-color: yellow; }
-      
-      main.main-content {
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-          width: 100%;
-          padding: 3rem;
-      }
 
       .module-section {
           display: none;
-          flex-direction: column;
-          width: 100%;
-          height: auto;
       }
       
-      #handbook-root {
-         width: 100%;
-         max-width: 56rem;
-      }
-
       .video-print-placeholder-export { display: none; }
 
       @media print {
           @page {
             size: A4;
-            margin: 0;
+            margin: 1.5cm;
           }
           html, body {
             width: 100%;
@@ -316,39 +297,22 @@ const getGlobalCss = (theme: Theme) => `
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-           body {
+          body, #handbook-root, main.main-content {
             margin: 0 !important;
-            padding: 1.5cm !important;
+            padding: 0 !important;
+            box-shadow: none !important;
           }
           .no-print, .no-print * { display: none !important; }
-          main.main-content {
-              display: block !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 100%;
-              height: auto;
-          }
           #handbook-root {
-              box-shadow: none !important;
               border-radius: 0 !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 100% !important;
-              max-width: 100% !important;
           }
           .module-section {
               display: block !important;
-              width: 100%;
-              height: auto;
-              page-break-after: always;
+              page-break-before: always;
           }
-          .module-section:last-of-type {
-              page-break-after: auto;
+          .module-section:first-of-type {
+              page-break-before: auto;
           }
-          .module-content-wrapper {
-             width: 100%;
-             max-width: 100%;
-           }
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
 
@@ -487,7 +451,7 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main class="main-content">
+                 <main class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                         ${interactiveContentHtml}
                     </div>
@@ -509,6 +473,3 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
-
-    
