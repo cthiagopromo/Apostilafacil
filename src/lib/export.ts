@@ -182,8 +182,8 @@ const renderBlockToHtml = (block: Block): string => {
                 videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
             }
 
-            const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '#';
-
+             const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '';
+            
             return `
                 <div class="video-container-export">
                     <div class="video-player-export">
@@ -195,7 +195,7 @@ const renderBlockToHtml = (block: Block): string => {
                             <div>
                                 <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
                                 <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
-                                ${videoType === 'youtube' && videoUrl ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
+                                ${videoLink ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -232,14 +232,12 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}">
-            <div class="module-content-wrapper">
-                <header class="text-center mb-12">
-                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                    <p class="text-muted-foreground">${project.description}</p>
-                </header>
-                <div class="space-y-8 flex-grow">
-                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
-                </div>
+            <header class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                <p class="text-muted-foreground">${project.description}</p>
+            </header>
+            <div class="space-y-8 flex-grow">
+                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
@@ -269,16 +267,16 @@ const getGlobalCss = () => `
       .module-section {
           display: none;
           flex-direction: column;
+          min-height: calc(100vh - 88px); /* Height of header */
           align-items: center;
           width: 100%;
-          padding: 2rem;
+          padding: 3rem;
       }
-
       .module-section-visible {
           display: flex;
       }
 
-      .module-content-wrapper {
+      .main-content {
           background-color: hsl(var(--card));
           border-radius: 0.75rem;
           box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
@@ -287,35 +285,34 @@ const getGlobalCss = () => `
           max-width: 42rem;
           display: flex;
           flex-direction: column;
-          flex-grow: 1;
       }
       .video-print-placeholder-export { display: none; }
-
-      @media screen {
-        main.interactive-view {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-      }
 
       @media print {
           @page { size: A4; margin: 0; }
           html, body { 
               width: 100%; 
-              height: 100%;
+              height: auto;
               margin: 0;
               padding: 0;
               background: white !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
           }
-          main.interactive-view { display: none !important; }
-          .printable-view { display: block !important; }
+          main {
+             padding: 0 !important;
+          }
           .no-print, .no-print * { display: none !important; }
-
+          .main-content {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100%;
+            height: auto;
+            flex-grow: 0;
+            border-radius: 0 !important;
+          }
           .module-section {
               display: flex !important;
               flex-direction: column;
@@ -323,24 +320,14 @@ const getGlobalCss = () => `
               align-items: center;
               box-sizing: border-box;
               width: 210mm;
-              height: 297mm;
+              min-height: 297mm;
               padding: 2cm;
               page-break-after: always;
               overflow: hidden;
           }
           .module-section:last-of-type { page-break-after: auto; }
-          .module-content-wrapper {
-              box-shadow: none !important;
-              border: none !important;
-              padding: 0 !important;
-              max-width: 100%;
-              width: 100%;
-              height: auto;
-              flex-grow: 0;
-          }
-
-          .video-player-export { display: none; }
-          .video-print-placeholder-export { display: block; }
+          .video-player-export { display: none !important; }
+          .video-print-placeholder-export { display: block !important; }
           
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
@@ -394,7 +381,6 @@ export const handleExportZip = async ({
         }));
         
         const interactiveContentHtml = renderProjectsToHtml(sanitizedProjects);
-        const printableContentHtml = renderProjectsToHtml(sanitizedProjects);
         const floatingNavHtml = getFloatingNavHtml(sanitizedProjects);
         
         const finalHtml = `
@@ -429,7 +415,7 @@ export const handleExportZip = async ({
                             md: 'calc(var(--radius) - 2px)',
                             sm: 'calc(var(--radius) - 4px)',
                           },
-                          typography: ({ theme }) => ({
+                           typography: ({ theme }) => ({
                             DEFAULT: {
                               css: {
                                 '--tw-prose-body': 'hsl(var(--foreground))',
@@ -459,27 +445,22 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                <div class="no-print">
-                     <header class="py-4 px-6 bg-primary text-primary-foreground">
-                        <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
-                            <h1 class="text-xl font-bold">${handbookTitle}</h1>
-                            <div class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
-                                <button data-action="print" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Imprimir/Salvar PDF"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg></button>
-                                <div class="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
-                                    <button data-action="zoom-out" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Diminuir Fonte"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
-                                    <button data-action="zoom-in" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Aumentar Fonte"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
-                                </div>
-                                <button data-action="contrast" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Alto Contraste"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg></button>
+                <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
+                    <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
+                        <h1 class="text-xl font-bold">${handbookTitle}</h1>
+                        <div class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
+                            <button data-action="print" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Imprimir/Salvar PDF"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg></button>
+                            <div class="flex items-center border-l border-r border-primary-foreground/20 mx-1 px-1">
+                                <button data-action="zoom-out" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Diminuir Fonte"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
+                                <button data-action="zoom-in" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Aumentar Fonte"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button>
                             </div>
+                            <button data-action="contrast" class="p-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-md" title="Alto Contraste"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg></button>
                         </div>
-                    </header>
-                </div>
-                 <main class="interactive-view no-print">
+                    </div>
+                </header>
+                 <main class="main-content">
                     ${interactiveContentHtml}
                 </main>
-                 <div class="printable-view" style="display: none;">
-                    ${printableContentHtml}
-                </div>
                 ${floatingNavHtml}
                 <script>${getInteractiveScript()}</script>
             </body>
