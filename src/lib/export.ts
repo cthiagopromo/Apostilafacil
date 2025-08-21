@@ -57,7 +57,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -179,10 +179,10 @@ const renderBlockToHtml = (block: Block): string => {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                    if (videoId) videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                    if (videoId) videoEmbedUrl = "https://www.youtube.com/embed/" + videoId + "?autoplay=" + (autoplay ? 1 : 0) + "&controls=" + (showControls ? 1 : 0);
                 } catch(e) {}
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+                videoEmbedUrl = "https://customer-mhnunnb897evy1sb.cloudflarestream.com/" + cloudflareVideoId + "/iframe?autoplay=" + (autoplay) + "&controls=" + (showControls);
             }
             if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
             return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
@@ -221,7 +221,7 @@ const renderBlockToHtmlForPrint = (block: Block): string => {
             const { videoType, videoUrl, videoTitle } = block.content;
             let videoLink = '';
             if (videoType === 'youtube' && videoUrl) {
-                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoUrl}</a></div>`;
+                videoLink = '<div class="text-sm">Link: <a href="' + videoUrl + '" target="_blank" rel="noopener noreferrer" class="text-primary underline">' + videoUrl + '</a></div>';
             }
             return `
                 <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -265,7 +265,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 const getPrintableHtml = (projects: Project[]): string => {
     return projects.map((project) => `
         <div class="printable-page-container">
-            <section class="module-section-printable">
+            <section class="module-section-printable max-w-4xl w-full bg-card p-8 sm:p-12 md:p-16">
                  <header class="text-center mb-12">
                     <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                     <p class="text-muted-foreground">${project.description}</p>
@@ -292,29 +292,32 @@ const getGlobalCss = () => `
       .border-primary { border-color: hsl(var(--primary)); }
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
-      .module-section { display: flex; flex-direction: column; }
+      .module-section { display: flex; flex-direction: column; min-height: 100%; }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print, main, #handbook-root-container > header { display: none !important; }
+          html, body { width: 100%; height: auto; margin: 0; padding: 0; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
+          .no-print, main, #floating-nav-container, header { display: none !important; }
           #printable-content { display: block !important; }
           .printable-page-container {
               display: flex;
               justify-content: center;
               align-items: center;
-              height: 100vh;
+              min-height: 100vh;
+              height: 100%;
               page-break-after: always;
+              padding: 2cm;
+              box-sizing: border-box;
           }
           .printable-page-container:last-of-type { page-break-after: auto; }
-          .module-section-printable { max-width: 100%; padding: 2cm; box-sizing: border-box; }
+          .module-section-printable { width: 100%; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
       }
 `;
 
 const getFloatingNavHtml = (projects: Project[]) => `
-    <div class="fixed bottom-5 right-5 z-50 no-print">
+    <div id="floating-nav-container" class="fixed bottom-5 right-5 z-50 no-print">
         <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 space-y-1 w-64">
              <p class="font-semibold text-sm px-2 py-1">Módulos</p>
             ${projects.map((p, i) => `<button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-accent rounded-md">${i+1}. ${p.title}</button>`).join('')}
@@ -371,11 +374,12 @@ export const handleExportZip = async ({
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
-                <script src="https://cdn.tailwindcss.com"></script>
+                <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
                 <style>${getGlobalCss()}</style>
                 <script>
                     tailwind.config = {
-                      theme: { extend: { 
+                      theme: { 
+                        extend: { 
                           colors: { 
                               border: 'hsl(var(--border))', 
                               input: 'hsl(var(--input))', 
@@ -390,41 +394,30 @@ export const handleExportZip = async ({
                               popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
                               card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
                           },
-                          typography: (theme) => ({
+                          typography: ({ theme }) => ({
                             DEFAULT: {
                               css: {
                                 '--tw-prose-body': theme('colors.foreground'),
-                                '--tw-prose-headings': theme('colors.primary.DEFAULT'),
+                                '--tw-prose-headings': 'hsl(var(--primary))',
                                 '--tw-prose-lead': theme('colors.foreground'),
-                                '--tw-prose-links': theme('colors.primary.DEFAULT'),
+                                '--tw-prose-links': 'hsl(var(--primary))',
                                 '--tw-prose-bold': theme('colors.foreground'),
-                                '--tw-prose-counters': theme('colors.muted.foreground'),
-                                '--tw-prose-bullets': theme('colors.muted.foreground'),
-                                '--tw-prose-hr': theme('colors.border'),
+                                '--tw-prose-counters': 'hsl(var(--muted-foreground))',
+                                '--tw-prose-bullets': 'hsl(var(--muted-foreground))',
+                                '--tw-prose-hr': 'hsl(var(--border))',
                                 '--tw-prose-quotes': theme('colors.foreground'),
-                                '--tw-prose-quote-borders': theme('colors.primary.DEFAULT'),
-                                '--tw-prose-captions': theme('colors.muted.foreground'),
+                                '--tw-prose-quote-borders': 'hsl(var(--primary))',
+                                '--tw-prose-captions': 'hsl(var(--muted-foreground))',
                                 '--tw-prose-code': theme('colors.foreground'),
                                 '--tw-prose-pre-code': theme('colors.foreground'),
-                                '--tw-prose-pre-bg': theme('colors.muted.DEFAULT'),
-                                '--tw-prose-th-borders': theme('colors.border'),
-                                '--tw-prose-td-borders': theme('colors.border'),
+                                '--tw-prose-pre-bg': 'hsl(var(--muted))',
+                                '--tw-prose-th-borders': 'hsl(var(--border))',
+                                '--tw-prose-td-borders': 'hsl(var(--border))',
                               },
                             },
                           }),
                         } 
-                      },
-                      plugins: [
-                        require('@tailwindcss/typography'),
-                        function({ addBase }) {
-                          addBase({
-                            '.prose': {
-                              'h1,h2,h3,h4,h5,h6': { color: 'var(--tw-prose-headings)' },
-                               a: { color: 'var(--tw-prose-links)' },
-                            }
-                          })
-                        }
-                      ]
+                      }
                     }
                 </script>
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
@@ -460,17 +453,15 @@ export const handleExportZip = async ({
 
         zip.file('index.html', finalHtml);
         const blob = await zip.generateAsync({ type: 'blob' });
-        saveAs(blob, 'apostila-' + cleanTitle + '.zip');
+        saveAs(blob, "apostila-" + cleanTitle + ".zip");
 
         toast({ title: 'Exportação Concluída' });
     } catch (error) {
         console.error('Falha ao exportar o projeto', error);
-        toast({ variant: 'destructive', title: 'Erro na Exportação', description: 'Não foi possível exportar o projeto. Detalhes: ' + (error instanceof Error ? error.message : 'Erro desconhecido.') });
+        toast({ variant: 'destructive', title: 'Erro na Exportação', description: "Não foi possível exportar o projeto. Detalhes: " + (error instanceof Error ? error.message : 'Erro desconhecido.') });
     } finally {
         setIsExporting(false);
     }
 };
-
-    
 
     
