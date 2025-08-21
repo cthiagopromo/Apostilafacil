@@ -302,18 +302,20 @@ const getGlobalCss = (theme: Theme) => `
       @media print {
           @page {
               size: A4;
-              margin: 2cm;
+              margin: 0;
           }
           html, body {
               width: 100%;
               height: auto;
               margin: 0 !important;
-              padding: 0 !important;
               background: white !important;
               color: black !important;
               font-size: 11pt;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+          }
+          body {
+            padding: 1.5cm;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
@@ -332,13 +334,13 @@ const getGlobalCss = (theme: Theme) => `
               max-width: 100% !important;
           }
           .module-section {
-              display: block !important; /* Allow content to flow */
+              display: block !important;
               width: 100%;
-              height: auto; /* Let content determine height */
-              page-break-before: always; /* Each module starts on a new page */
+              height: auto;
+              page-break-after: always;
           }
-          .module-section:first-child {
-             page-break-before: auto;
+          .module-section:last-of-type {
+              page-break-after: auto;
           }
           .module-content-wrapper {
              width: 100%;
@@ -514,5 +516,3 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
-    
