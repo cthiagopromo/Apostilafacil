@@ -221,7 +221,7 @@ const renderBlockToHtmlForPrint = (block: Block): string => {
             const { videoType, videoUrl, videoTitle } = block.content;
             let videoLink = '';
             if (videoType === 'youtube' && videoUrl) {
-                videoLink = '<div class="text-sm">Link: <a href="' + videoUrl + '" target="_blank" rel="noopener noreferrer" class="text-primary underline">' + videoUrl + '</a></div>';
+                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoUrl}</a></div>`;
             }
             return `
                 <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -295,9 +295,9 @@ const getGlobalCss = () => `
       .module-section { display: flex; flex-direction: column; min-height: 100%; }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { width: 100%; height: auto; margin: 0; padding: 0; }
+          html, body { width: 100%; height: auto; margin: 0; padding: 0; box-sizing: border-box; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-          .no-print, main, #floating-nav-container, header { display: none !important; }
+          .no-print, #handbook-root, #floating-nav-container, header { display: none !important; }
           #printable-content { display: block !important; }
           .printable-page-container {
               display: flex;
@@ -310,9 +310,9 @@ const getGlobalCss = () => `
               box-sizing: border-box;
           }
           .printable-page-container:last-of-type { page-break-after: auto; }
-          .module-section-printable { width: 100%; }
+          .module-section-printable { width: 100%; box-shadow: none !important; border: none !important; background-color: transparent !important; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
-          figure, .quiz-card, blockquote { page-break-inside: avoid; }
+          figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
       }
 `;
 
@@ -394,25 +394,31 @@ export const handleExportZip = async ({
                               popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
                               card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
                           },
+                          borderRadius: {
+                            lg: 'var(--radius)',
+                            md: 'calc(var(--radius) - 2px)',
+                            sm: 'calc(var(--radius) - 4px)',
+                          },
                           typography: ({ theme }) => ({
                             DEFAULT: {
                               css: {
-                                '--tw-prose-body': theme('colors.foreground'),
+                                '--tw-prose-body': 'hsl(var(--foreground))',
                                 '--tw-prose-headings': 'hsl(var(--primary))',
-                                '--tw-prose-lead': theme('colors.foreground'),
+                                '--tw-prose-lead': 'hsl(var(--foreground))',
                                 '--tw-prose-links': 'hsl(var(--primary))',
-                                '--tw-prose-bold': theme('colors.foreground'),
+                                '--tw-prose-bold': 'hsl(var(--foreground))',
                                 '--tw-prose-counters': 'hsl(var(--muted-foreground))',
                                 '--tw-prose-bullets': 'hsl(var(--muted-foreground))',
                                 '--tw-prose-hr': 'hsl(var(--border))',
-                                '--tw-prose-quotes': theme('colors.foreground'),
+                                '--tw-prose-quotes': 'hsl(var(--foreground))',
                                 '--tw-prose-quote-borders': 'hsl(var(--primary))',
                                 '--tw-prose-captions': 'hsl(var(--muted-foreground))',
-                                '--tw-prose-code': theme('colors.foreground'),
-                                '--tw-prose-pre-code': theme('colors.foreground'),
+                                '--tw-prose-code': 'hsl(var(--foreground))',
+                                '--tw-prose-pre-code': 'hsl(var(--foreground))',
                                 '--tw-prose-pre-bg': 'hsl(var(--muted))',
                                 '--tw-prose-th-borders': 'hsl(var(--border))',
                                 '--tw-prose-td-borders': 'hsl(var(--border))',
+                                '--tw-prose-invert-body': 'hsl(var(--foreground))',
                               },
                             },
                           }),
@@ -464,4 +470,5 @@ export const handleExportZip = async ({
     }
 };
 
+    
     
