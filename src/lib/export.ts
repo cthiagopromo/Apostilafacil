@@ -129,14 +129,7 @@ const getInteractiveScript = (): string => {
                 
                 if (printBtn) {
                     printBtn.addEventListener('click', () => {
-                        const printableContainer = document.getElementById('printable-content');
-                        if (printableContainer) {
-                           printableContainer.classList.remove('hidden');
-                        }
                         window.print();
-                        if (printableContainer) {
-                           printableContainer.classList.add('hidden');
-                        }
                     });
                 }
 
@@ -223,7 +216,6 @@ const renderBlockToHtml = (block: Block): string => {
 };
 
 const renderBlockToHtmlForPrint = (block: Block): string => {
-    const sanitizedText = (text: string | undefined) => text ? DOMPurify.sanitize(text) : '';
     switch (block.type) {
         case 'video':
             const { videoType, videoUrl, videoTitle } = block.content;
@@ -304,10 +296,9 @@ const getGlobalCss = () => `
           html, body { height: auto; width: 100%; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print, .no-print * { display: none !important; }
-          main { display: none !important; }
-          #handbook-root-container { display: block !important; }
-          #printable-content { display: block !important; padding: 2cm; }
-          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; }
+          #handbook-root, #handbook-root-container > header { display: none !important; }
+          #printable-content { display: block !important; padding: 2cm; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; width: 100%; }
           .module-section-printable:last-of-type { page-break-after: auto; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
