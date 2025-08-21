@@ -268,13 +268,17 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 const getGlobalCss = (theme: Theme) => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
-      body.high-contrast { background-color: black !important; color: white !important; }
-      body.high-contrast .bg-card, body.high-contrast .bg-muted\\/30, body.high-contrast .bg-primary { background-color: black !important; border: 1px solid white; }
-      body.high-contrast .prose { color: white !important; }
-      body.high-contrast .text-primary-foreground, body.high-contrast .text-muted-foreground, body.high-contrast h1, body.high-contrast h2, body.high-contrast h3, body.high-contrast p { color: white !important; }
-      body.high-contrast .text-primary { color: yellow !important; }
-      body.high-contrast .border-primary { border-color: yellow !important; }
       
+      body.high-contrast { background-color: black !important; color: white !important; }
+      body.high-contrast * { color: white !important; }
+      body.high-contrast .bg-card, body.high-contrast .bg-muted\\/30, body.high-contrast .bg-primary { background-color: black !important; border: 1px solid white; }
+      body.high-contrast .text-primary { color: yellow !important; }
+      body.high-contrast .border-primary, body.high-contrast .quiz-option.bg-primary\\/10 { border-color: yellow !important; }
+      body.high-contrast a, body.high-contrast .text-primary, body.high-contrast .lucide-check-circle { color: yellow !important; }
+      body.high-contrast .radio-group-item { border-color: white !important; }
+      body.high-contrast .lucide-check-circle { fill: yellow !important; }
+
+
       .module-section {
           display: none;
       }
@@ -308,6 +312,7 @@ const getGlobalCss = (theme: Theme) => `
           .no-print, .no-print * { display: none !important; }
           .module-section {
               display: block !important;
+              page-break-inside: avoid;
               page-break-after: always;
           }
            .module-section:last-of-type {
@@ -474,3 +479,4 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
