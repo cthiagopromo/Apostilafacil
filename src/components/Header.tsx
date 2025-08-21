@@ -13,7 +13,7 @@ import { handleExportZip } from '@/lib/export';
 
 
 export default function Header() {
-  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects, saveData, isDirty } = useProjectStore();
+  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects, saveData, isDirty } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -25,7 +25,8 @@ export default function Header() {
         handbookTitle, 
         handbookDescription, 
         handbookId, 
-        handbookUpdatedAt, 
+        handbookUpdatedAt,
+        handbookTheme,
         setIsExporting, 
         toast 
     });
@@ -103,3 +104,5 @@ export default function Header() {
     </>
   );
 }
+
+    

@@ -1,16 +1,20 @@
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import type { HandbookData, Block, Project } from '@/lib/types';
+import type { HandbookData, Block, Project, Theme } from '@/lib/types';
 import DOMPurify from 'dompurify';
 
-const getInteractiveScript = (): string => {
+const getInteractiveScript = (theme: Theme): string => {
     return `
         document.addEventListener('DOMContentLoaded', () => {
             const dataElement = document.getElementById('handbook-data');
             if (!dataElement) return;
 
-            const handbookData = JSON.parse(dataElement.textContent || '{}');
+            const theme = ${JSON.stringify(theme)};
+            if (theme && theme.colorPrimary) {
+                document.documentElement.style.setProperty('--primary', theme.colorPrimary);
+            }
+
             let currentModuleIndex = 0;
             const modules = document.querySelectorAll('.module-section');
             const navButtons = document.querySelectorAll('.module-nav-btn');
@@ -19,11 +23,6 @@ const getInteractiveScript = (): string => {
             const floatingNavToggle = document.getElementById('floating-nav-toggle');
 
             const showModule = (index) => {
-                const project = handbookData.projects[index];
-                if (project && project.theme && project.theme.colorPrimary) {
-                    document.documentElement.style.setProperty('--primary', project.theme.colorPrimary);
-                }
-
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
                     module.style.display = isVisible ? 'flex' : 'none';
@@ -261,8 +260,8 @@ const renderProjectsToHtml = (projects: Project[]): string => {
     `).join('');
 };
 
-const getGlobalCss = () => `
-      :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: 221 83% 53%; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: 221 83% 53%; --radius: 0.75rem; }
+const getGlobalCss = (theme: Theme) => `
+      :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
       body.high-contrast { background-color: black !important; color: white !important; }
       body.high-contrast .bg-card, body.high-contrast .quiz-card, body.high-contrast .bg-primary { background-color: black !important; border: 1px solid white; color: white; }
@@ -366,12 +365,13 @@ interface ExportParams {
     handbookDescription: string;
     handbookId: string;
     handbookUpdatedAt: string;
+    handbookTheme: Theme;
     setIsExporting: (isExporting: boolean) => void;
     toast: (options: { variant?: 'default' | 'destructive', title: string, description?: string }) => void;
 }
 
 export const handleExportZip = async ({
-    projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, setIsExporting, toast
+    projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, setIsExporting, toast
 }: ExportParams) => {
     if (!projects || projects.length === 0) {
         toast({ variant: 'destructive', title: 'Nenhum módulo para exportar.' });
@@ -382,7 +382,7 @@ export const handleExportZip = async ({
     try {
         const zip = new JSZip();
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
-        const handbookData: HandbookData = { id: handbookId, title: handbookTitle, description: handbookDescription, updatedAt: handbookUpdatedAt, projects };
+        const handbookData: HandbookData = { id: handbookId, title: handbookTitle, description: handbookDescription, updatedAt: handbookUpdatedAt, theme: handbookTheme, projects };
         
         const sanitizedProjects = handbookData.projects.map(p => ({
             ...p,
@@ -405,7 +405,7 @@ export const handleExportZip = async ({
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
                 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-                <style>${getGlobalCss()}</style>
+                <style>${getGlobalCss(handbookTheme)}</style>
                 <script>
                     tailwind.config = {
                       theme: { 
@@ -433,7 +433,7 @@ export const handleExportZip = async ({
                             DEFAULT: {
                               css: {
                                 '--tw-prose-body': 'hsl(var(--foreground))',
-                                '--tw-prose-headings': theme('colors.foreground'),
+                                '--tw-prose-headings': 'hsl(var(--foreground))',
                                 '--tw-prose-lead': 'hsl(var(--foreground))',
                                 '--tw-prose-links': 'hsl(var(--primary))',
                                 '--tw-prose-bold': 'hsl(var(--foreground))',
@@ -493,7 +493,7 @@ export const handleExportZip = async ({
                     </div>
                 </main>
                 ${floatingNavHtml}
-                <script>${getInteractiveScript()}</script>
+                <script>${getInteractiveScript(handbookTheme)}</script>
             </body>
             </html>`;
 
@@ -509,7 +509,5 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
-    
 
     

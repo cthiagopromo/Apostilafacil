@@ -11,7 +11,6 @@ import { Settings, Palette, Type, Layout, Book, FileText } from 'lucide-react';
 import ModuleSettings from './ModuleSettings';
 import LayoutSettings from './LayoutSettings';
 import HandbookSettings from './HandbookSettings';
-import ThemeSettings from './ThemeSettings';
 
 export default function RightSidebar() {
   return (
@@ -44,17 +43,6 @@ export default function RightSidebar() {
             </AccordionTrigger>
             <AccordionContent>
               <ModuleSettings />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="item-2">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <Palette className="h-4 w-4" />
-                <span>Tema & Cores</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <ThemeSettings />
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="item-3">

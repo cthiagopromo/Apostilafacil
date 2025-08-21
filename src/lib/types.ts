@@ -47,9 +47,6 @@ export interface Block {
 
 export interface Theme {
   colorPrimary: string;
-  colorBackground: string;
-  colorAccent: string;
-  fontBody: string;
 }
 
 export interface LayoutSettings {
@@ -62,7 +59,6 @@ export interface Project {
   id:string;
   title: string;
   description: string;
-  theme: Theme;
   layoutSettings: LayoutSettings;
   blocks: Block[];
   version: string;
@@ -74,8 +70,9 @@ export interface HandbookData {
   id: string;
   title: string;
   description: string;
+  theme: Theme;
   projects: Project[];
   updatedAt: string;
 }
 
-
+    

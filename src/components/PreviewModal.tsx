@@ -20,7 +20,7 @@ interface PreviewModalProps {
 }
 
 export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
-  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects } = useProjectStore();
+  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects } = useProjectStore();
   const [isExporting, setIsExporting] = React.useState(false);
   const [isIframeLoading, setIsIframeLoading] = React.useState(true);
   const { toast } = useToast();
@@ -41,6 +41,7 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
         handbookDescription, 
         handbookId, 
         handbookUpdatedAt, 
+        handbookTheme,
         setIsExporting, 
         toast 
     });
@@ -79,3 +80,5 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
     </Dialog>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -8,18 +9,18 @@ import MainContent from './MainContent';
 import RightSidebar from './RightSidebar';
 
 export function EditorLayout() {
-  const { activeProject } = useProjectStore();
+  const { activeProject, handbookTheme } = useProjectStore();
 
   useEffect(() => {
-    if (activeProject?.theme?.colorPrimary) {
-      document.documentElement.style.setProperty('--primary', activeProject.theme.colorPrimary);
+    if (handbookTheme?.colorPrimary) {
+      document.documentElement.style.setProperty('--primary', handbookTheme.colorPrimary);
     }
     // Cleanup function to reset to default when component unmounts or project changes
     return () => {
       // You might want to reset to a default color or remove the property
       document.documentElement.style.removeProperty('--primary');
     };
-  }, [activeProject?.theme?.colorPrimary]);
+  }, [handbookTheme?.colorPrimary]);
 
   if (!activeProject) {
     return (
@@ -42,3 +43,5 @@ export function EditorLayout() {
     </div>
   );
 }
+
+    

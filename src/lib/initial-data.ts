@@ -9,17 +9,14 @@ export const initialHandbookData: HandbookData = {
   title: 'Apostila de Teste Completa',
   description: 'Um curso completo para testar a funcionalidade de exportação.',
   updatedAt: new Date().toISOString(),
+  theme: {
+    colorPrimary: '221 83% 53%',
+  },
   projects: [
     {
       id: firstProjectId,
       title: 'Módulo 1: Teste de Paginação e Conteúdo Misto',
       description: 'Este módulo testa a quebra de página inteligente e a renderização de vários blocos.',
-      theme: {
-        colorPrimary: '#2563EB',
-        colorBackground: '#F9FAFB',
-        colorAccent: '#60A5FA',
-        fontBody: 'Inter',
-      },
       layoutSettings: {
         containerWidth: 'large',
         sectionSpacing: 'standard',
@@ -64,12 +61,6 @@ export const initialHandbookData: HandbookData = {
       id: secondProjectId,
       title: 'Módulo 2: Teste de Vídeo e Citação',
       description: 'Verificação da renderização de blocos de vídeo e citação.',
-      theme: {
-        colorPrimary: '#2563EB',
-        colorBackground: '#F9FAFB',
-        colorAccent: '#60A5FA',
-        fontBody: 'Inter',
-      },
       layoutSettings: {
         containerWidth: 'large',
         sectionSpacing: 'standard',
@@ -101,3 +92,5 @@ export const initialHandbookData: HandbookData = {
     }
   ]
 };
+
+    

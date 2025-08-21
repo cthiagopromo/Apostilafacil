@@ -14,14 +14,13 @@ import FloatingNav from '@/components/FloatingNav';
 import { cn } from '@/lib/utils';
 
 export default function PreviewPage() {
-  const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt } = useProjectStore();
+  const { projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme } = useProjectStore();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
-  const currentProject = projects[currentModuleIndex];
-  const primaryColor = currentProject?.theme?.colorPrimary;
+  const primaryColor = handbookTheme?.colorPrimary;
 
   useEffect(() => {
     setIsClient(true);
@@ -30,7 +29,6 @@ export default function PreviewPage() {
   useEffect(() => {
     if (isPreparingPrint) {
       const handlePrint = async () => {
-        // A short delay to allow the DOM to update and show all modules
         await new Promise(resolve => setTimeout(resolve, 500));
         window.print();
         setIsPreparingPrint(false);
@@ -43,7 +41,6 @@ export default function PreviewPage() {
     if (primaryColor) {
       document.documentElement.style.setProperty('--primary', primaryColor);
     }
-    // Cleanup function to reset the color when the component unmounts or changes
     return () => {
        document.documentElement.style.removeProperty('--primary');
     }
@@ -71,6 +68,7 @@ export default function PreviewPage() {
     title: handbookTitle, 
     description: handbookDescription, 
     updatedAt: handbookUpdatedAt,
+    theme: handbookTheme,
     projects 
   };
 
@@ -140,3 +138,5 @@ export default function PreviewPage() {
       </>
   );
 }
+
+    

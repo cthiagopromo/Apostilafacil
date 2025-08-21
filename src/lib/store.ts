@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData } from './types';
+import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData, Theme } from './types';
 import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
 
@@ -22,6 +22,7 @@ type State = {
   handbookTitle: string;
   handbookDescription: string;
   handbookUpdatedAt: string;
+  handbookTheme: Theme;
   projects: Project[];
   activeProject: Project | null;
   activeBlockId: string | null;
@@ -34,6 +35,7 @@ type Actions = {
   setActiveBlockId: (blockId: string | null) => void;
   updateHandbookTitle: (title: string) => void;
   updateHandbookDescription: (description: string) => void;
+  updateHandbookTheme: (theme: Partial<Theme>) => void;
   createNewHandbook: () => void;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
@@ -41,7 +43,6 @@ type Actions = {
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
-  updateThemeColor: (projectId: string, color: string) => void;
   addBlock: (projectId: string, type: BlockType) => void;
   deleteBlock: (projectId: string, blockId: string) => void;
   reorderBlocks: (projectId: string, startIndex: number, endIndex: number) => void;
@@ -59,6 +60,7 @@ const useProjectStore = create<State & Actions>()(
     handbookTitle: '',
     handbookDescription: '',
     handbookUpdatedAt: new Date().toISOString(),
+    handbookTheme: { colorPrimary: '221 83% 53%' },
     projects: [],
     activeProject: null,
     activeBlockId: null,
@@ -71,30 +73,33 @@ const useProjectStore = create<State & Actions>()(
           let data: HandbookData | null = storedData ? JSON.parse(storedData) : null;
           
           if (data && data.projects) {
-             const migratedProjects = data.projects.map(p => {
-              if (!p.layoutSettings) {
-                p.layoutSettings = {
-                  containerWidth: 'large',
-                  sectionSpacing: 'standard',
-                  navigationType: 'sidebar',
-                };
-              }
-               if (!p.theme) {
-                 p.theme = {
-                    colorPrimary: '221 83% 53%', // Default Blue HSL
-                    colorBackground: '#F9FAFB',
-                    colorAccent: '#60A5FA',
-                    fontBody: 'Inter',
-                 }
-               }
-              return p;
-            });
+             const migratedData = produce(data, draft => {
+                if (!draft.theme) {
+                    draft.theme = { colorPrimary: '221 83% 53%' };
+                }
+                draft.projects.forEach(p => {
+                  if (!p.layoutSettings) {
+                    p.layoutSettings = {
+                      containerWidth: 'large',
+                      sectionSpacing: 'standard',
+                      navigationType: 'sidebar',
+                    };
+                  }
+                  // @ts-ignore
+                  if (p.theme) {
+                    // @ts-ignore
+                    delete p.theme;
+                  }
+                });
+             });
+
             set({ 
-                handbookId: data.id || getUniqueId('handbook'),
-                projects: migratedProjects,
-                handbookTitle: data.title,
-                handbookDescription: data.description,
-                handbookUpdatedAt: data.updatedAt || new Date().toISOString(),
+                handbookId: migratedData.id || getUniqueId('handbook'),
+                projects: migratedData.projects,
+                handbookTitle: migratedData.title,
+                handbookDescription: migratedData.description,
+                handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
+                handbookTheme: migratedData.theme
             });
           } else {
             set({ 
@@ -103,6 +108,7 @@ const useProjectStore = create<State & Actions>()(
                 handbookTitle: initialHandbookData.title,
                 handbookDescription: initialHandbookData.description,
                 handbookUpdatedAt: initialHandbookData.updatedAt,
+                handbookTheme: initialHandbookData.theme,
             });
           }
         } catch (e) {
@@ -113,6 +119,7 @@ const useProjectStore = create<State & Actions>()(
             handbookTitle: initialHandbookData.title,
             handbookDescription: initialHandbookData.description,
             handbookUpdatedAt: initialHandbookData.updatedAt,
+            handbookTheme: initialHandbookData.theme,
           });
         }
         
@@ -152,6 +159,13 @@ const useProjectStore = create<State & Actions>()(
         });
     },
 
+    updateHandbookTheme: (theme) => {
+        set(state => {
+            state.handbookTheme = { ...state.handbookTheme, ...theme };
+            state.isDirty = true;
+        })
+    },
+
     createNewHandbook: () => {
         const newHandbook = initialHandbookData;
         set({
@@ -159,17 +173,12 @@ const useProjectStore = create<State & Actions>()(
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
+            handbookTheme: { colorPrimary: '221 83% 53%' },
             projects: [
                 {
                     id: getUniqueId('proj'),
                     title: 'Novo Módulo',
                     description: 'Uma nova apostila com blocos editáveis.',
-                    theme: {
-                      colorPrimary: '221 83% 53%',
-                      colorBackground: '#F9FAFB',
-                      colorAccent: '#60A5FA',
-                      fontBody: 'Inter',
-                    },
                     layoutSettings: {
                         containerWidth: 'large',
                         sectionSpacing: 'standard',
@@ -195,12 +204,6 @@ const useProjectStore = create<State & Actions>()(
             id: getUniqueId('proj'),
             title: 'Novo Módulo',
             description: 'Uma nova apostila com blocos editáveis.',
-            theme: {
-              colorPrimary: '221 83% 53%',
-              colorBackground: '#F9FAFB',
-              colorAccent: '#60A5FA',
-              fontBody: 'Inter',
-            },
             layoutSettings: {
                 containerWidth: 'large',
                 sectionSpacing: 'standard',
@@ -225,10 +228,8 @@ const useProjectStore = create<State & Actions>()(
         const projectIndex = state.projects.findIndex(p => p.id === projectId);
         if (projectIndex === -1) return;
 
-        // Prevent deleting the last module
         if (state.projects.length === 1) {
             console.warn("Cannot delete the last module.");
-            // Optionally, show a toast or alert to the user
             return;
         }
 
@@ -277,6 +278,7 @@ const useProjectStore = create<State & Actions>()(
             description: state.handbookDescription,
             projects: state.projects,
             updatedAt: state.handbookUpdatedAt,
+            theme: state.handbookTheme
           };
           localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
         }
@@ -313,16 +315,6 @@ const useProjectStore = create<State & Actions>()(
                 state.isDirty = true;
             }
         });
-    },
-
-    updateThemeColor: (projectId, color) => {
-      set(state => {
-        const project = state.activeProject;
-        if (project && project.id === projectId) {
-          project.theme.colorPrimary = color;
-          state.isDirty = true;
-        }
-      });
     },
 
     addBlock: (projectId, type) => {
