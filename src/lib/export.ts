@@ -293,12 +293,12 @@ const getGlobalCss = () => `
       .module-section { display: flex; flex-direction: column; }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { height: auto; width: 100%; }
+          html, body { width: 100%; height: auto; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print, .no-print * { display: none !important; }
-          #handbook-root, #handbook-root-container > header { display: none !important; }
-          #printable-content { display: block !important; padding: 2cm; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; width: 100%; }
+          .no-print { display: none !important; }
+          main, header { display: none !important; }
+          #printable-content { display: flex !important; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 2cm; }
+          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; width: 100%; max-width: 100%; box-sizing: border-box;}
           .module-section-printable:last-of-type { page-break-after: auto; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
@@ -461,5 +461,7 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+    
 
     
