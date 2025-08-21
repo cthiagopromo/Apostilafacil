@@ -72,7 +72,7 @@ const config = {
         DEFAULT: {
           css: {
             '--tw-prose-body': theme('colors.foreground'),
-            '--tw-prose-headings': theme('colors.primary'),
+            '--tw-prose-headings': theme('colors.foreground'),
             '--tw-prose-lead': theme('colors.foreground'),
             '--tw-prose-links': theme('colors.primary'),
             '--tw-prose-bold': theme('colors.foreground'),

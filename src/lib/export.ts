@@ -271,7 +271,13 @@ const getGlobalCss = () => `
           flex-direction: column;
           align-items: center;
           width: 100%;
+          padding: 2rem;
       }
+
+      .module-section-visible {
+          display: flex;
+      }
+
       .module-content-wrapper {
           background-color: hsl(var(--card));
           border-radius: 0.75rem;
@@ -279,33 +285,48 @@ const getGlobalCss = () => `
           padding: 3rem;
           width: 100%;
           max-width: 42rem;
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
       }
       .video-print-placeholder-export { display: none; }
+
+      @media screen {
+        main.interactive-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+      }
 
       @media print {
           @page { size: A4; margin: 0; }
           html, body { 
-              width: 210mm; 
-              height: 297mm;
+              width: 100%; 
+              height: 100%;
               margin: 0;
               padding: 0;
-              box-sizing: border-box;
               background: white !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
           }
-          main { display: block !important; padding: 0 !important; }
+          main.interactive-view { display: none !important; }
+          .printable-view { display: block !important; }
           .no-print, .no-print * { display: none !important; }
+
           .module-section {
               display: flex !important;
+              flex-direction: column;
               justify-content: center;
               align-items: center;
               box-sizing: border-box;
-              width: 100%;
-              height: 100%;
-              min-height: 297mm;
+              width: 210mm;
+              height: 297mm;
               padding: 2cm;
               page-break-after: always;
+              overflow: hidden;
           }
           .module-section:last-of-type { page-break-after: auto; }
           .module-content-wrapper {
@@ -313,6 +334,9 @@ const getGlobalCss = () => `
               border: none !important;
               padding: 0 !important;
               max-width: 100%;
+              width: 100%;
+              height: auto;
+              flex-grow: 0;
           }
 
           .video-player-export { display: none; }
@@ -369,7 +393,8 @@ export const handleExportZip = async ({
             })
         }));
         
-        const contentHtml = renderProjectsToHtml(sanitizedProjects);
+        const interactiveContentHtml = renderProjectsToHtml(sanitizedProjects);
+        const printableContentHtml = renderProjectsToHtml(sanitizedProjects);
         const floatingNavHtml = getFloatingNavHtml(sanitizedProjects);
         
         const finalHtml = `
@@ -408,7 +433,7 @@ export const handleExportZip = async ({
                             DEFAULT: {
                               css: {
                                 '--tw-prose-body': 'hsl(var(--foreground))',
-                                '--tw-prose-headings': 'hsl(var(--primary))',
+                                '--tw-prose-headings': 'hsl(var(--foreground))',
                                 '--tw-prose-lead': 'hsl(var(--foreground))',
                                 '--tw-prose-links': 'hsl(var(--primary))',
                                 '--tw-prose-bold': 'hsl(var(--foreground))',
@@ -449,9 +474,12 @@ export const handleExportZip = async ({
                         </div>
                     </header>
                 </div>
-                 <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-8 md:p-12">
-                    ${contentHtml}
+                 <main class="interactive-view no-print">
+                    ${interactiveContentHtml}
                 </main>
+                 <div class="printable-view" style="display: none;">
+                    ${printableContentHtml}
+                </div>
                 ${floatingNavHtml}
                 <script>${getInteractiveScript()}</script>
             </body>
