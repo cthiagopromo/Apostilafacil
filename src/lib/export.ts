@@ -151,12 +151,11 @@ const getInteractiveScript = (theme: Theme): string => {
 };
 
 const renderBlockToHtml = (block: Block): string => {
-    // We only sanitize on the client-side during export, so window should be available
     const sanitizedText = (text: string | undefined) => (typeof window !== 'undefined' && text) ? DOMPurify.sanitize(text) : text || '';
     
     switch (block.type) {
         case 'text':
-            return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
+            return `<div class="prose max-w-none">${sanitizedText(block.content.text)}</div>`;
         case 'image':
             const { url, alt, caption, width } = block.content;
             return `
@@ -297,21 +296,23 @@ const getGlobalCss = (theme: Theme) => `
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-          body, #handbook-root, main.main-content {
+          body, main.main-content {
             margin: 0 !important;
             padding: 0 !important;
+          }
+          #handbook-root {
             box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            padding: 0 !important;
           }
           .no-print, .no-print * { display: none !important; }
-          #handbook-root {
-              border-radius: 0 !important;
-          }
           .module-section {
               display: block !important;
-              page-break-before: always;
+              page-break-after: always;
           }
-          .module-section:first-of-type {
-              page-break-before: auto;
+           .module-section:last-of-type {
+              page-break-after: auto;
           }
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
@@ -451,7 +452,7 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
+                 <main class="max-w-4xl mx-auto main-content">
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                         ${interactiveContentHtml}
                     </div>
