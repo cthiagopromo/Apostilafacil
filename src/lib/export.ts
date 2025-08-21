@@ -20,11 +20,8 @@ const getInteractiveScript = (): string => {
 
             const showModule = (index) => {
                 modules.forEach((module, i) => {
-                    if (i === index) {
-                        module.classList.remove('hidden');
-                    } else {
-                        module.classList.add('hidden');
-                    }
+                    const isVisible = i === index;
+                    module.style.display = isVisible ? 'flex' : 'none';
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
@@ -184,8 +181,25 @@ const renderBlockToHtml = (block: Block): string => {
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
                 videoEmbedUrl = "https://customer-mhnunnb897evy1sb.cloudflarestream.com/" + cloudflareVideoId + "/iframe?autoplay=" + (autoplay) + "&controls=" + (showControls);
             }
-            if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
-            return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
+
+            const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '#';
+
+            return `
+                <div class="video-container-export">
+                    <div class="video-player-export">
+                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`}
+                    </div>
+                    <div class="video-print-placeholder-export">
+                        <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-muted-foreground flex-shrink-0"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                            <div>
+                                <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
+                                <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
+                                ${videoType === 'youtube' && videoUrl ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
         case 'button':
             return `
                 <div class="flex justify-center">
@@ -215,37 +229,17 @@ const renderBlockToHtml = (block: Block): string => {
     }
 };
 
-const renderBlockToHtmlForPrint = (block: Block): string => {
-    switch (block.type) {
-        case 'video':
-            const { videoType, videoUrl, videoTitle } = block.content;
-            let videoLink = '';
-            if (videoType === 'youtube' && videoUrl) {
-                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoUrl}</a></div>`;
-            }
-            return `
-                <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-muted-foreground flex-shrink-0"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-                    <div>
-                        <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
-                        <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
-                        ${videoLink}
-                    </div>
-                </div>`;
-        default:
-            return renderBlockToHtml(block);
-    }
-}
-
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
-        <section class="module-section hidden max-w-4xl w-full bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16" data-module-id="${project.id}">
-            <header class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                <p class="text-muted-foreground">${project.description}</p>
-            </header>
-            <div class="space-y-8 flex-grow">
-                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+        <section class="module-section" data-module-id="${project.id}">
+            <div class="module-content-wrapper">
+                <header class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                    <p class="text-muted-foreground">${project.description}</p>
+                </header>
+                <div class="space-y-8 flex-grow">
+                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+                </div>
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
@@ -262,22 +256,6 @@ const renderProjectsToHtml = (projects: Project[]): string => {
     `).join('');
 };
 
-const getPrintableHtml = (projects: Project[]): string => {
-    return projects.map((project) => `
-        <div class="printable-page-container">
-            <section class="module-section-printable max-w-4xl w-full bg-card p-8 sm:p-12 md:p-16">
-                 <header class="text-center mb-12">
-                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                    <p class="text-muted-foreground">${project.description}</p>
-                </header>
-                <div class="space-y-8">
-                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtmlForPrint(block)}</div>`).join('')}
-                </div>
-            </section>
-        </div>
-    `).join('');
-}
-
 
 const getGlobalCss = () => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: 221 83% 53%; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: 221 83% 53%; --radius: 0.75rem; }
@@ -292,25 +270,45 @@ const getGlobalCss = () => `
       .border-primary { border-color: hsl(var(--primary)); }
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
-      .module-section { display: flex; flex-direction: column; min-height: 100%; }
+      
+      .module-section {
+          display: none; /* Hidden by default */
+          flex-direction: column;
+      }
+      .module-content-wrapper {
+          background-color: hsl(var(--card));
+          border-radius: 0.75rem;
+          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+          padding: 3rem;
+          width: 100%;
+          max-width: 42rem; /* equivalent to prose */
+      }
+
+      .video-print-placeholder-export { display: none; }
+      
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { width: 100%; height: auto; margin: 0; padding: 0; box-sizing: border-box; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-          .no-print, #handbook-root, #floating-nav-container, header { display: none !important; }
-          #printable-content { display: block !important; }
-          .printable-page-container {
-              display: flex;
+          html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; box-sizing: border-box; background: white !important; }
+          .no-print, .no-print *, header, #floating-nav-container { display: none !important; }
+          main { display: block !important; padding: 0 !important; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          
+          .module-section {
+              display: flex !important;
+              box-sizing: border-box;
+              width: 100%;
+              height: 100%;
               justify-content: center;
               align-items: center;
-              min-height: 100vh;
-              height: 100%;
-              page-break-after: always;
               padding: 2cm;
-              box-sizing: border-box;
+              page-break-after: always;
           }
-          .printable-page-container:last-of-type { page-break-after: auto; }
-          .module-section-printable { width: 100%; box-shadow: none !important; border: none !important; background-color: transparent !important; }
+          .module-section:last-of-type { page-break-after: auto; }
+          .module-content-wrapper { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 100%; }
+
+          .video-player-export { display: none; }
+          .video-print-placeholder-export { display: block; }
+          
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
       }
@@ -364,7 +362,6 @@ export const handleExportZip = async ({
         }));
         
         const contentHtml = renderProjectsToHtml(sanitizedProjects);
-        const printableHtml = getPrintableHtml(sanitizedProjects);
         const floatingNavHtml = getFloatingNavHtml(sanitizedProjects);
         
         const finalHtml = `
@@ -444,13 +441,8 @@ export const handleExportZip = async ({
                         </div>
                     </header>
                      <main class="flex-grow flex items-center justify-center p-4 sm:p-8 md:p-12">
-                        <div id="handbook-root">
-                            ${contentHtml}
-                        </div>
+                        ${contentHtml}
                     </main>
-                    <div id="printable-content" class="hidden">
-                        ${printableHtml}
-                    </div>
                     ${floatingNavHtml}
                 </div>
                 <script>${getInteractiveScript()}</script>
@@ -464,11 +456,10 @@ export const handleExportZip = async ({
         toast({ title: 'Exportação Concluída' });
     } catch (error) {
         console.error('Falha ao exportar o projeto', error);
-        toast({ variant: 'destructive', title: 'Erro na Exportação', description: "Não foi possível exportar o projeto. Detalhes: " + (error instanceof Error ? error.message : 'Erro desconhecido.') });
+        toast({ variant: 'destructive', title: 'Erro na Exportação', description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}` });
     } finally {
         setIsExporting(false);
     }
 };
 
-    
     
