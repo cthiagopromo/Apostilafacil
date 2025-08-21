@@ -7,9 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '@/components/ui/dialog';
-import { X, Download, Loader } from 'lucide-react';
+import { Download, Loader } from 'lucide-react';
 import { Button } from './ui/button';
 import useProjectStore from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
@@ -58,10 +57,6 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
                       </>
                   )}
               </Button>
-               <DialogClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Fechar</span>
-              </DialogClose>
           </div>
         </DialogHeader>
         <div className="flex-1 w-full h-full overflow-hidden">
