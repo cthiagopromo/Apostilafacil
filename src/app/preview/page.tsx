@@ -43,7 +43,7 @@ export default function PreviewPage() {
     if (primaryColor) {
       document.documentElement.style.setProperty('--primary', primaryColor);
     }
-    // Cleanup function to reset the color when the component unmounts
+    // Cleanup function to reset the color when the component unmounts or changes
     return () => {
        document.documentElement.style.removeProperty('--primary');
     }
@@ -140,5 +140,3 @@ export default function PreviewPage() {
       </>
   );
 }
-
-    

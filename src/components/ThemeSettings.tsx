@@ -30,6 +30,7 @@ export default function ThemeSettings() {
     }
   }
 
+  // Use the color from the active project in the store as the source of truth
   const currentColor = activeProject.theme?.colorPrimary || '221 83% 53%';
 
   return (
@@ -43,7 +44,7 @@ export default function ThemeSettings() {
               title={color.name}
               onClick={() => handleColorSelect(color.hsl)}
               className={cn(
-                "w-8 h-8 rounded-full border-2 transition-all",
+                "w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
                 color.className,
                 currentColor === color.hsl ? 'border-primary ring-2 ring-offset-2 ring-ring' : 'border-transparent'
               )}
@@ -58,5 +59,3 @@ export default function ThemeSettings() {
     </div>
   );
 }
-
-    
