@@ -22,7 +22,15 @@ interface PreviewModalProps {
 export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
   const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, projects } = useProjectStore();
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isIframeLoading, setIsIframeLoading] = React.useState(true);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    // Reset loading state when modal is reopened
+    if (isOpen) {
+      setIsIframeLoading(true);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -52,11 +60,19 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
             {isExporting ? 'Exportando...' : 'Exportar ZIP'}
           </Button>
         </DialogHeader>
-        <div className="flex-1 w-full h-full overflow-hidden">
+        <div className="flex-1 w-full h-full overflow-hidden relative">
+           {isIframeLoading && (
+            <div className="absolute inset-0 bg-secondary/80 flex flex-col items-center justify-center z-10">
+              <Loader className="h-10 w-10 text-primary animate-spin" />
+              <p className="mt-4 text-muted-foreground">Carregando pré-visualização...</p>
+            </div>
+           )}
            <iframe
             src="/preview"
             className="w-full h-full border-0"
             title="Pré-visualização da Apostila"
+            onLoad={() => setIsIframeLoading(false)}
+            style={{ visibility: isIframeLoading ? 'hidden' : 'visible' }}
           />
         </div>
       </DialogContent>
