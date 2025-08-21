@@ -19,6 +19,11 @@ const getInteractiveScript = (): string => {
             const floatingNavToggle = document.getElementById('floating-nav-toggle');
 
             const showModule = (index) => {
+                const project = handbookData.projects[index];
+                if (project && project.theme && project.theme.colorPrimary) {
+                    document.documentElement.style.setProperty('--primary', project.theme.colorPrimary);
+                }
+
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
                     module.style.display = isVisible ? 'flex' : 'none';
@@ -54,7 +59,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -418,7 +423,7 @@ export const handleExportZip = async ({
                               secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, 
                               destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, 
                               muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, 
-                              accent: { DEFAULT: 'hsl(var(--accent-foreground))' }, 
+                              accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, 
                               popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
                               card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
                           },
@@ -507,5 +512,7 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+    
 
     

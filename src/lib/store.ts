@@ -41,6 +41,7 @@ type Actions = {
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
+  updateThemeColor: (projectId: string, color: string) => void;
   addBlock: (projectId: string, type: BlockType) => void;
   deleteBlock: (projectId: string, blockId: string) => void;
   reorderBlocks: (projectId: string, startIndex: number, endIndex: number) => void;
@@ -78,6 +79,14 @@ const useProjectStore = create<State & Actions>()(
                   navigationType: 'sidebar',
                 };
               }
+               if (!p.theme) {
+                 p.theme = {
+                    colorPrimary: '221 83% 53%', // Default Blue HSL
+                    colorBackground: '#F9FAFB',
+                    colorAccent: '#60A5FA',
+                    fontBody: 'Inter',
+                 }
+               }
               return p;
             });
             set({ 
@@ -156,7 +165,7 @@ const useProjectStore = create<State & Actions>()(
                     title: 'Novo Módulo',
                     description: 'Uma nova apostila com blocos editáveis.',
                     theme: {
-                      colorPrimary: '#2563EB',
+                      colorPrimary: '221 83% 53%',
                       colorBackground: '#F9FAFB',
                       colorAccent: '#60A5FA',
                       fontBody: 'Inter',
@@ -187,7 +196,7 @@ const useProjectStore = create<State & Actions>()(
             title: 'Novo Módulo',
             description: 'Uma nova apostila com blocos editáveis.',
             theme: {
-              colorPrimary: '#2563EB',
+              colorPrimary: '221 83% 53%',
               colorBackground: '#F9FAFB',
               colorAccent: '#60A5FA',
               fontBody: 'Inter',
@@ -304,6 +313,16 @@ const useProjectStore = create<State & Actions>()(
                 state.isDirty = true;
             }
         });
+    },
+
+    updateThemeColor: (projectId, color) => {
+      set(state => {
+        const project = state.activeProject;
+        if (project && project.id === projectId) {
+          project.theme.colorPrimary = color;
+          state.isDirty = true;
+        }
+      });
     },
 
     addBlock: (projectId, type) => {
@@ -499,3 +518,5 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
+
+    

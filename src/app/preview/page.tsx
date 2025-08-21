@@ -20,6 +20,9 @@ export default function PreviewPage() {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
+  const currentProject = projects[currentModuleIndex];
+  const primaryColor = currentProject?.theme?.colorPrimary;
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -35,6 +38,17 @@ export default function PreviewPage() {
       handlePrint();
     }
   }, [isPreparingPrint]);
+
+  useEffect(() => {
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary', primaryColor);
+    }
+    // Cleanup function to reset the color when the component unmounts
+    return () => {
+       document.documentElement.style.removeProperty('--primary');
+    }
+  }, [primaryColor]);
+
 
   if (!isClient) {
     return <LoadingModal isOpen={true} text="Carregando visualização..." />
@@ -126,3 +140,5 @@ export default function PreviewPage() {
       </>
   );
 }
+
+    
