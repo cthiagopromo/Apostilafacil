@@ -182,7 +182,7 @@ const renderBlockToHtml = (block: Block): string => {
                 videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
             }
 
-             const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '';
+            const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '';
             
             return `
                 <div class="video-container-export">
@@ -232,12 +232,14 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}">
-            <header class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                <p class="text-muted-foreground">${project.description}</p>
-            </header>
-            <div class="space-y-8 flex-grow">
-                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+            <div class="module-content-wrapper">
+                <header class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                    <p class="text-muted-foreground">${project.description}</p>
+                </header>
+                <div class="space-y-8 flex-grow">
+                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+                </div>
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
@@ -276,46 +278,66 @@ const getGlobalCss = () => `
           display: none;
           flex-direction: column;
           width: 100%;
-          max-width: 48rem; /* Equivalent to max-w-2xl or a bit more */
       }
       .module-section-visible {
           display: flex;
+      }
+      
+      #handbook-root {
+         width: 100%;
+         max-width: 80rem;
       }
 
       .video-print-placeholder-export { display: none; }
 
       @media print {
-          @page { size: A4; margin: 0; }
-          html, body { 
-              width: 100%; 
-              height: auto;
-              margin: 0;
-              padding: 0;
-              background: white !important;
-              color: black !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
+          @page { 
+            size: A4; 
+            margin: 0; 
+          }
+          html, body {
+            width: 100%;
+            height: auto;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            color: black !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
             display: block !important;
             padding: 0 !important;
+            margin: 0 !important;
+          }
+          #handbook-root {
             box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
             max-width: 100% !important;
-            width: 100%;
           }
           .module-section {
-              display: flex !important;
-              flex-direction: column;
-              justify-content: center;
-              box-sizing: border-box;
-              width: 210mm;
-              min-height: 297mm;
-              padding: 2cm;
-              page-break-after: always;
-              overflow: hidden;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 210mm;
+            min-height: 297mm; /* A4 height */
+            height: 100vh; /* Fallback */
+            padding: 2cm;
+            box-sizing: border-box;
+            page-break-after: always;
+            overflow: hidden;
           }
-          .module-section:last-of-type { page-break-after: auto; }
+           .module-content-wrapper {
+             width: 100%;
+             max-width: 100%;
+           }
+          .module-section:last-of-type { 
+            page-break-after: auto; 
+          }
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
           
@@ -396,7 +418,7 @@ export const handleExportZip = async ({
                               secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, 
                               destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, 
                               muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, 
-                              accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, 
+                              accent: { DEFAULT: 'hsl(var(--accent-foreground))' }, 
                               popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
                               card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
                           },
