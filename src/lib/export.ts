@@ -25,7 +25,7 @@ const getInteractiveScript = (theme: Theme): string => {
             const showModule = (index) => {
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
-                    module.style.display = isVisible ? 'flex' : 'none';
+                    module.style.display = isVisible ? 'block' : 'none';
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
@@ -151,7 +151,9 @@ const getInteractiveScript = (theme: Theme): string => {
 };
 
 const renderBlockToHtml = (block: Block): string => {
-    const sanitizedText = (text: string | undefined) => text ? DOMPurify.sanitize(text) : '';
+    // We only sanitize on the client-side during export, so window should be available
+    const sanitizedText = (text: string | undefined) => (typeof window !== 'undefined' && text) ? DOMPurify.sanitize(text) : text || '';
+    
     switch (block.type) {
         case 'text':
             return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
@@ -290,6 +292,7 @@ const getGlobalCss = (theme: Theme) => `
           display: none;
           flex-direction: column;
           width: 100%;
+          height: auto;
       }
       
       #handbook-root {
@@ -302,7 +305,7 @@ const getGlobalCss = (theme: Theme) => `
       @media print {
           @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 0;
           }
           html, body {
             width: 100%;
@@ -315,14 +318,14 @@ const getGlobalCss = (theme: Theme) => `
           }
            body {
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 1.5cm !important;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
               display: block !important;
               padding: 0 !important;
               margin: 0 !important;
-              width: auto;
+              width: 100%;
               height: auto;
           }
           #handbook-root {
@@ -391,18 +394,8 @@ export const handleExportZip = async ({
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
         const handbookData: HandbookData = { id: handbookId, title: handbookTitle, description: handbookDescription, updatedAt: handbookUpdatedAt, theme: handbookTheme, projects };
         
-        const sanitizedProjects = handbookData.projects.map(p => ({
-            ...p,
-            blocks: p.blocks.map(b => {
-                if (b.type === 'text' && b.content.text) {
-                     return { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } };
-                }
-                return b;
-            })
-        }));
-        
-        const interactiveContentHtml = renderProjectsToHtml(sanitizedProjects);
-        const floatingNavHtml = getFloatingNavHtml(sanitizedProjects);
+        const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
+        const floatingNavHtml = getFloatingNavHtml(handbookData.projects);
         
         const finalHtml = `
             <!DOCTYPE html>
