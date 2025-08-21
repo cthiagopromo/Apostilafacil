@@ -302,7 +302,7 @@ const getGlobalCss = (theme: Theme) => `
       @media print {
           @page {
             size: A4;
-            margin: 0;
+            margin: 1.5cm;
           }
           html, body {
             width: 100%;
@@ -315,7 +315,7 @@ const getGlobalCss = (theme: Theme) => `
           }
            body {
             margin: 0 !important;
-            padding: 1.5cm !important;
+            padding: 0 !important;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
@@ -395,7 +395,7 @@ export const handleExportZip = async ({
             ...p,
             blocks: p.blocks.map(b => {
                 if (b.type === 'text' && b.content.text) {
-                    return { ...b, content: { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } } };
+                     return { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } };
                 }
                 return b;
             })
@@ -516,3 +516,6 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+
+    
