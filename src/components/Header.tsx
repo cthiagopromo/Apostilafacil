@@ -98,19 +98,6 @@ export default function Header() {
               <Eye className="mr-2 h-4 w-4" />
               Visualizar
           </Button>
-          <Button onClick={onExportClick} disabled={isExporting}>
-              {isExporting ? (
-                  <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      Exportando...
-                  </>
-              ) : (
-                  <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Exportar ZIP
-                  </>
-              )}
-          </Button>
         </div>
       </header>
     </>
