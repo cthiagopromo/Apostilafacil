@@ -176,10 +176,10 @@ const renderBlockToHtml = (block: Block): string => {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                    if (videoId) videoEmbedUrl = "https://www.youtube.com/embed/" + videoId + "?autoplay=" + (autoplay ? 1 : 0) + "&controls=" + (showControls ? 1 : 0);
+                    if (videoId) videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
                 } catch(e) {}
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoEmbedUrl = "https://customer-mhnunnb897evy1sb.cloudflarestream.com/" + cloudflareVideoId + "/iframe?autoplay=" + (autoplay) + "&controls=" + (showControls);
+                videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
             }
 
             const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '#';
@@ -256,7 +256,6 @@ const renderProjectsToHtml = (projects: Project[]): string => {
     `).join('');
 };
 
-
 const getGlobalCss = () => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: 221 83% 53%; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: 221 83% 53%; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
@@ -266,14 +265,12 @@ const getGlobalCss = () => `
       body.high-contrast .text-primary { color: yellow; }
       body.high-contrast .text-muted-foreground { color: lightgray; }
       body.high-contrast .border-primary { border-color: yellow; }
-      .bg-primary-light { background-color: hsla(var(--primary), 0.1); }
-      .border-primary { border-color: hsl(var(--primary)); }
-      .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
-      .border-destructive { border-color: hsl(var(--destructive)); }
       
       .module-section {
-          display: none; /* Hidden by default */
+          display: none;
           flex-direction: column;
+          align-items: center;
+          width: 100%;
       }
       .module-content-wrapper {
           background-color: hsl(var(--card));
@@ -281,30 +278,42 @@ const getGlobalCss = () => `
           box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
           padding: 3rem;
           width: 100%;
-          max-width: 42rem; /* equivalent to prose */
+          max-width: 42rem;
       }
-
       .video-print-placeholder-export { display: none; }
-      
-      @media print { 
+
+      @media print {
           @page { size: A4; margin: 0; }
-          html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; box-sizing: border-box; background: white !important; }
-          .no-print, .no-print *, header, #floating-nav-container { display: none !important; }
+          html, body { 
+              width: 210mm; 
+              height: 297mm;
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+              background: white !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+          }
           main { display: block !important; padding: 0 !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          
+          .no-print, .no-print * { display: none !important; }
           .module-section {
               display: flex !important;
+              justify-content: center;
+              align-items: center;
               box-sizing: border-box;
               width: 100%;
               height: 100%;
-              justify-content: center;
-              align-items: center;
+              min-height: 297mm;
               padding: 2cm;
               page-break-after: always;
           }
           .module-section:last-of-type { page-break-after: auto; }
-          .module-content-wrapper { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 100%; }
+          .module-content-wrapper {
+              box-shadow: none !important;
+              border: none !important;
+              padding: 0 !important;
+              max-width: 100%;
+          }
 
           .video-player-export { display: none; }
           .video-print-placeholder-export { display: block; }
@@ -325,7 +334,6 @@ const getFloatingNavHtml = (projects: Project[]) => `
         </button>
     </div>
 `;
-
 
 interface ExportParams {
     projects: Project[];
@@ -426,8 +434,8 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                <div id="handbook-root-container" class="min-h-screen flex flex-col">
-                     <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
+                <div class="no-print">
+                     <header class="py-4 px-6 bg-primary text-primary-foreground">
                         <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
                             <h1 class="text-xl font-bold">${handbookTitle}</h1>
                             <div class="flex items-center gap-1 bg-primary p-1 rounded-lg border border-primary-foreground/20 accessibility-toolbar">
@@ -440,18 +448,18 @@ export const handleExportZip = async ({
                             </div>
                         </div>
                     </header>
-                     <main class="flex-grow flex items-center justify-center p-4 sm:p-8 md:p-12">
-                        ${contentHtml}
-                    </main>
-                    ${floatingNavHtml}
                 </div>
+                 <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-8 md:p-12">
+                    ${contentHtml}
+                </main>
+                ${floatingNavHtml}
                 <script>${getInteractiveScript()}</script>
             </body>
             </html>`;
 
         zip.file('index.html', finalHtml);
         const blob = await zip.generateAsync({ type: 'blob' });
-        saveAs(blob, "apostila-" + cleanTitle + ".zip");
+        saveAs(blob, `apostila-${cleanTitle}.zip`);
 
         toast({ title: 'Exportação Concluída' });
     } catch (error) {
