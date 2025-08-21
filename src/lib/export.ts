@@ -57,7 +57,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -129,14 +129,14 @@ const getInteractiveScript = (): string => {
                 
                 if (printBtn) {
                     printBtn.addEventListener('click', () => {
-                        const allModules = document.querySelectorAll('.module-section-printable');
-                        allModules.forEach(module => {
-                           module.classList.remove('hidden');
-                        });
+                        const printableContainer = document.getElementById('printable-content');
+                        if (printableContainer) {
+                           printableContainer.classList.remove('hidden');
+                        }
                         window.print();
-                         allModules.forEach(module => {
-                           module.classList.add('hidden');
-                        });
+                        if (printableContainer) {
+                           printableContainer.classList.add('hidden');
+                        }
                     });
                 }
 
@@ -186,10 +186,10 @@ const renderBlockToHtml = (block: Block): string => {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                    if (videoId) videoEmbedUrl = 'https://www.youtube.com/embed/' + videoId + '?autoplay=' + (autoplay ? 1 : 0) + '&controls=' + (showControls ? 1 : 0);
+                    if (videoId) videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
                 } catch(e) {}
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoEmbedUrl = 'https://customer-mhnunnb897evy1sb.cloudflarestream.com/' + cloudflareVideoId + '/iframe?autoplay=' + (autoplay ? 'true' : 'false') + '&controls=' + (showControls ? 'true' : 'false');
+                videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
             }
             if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
             return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
@@ -249,7 +249,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 
 const getPrintableHtml = (projects: Project[]): string => {
     return projects.map((project) => `
-        <section class="module-section-printable hidden">
+        <section class="module-section-printable">
              <header class="text-center mb-12">
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
@@ -281,6 +281,7 @@ const getGlobalCss = () => `
           html, body { height: 100%; width: 100%; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print, .no-print * { display: none !important; }
+          main { display: none !important; }
           #printable-content { display: block !important; }
           .module-section-printable { display: flex !important; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100vh; page-break-after: always; padding: 2cm; box-sizing: border-box; }
           .module-section-printable:last-of-type { page-break-after: auto; }
