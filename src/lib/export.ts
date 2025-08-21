@@ -57,7 +57,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -221,7 +221,7 @@ const renderBlockToHtmlForPrint = (block: Block): string => {
             const { videoType, videoUrl, videoTitle } = block.content;
             let videoLink = '';
             if (videoType === 'youtube' && videoUrl) {
-                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" class="text-primary underline">${videoUrl}</a></div>`;
+                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoUrl}</a></div>`;
             }
             return `
                 <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -264,15 +264,17 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 
 const getPrintableHtml = (projects: Project[]): string => {
     return projects.map((project) => `
-        <section class="module-section-printable">
-             <header class="text-center mb-12">
-                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
-                <p class="text-muted-foreground">${project.description}</p>
-            </header>
-            <div class="space-y-8">
-                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtmlForPrint(block)}</div>`).join('')}
-            </div>
-        </section>
+        <div class="printable-page-container">
+            <section class="module-section-printable">
+                 <header class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                    <p class="text-muted-foreground">${project.description}</p>
+                </header>
+                <div class="space-y-8">
+                    ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtmlForPrint(block)}</div>`).join('')}
+                </div>
+            </section>
+        </div>
     `).join('');
 }
 
@@ -293,13 +295,19 @@ const getGlobalCss = () => `
       .module-section { display: flex; flex-direction: column; }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { width: 100%; height: auto; }
+          html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print { display: none !important; }
-          main, header { display: none !important; }
-          #printable-content { display: flex !important; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 2cm; }
-          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; width: 100%; max-width: 100%; box-sizing: border-box;}
-          .module-section-printable:last-of-type { page-break-after: auto; }
+          .no-print, main, #handbook-root-container > header { display: none !important; }
+          #printable-content { display: block !important; }
+          .printable-page-container {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              page-break-after: always;
+          }
+          .printable-page-container:last-of-type { page-break-after: auto; }
+          .module-section-printable { max-width: 100%; padding: 2cm; box-sizing: border-box; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
       }
@@ -407,6 +415,7 @@ export const handleExportZip = async ({
                         } 
                       },
                       plugins: [
+                        require('@tailwindcss/typography'),
                         function({ addBase }) {
                           addBase({
                             '.prose': {
