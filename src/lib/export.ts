@@ -20,13 +20,19 @@ const getInteractiveScript = (): string => {
 
             const showModule = (index) => {
                 modules.forEach((module, i) => {
-                    module.style.display = i === index ? 'flex' : 'none';
+                    if (i === index) {
+                        module.classList.remove('hidden');
+                    } else {
+                        module.classList.add('hidden');
+                    }
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
                         btn.classList.add('bg-primary', 'text-primary-foreground');
+                        btn.classList.remove('hover:bg-accent');
                     } else {
                         btn.classList.remove('bg-primary', 'text-primary-foreground');
+                        btn.classList.add('hover:bg-accent');
                     }
                 });
                 currentModuleIndex = index;
@@ -51,7 +57,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -79,21 +85,23 @@ const getInteractiveScript = (): string => {
                     if (!selectedOptionEl) return;
                     radioButtons.forEach(rb => { rb.disabled = true; });
                     const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
-                    if (isSelectedCorrect) {
-                        selectedOptionEl.classList.add('bg-primary-light', 'border-primary');
-                        const icon = selectedOptionEl.querySelector('.lucide-check-circle');
-                        if (icon) icon.style.display = 'inline-block';
-                    } else {
-                        selectedOptionEl.classList.add('bg-destructive-light', 'border-destructive');
-                        const icon = selectedOptionEl.querySelector('.lucide-x-circle');
-                        if (icon) icon.style.display = 'inline-block';
-                        const correctOption = card.querySelector('.quiz-option[data-correct="true"]');
-                        if(correctOption) {
-                           correctOption.classList.add('bg-primary-light', 'border-primary');
-                           const correctIcon = correctOption.querySelector('.lucide-check-circle');
-                           if(correctIcon) correctIcon.style.display = 'inline-block';
+                    
+                    options.forEach(opt => {
+                        const checkIcon = opt.querySelector('.lucide-check-circle');
+                        const xIcon = opt.querySelector('.lucide-x-circle');
+                        const isCorrect = opt.dataset.correct === 'true';
+
+                        if(isCorrect) {
+                            opt.classList.add('bg-primary/10', 'border-primary/50');
+                            if(checkIcon) checkIcon.style.display = 'inline-block';
                         }
-                    }
+                        
+                        if (opt === selectedOptionEl && !isCorrect) {
+                           opt.classList.add('bg-destructive/10', 'border-destructive/50');
+                           if(xIcon) xIcon.style.display = 'inline-block';
+                        }
+                    });
+
                     if (retryBtn) retryBtn.style.display = 'inline-flex';
                 };
                 radioButtons.forEach(radio => { radio.addEventListener('change', handleAnswer); });
@@ -101,7 +109,7 @@ const getInteractiveScript = (): string => {
                     retryBtn.addEventListener('click', () => {
                         radioButtons.forEach(rb => { rb.disabled = false; rb.checked = false; });
                         options.forEach(opt => {
-                           opt.classList.remove('bg-primary-light', 'border-primary', 'bg-destructive-light', 'border-destructive');
+                           opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-destructive/10', 'border-destructive/50');
                            const checkIcon = opt.querySelector('.lucide-check-circle');
                            const xIcon = opt.querySelector('.lucide-x-circle');
                            if(checkIcon) checkIcon.style.display = 'none';
@@ -121,13 +129,14 @@ const getInteractiveScript = (): string => {
                 
                 if (printBtn) {
                     printBtn.addEventListener('click', () => {
-                        // Show all modules for printing
-                        modules.forEach(module => {
-                            module.style.display = 'flex';
+                        const allModules = document.querySelectorAll('.module-section-printable');
+                        allModules.forEach(module => {
+                           module.classList.remove('hidden');
                         });
                         window.print();
-                        // Restore view after printing
-                        showModule(currentModuleIndex);
+                         allModules.forEach(module => {
+                           module.classList.add('hidden');
+                        });
                     });
                 }
 
@@ -215,15 +224,15 @@ const renderBlockToHtml = (block: Block): string => {
 
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
-        <section class="module-section" data-module-id="${project.id}" style="display: none;">
-            <header class="text-center">
+        <section class="module-section hidden max-w-4xl w-full bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16" data-module-id="${project.id}">
+            <header class="text-center mb-12">
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
-            <div class="content-body">
+            <div class="space-y-8 flex-grow">
                 ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
-            <footer class="mt-auto flex justify-between items-center no-print">
+            <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     Módulo Anterior
@@ -238,6 +247,21 @@ const renderProjectsToHtml = (projects: Project[]): string => {
     `).join('');
 };
 
+const getPrintableHtml = (projects: Project[]): string => {
+    return projects.map((project) => `
+        <section class="module-section-printable hidden">
+             <header class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
+                <p class="text-muted-foreground">${project.description}</p>
+            </header>
+            <div class="space-y-8">
+                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+            </div>
+        </section>
+    `).join('');
+}
+
+
 const getGlobalCss = () => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: 221 83% 53%; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: 221 83% 53%; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
@@ -251,18 +275,15 @@ const getGlobalCss = () => `
       .border-primary { border-color: hsl(var(--primary)); }
       .bg-destructive-light { background-color: hsla(var(--destructive), 0.1); }
       .border-destructive { border-color: hsl(var(--destructive)); }
+      .module-section { display: flex; flex-direction: column; }
       @media print { 
           @page { size: A4; margin: 0; }
           html, body { height: 100%; width: 100%; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          main { display: flex; flex-direction: column; flex-grow: 1; padding: 2cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
-          .module-section { display: flex !important; flex-direction: column; justify-content: flex-start; height: 100%; page-break-after: always; }
-          .module-section > .content-body { flex-grow: 1; }
-          .module-section > header { margin-bottom: 2rem !important; flex-shrink: 0; }
-          .module-section > footer { margin-top: auto !important; padding-top: 2rem !important; flex-shrink: 0; }
-          .content-body > * + * { margin-top: 1rem !important; }
-          #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
+          #printable-content { display: block !important; }
+          .module-section-printable { display: flex !important; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100vh; page-break-after: always; padding: 2cm; box-sizing: border-box; }
+          .module-section-printable:last-of-type { page-break-after: auto; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
       }
@@ -316,6 +337,7 @@ export const handleExportZip = async ({
         }));
         
         const contentHtml = renderProjectsToHtml(sanitizedProjects);
+        const printableHtml = getPrintableHtml(sanitizedProjects);
         const floatingNavHtml = getFloatingNavHtml(sanitizedProjects);
         
         const finalHtml = `
@@ -329,13 +351,61 @@ export const handleExportZip = async ({
                 <style>${getGlobalCss()}</style>
                 <script>
                     tailwind.config = {
-                      theme: { extend: { colors: { border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))', background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))', primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' }, secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } } } }
+                      theme: { extend: { 
+                          colors: { 
+                              border: 'hsl(var(--border))', 
+                              input: 'hsl(var(--input))', 
+                              ring: 'hsl(var(--ring))', 
+                              background: 'hsl(var(--background))', 
+                              foreground: 'hsl(var(--foreground))', 
+                              primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' }, 
+                              secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, 
+                              destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, 
+                              muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, 
+                              accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, 
+                              popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
+                              card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
+                          },
+                          typography: (theme) => ({
+                            DEFAULT: {
+                              css: {
+                                '--tw-prose-body': theme('colors.foreground'),
+                                '--tw-prose-headings': theme('colors.primary.DEFAULT'),
+                                '--tw-prose-lead': theme('colors.foreground'),
+                                '--tw-prose-links': theme('colors.primary.DEFAULT'),
+                                '--tw-prose-bold': theme('colors.foreground'),
+                                '--tw-prose-counters': theme('colors.muted.foreground'),
+                                '--tw-prose-bullets': theme('colors.muted.foreground'),
+                                '--tw-prose-hr': theme('colors.border'),
+                                '--tw-prose-quotes': theme('colors.foreground'),
+                                '--tw-prose-quote-borders': theme('colors.primary.DEFAULT'),
+                                '--tw-prose-captions': theme('colors.muted.foreground'),
+                                '--tw-prose-code': theme('colors.foreground'),
+                                '--tw-prose-pre-code': theme('colors.foreground'),
+                                '--tw-prose-pre-bg': theme('colors.muted.DEFAULT'),
+                                '--tw-prose-th-borders': theme('colors.border'),
+                                '--tw-prose-td-borders': theme('colors.border'),
+                              },
+                            },
+                          }),
+                        } 
+                      },
+                      plugins: [
+                        function({ addBase }) {
+                          addBase({
+                            '.prose': {
+                              'h1,h2,h3,h4,h5,h6': { color: 'var(--tw-prose-headings)' },
+                               a: { color: 'var(--tw-prose-links)' },
+                            }
+                          })
+                        }
+                      ]
                     }
                 </script>
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                <div id="handbook-root-container">
+                <div id="handbook-root-container" class="min-h-screen flex flex-col">
                      <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
                         <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
                             <h1 class="text-xl font-bold">${handbookTitle}</h1>
@@ -349,11 +419,14 @@ export const handleExportZip = async ({
                             </div>
                         </div>
                     </header>
-                     <main id="printable-content" class="max-w-4xl mx-auto p-4 sm:p-8 md:p-12">
-                        <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                     <main class="flex-grow flex items-center justify-center p-4 sm:p-8 md:p-12">
+                        <div id="handbook-root">
                             ${contentHtml}
                         </div>
                     </main>
+                    <div id="printable-content" class="hidden">
+                        ${printableHtml}
+                    </div>
                     ${floatingNavHtml}
                 </div>
                 <script>${getInteractiveScript()}</script>
@@ -373,3 +446,4 @@ export const handleExportZip = async ({
     }
 };
 
+    
