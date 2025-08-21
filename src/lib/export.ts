@@ -20,7 +20,7 @@ const getInteractiveScript = (): string => {
 
             const showModule = (index) => {
                 modules.forEach((module, i) => {
-                    module.style.display = i === index ? 'block' : 'none';
+                    module.style.display = i === index ? 'flex' : 'none';
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
@@ -41,7 +41,7 @@ const getInteractiveScript = (): string => {
 
                 if (prevBtn) prevBtn.disabled = currentModuleIndex === 0;
                 if (nextBtn) nextBtn.disabled = currentModuleIndex === modules.length - 1;
-                if (progressText) progressText.textContent = \`Módulo \${currentModuleIndex + 1} de \${modules.length}\`;
+                if (progressText) progressText.textContent = 'Módulo ' + (currentModuleIndex + 1) + ' de ' + modules.length;
             };
 
             navButtons.forEach(button => {
@@ -123,7 +123,7 @@ const getInteractiveScript = (): string => {
                     printBtn.addEventListener('click', () => {
                         // Show all modules for printing
                         modules.forEach(module => {
-                            module.style.display = 'block';
+                            module.style.display = 'flex';
                         });
                         window.print();
                         // Restore view after printing
@@ -136,7 +136,7 @@ const getInteractiveScript = (): string => {
                     const body = document.body;
                     const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
                     const newSize = increase ? currentSize + 1 : currentSize - 1;
-                    if (newSize >= 12 && newSize <= 24) { body.style.fontSize = \`\${newSize}px\`; }
+                    if (newSize >= 12 && newSize <= 24) { body.style.fontSize = newSize + 'px'; }
                 };
                 if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
@@ -177,13 +177,13 @@ const renderBlockToHtml = (block: Block): string => {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                    if (videoId) videoEmbedUrl = \`https://www.youtube.com/embed/\${videoId}?autoplay=\${autoplay ? 1 : 0}&controls=\${showControls ? 1 : 0}\`;
+                    if (videoId) videoEmbedUrl = 'https://www.youtube.com/embed/' + videoId + '?autoplay=' + (autoplay ? 1 : 0) + '&controls=' + (showControls ? 1 : 0);
                 } catch(e) {}
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoEmbedUrl = \`https://customer-mhnunnb897evy1sb.cloudflarestream.com/\${cloudflareVideoId}/iframe?autoplay=\${autoplay}&controls=\${showControls}\`;
+                videoEmbedUrl = 'https://customer-mhnunnb897evy1sb.cloudflarestream.com/' + cloudflareVideoId + '/iframe?autoplay=' + (autoplay ? 'true' : 'false') + '&controls=' + (showControls ? 'true' : 'false');
             }
             if (!videoEmbedUrl) return `<p class="text-destructive">Vídeo inválido ou não configurado.</p>`;
-            return `<iframe class="w-full aspect-video rounded-md" src="\${videoEmbedUrl}" title="\${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
+            return `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`;
         case 'button':
             return `
                 <div class="flex justify-center">
@@ -193,19 +193,19 @@ const renderBlockToHtml = (block: Block): string => {
                 </div>`;
         case 'quiz':
             const optionsHtml = block.content.options?.map(option => `
-                <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all border" data-correct="\${option.isCorrect}">
-                    <input type="radio" name="quiz-\${block.id}" id="\${option.id}" class="radio-group-item" />
-                    <label for="\${option.id}" class="flex-1 cursor-pointer">\${option.text}</label>
+                <div class="quiz-option flex items-center space-x-3 p-3 rounded-md transition-all border" data-correct="${option.isCorrect}">
+                    <input type="radio" name="quiz-${block.id}" id="${option.id}" class="radio-group-item" />
+                    <label for="${option.id}" class="flex-1 cursor-pointer">${option.text}</label>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-check-circle text-primary" style="display:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-x-circle text-red-600" style="display:none;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                 </div>`).join('') || '';
             return `
                 <div class="quiz-card rounded-lg border bg-card text-card-foreground shadow-sm bg-muted/30">
                     <div class="p-6">
-                        <h3 class="text-xl font-semibold">\${block.content.question || ''}</h3>
+                        <h3 class="text-xl font-semibold">${block.content.question || ''}</h3>
                         <p class="text-sm text-muted-foreground">Selecione a resposta correta.</p>
                     </div>
-                    <div class="p-6 pt-0"><div class="grid gap-2">\${optionsHtml}</div></div>
+                    <div class="p-6 pt-0"><div class="grid gap-2">${optionsHtml}</div></div>
                     <div class="p-6 pt-0"><button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" style="display:none;">Tentar Novamente</button></div>
                 </div>`;
         default:
@@ -216,14 +216,14 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}" style="display: none;">
-            <header class="text-center mb-8">
+            <header class="text-center">
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
-            <div class="space-y-6">
+            <div class="content-body">
                 ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
-            <footer class="mt-auto pt-8 flex justify-between items-center no-print">
+            <footer class="mt-auto flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     Módulo Anterior
@@ -253,17 +253,16 @@ const getGlobalCss = () => `
       .border-destructive { border-color: hsl(var(--destructive)); }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { height: 100%; }
+          html, body { height: 100%; width: 100%; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           main { display: flex; flex-direction: column; flex-grow: 1; padding: 2cm !important; margin: 0 !important; }
           .no-print, .no-print * { display: none !important; }
-          .module-section { display: flex !important; flex-direction: column; justify-content: flex-start; flex-grow: 1; page-break-after: always; }
-          .module-section > * { flex-shrink: 0; }
-          .module-section:last-of-type { page-break-after: auto; }
+          .module-section { display: flex !important; flex-direction: column; justify-content: flex-start; height: 100%; page-break-after: always; }
+          .module-section > .content-body { flex-grow: 1; }
+          .module-section > header { margin-bottom: 2rem !important; flex-shrink: 0; }
+          .module-section > footer { margin-top: auto !important; padding-top: 2rem !important; flex-shrink: 0; }
+          .content-body > * + * { margin-top: 1rem !important; }
           #handbook-root, .bg-card { box-shadow: none !important; border: none !important; }
-          .module-section header { margin-bottom: 2rem !important; }
-          .module-section .space-y-8 > * + * { margin-top: 1.5rem !important; }
-          .module-section footer { margin-top: auto !important; padding-top: 2rem !important; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
       }
@@ -326,14 +325,14 @@ export const handleExportZip = async ({
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <style>${getGlobalCss()}<\/style>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <style>${getGlobalCss()}</style>
                 <script>
                     tailwind.config = {
                       theme: { extend: { colors: { border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))', background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))', primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' }, secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } } } }
                     }
-                <\/script>
-                <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}<\/script>
+                </script>
+                <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
                 <div id="handbook-root-container">
@@ -357,19 +356,20 @@ export const handleExportZip = async ({
                     </main>
                     ${floatingNavHtml}
                 </div>
-                <script>${getInteractiveScript()}<\/script>
+                <script>${getInteractiveScript()}</script>
             </body>
             </html>`;
 
         zip.file('index.html', finalHtml);
         const blob = await zip.generateAsync({ type: 'blob' });
-        saveAs(blob, `apostila-${cleanTitle}.zip`);
+        saveAs(blob, 'apostila-' + cleanTitle + '.zip');
 
         toast({ title: 'Exportação Concluída' });
     } catch (error) {
         console.error('Falha ao exportar o projeto', error);
-        toast({ variant: 'destructive', title: 'Erro na Exportação', description: \`Não foi possível exportar o projeto. Detalhes: \${error instanceof Error ? error.message : 'Erro desconhecido.'}\` });
+        toast({ variant: 'destructive', title: 'Erro na Exportação', description: 'Não foi possível exportar o projeto. Detalhes: ' + (error instanceof Error ? error.message : 'Erro desconhecido.') });
     } finally {
         setIsExporting(false);
     }
 };
+
