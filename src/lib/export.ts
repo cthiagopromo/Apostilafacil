@@ -264,28 +264,24 @@ const getGlobalCss = () => `
       body.high-contrast .text-muted-foreground { color: lightgray; }
       body.high-contrast .border-primary { border-color: yellow; }
       
+      main.main-content {
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          width: 100%;
+          padding: 3rem;
+      }
+
       .module-section {
           display: none;
           flex-direction: column;
-          min-height: calc(100vh - 88px); /* Height of header */
-          align-items: center;
           width: 100%;
-          padding: 3rem;
+          max-width: 48rem; /* Equivalent to max-w-2xl or a bit more */
       }
       .module-section-visible {
           display: flex;
       }
 
-      .main-content {
-          background-color: hsl(var(--card));
-          border-radius: 0.75rem;
-          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-          padding: 3rem;
-          width: 100%;
-          max-width: 42rem;
-          display: flex;
-          flex-direction: column;
-      }
       .video-print-placeholder-export { display: none; }
 
       @media print {
@@ -296,28 +292,22 @@ const getGlobalCss = () => `
               margin: 0;
               padding: 0;
               background: white !important;
+              color: black !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
           }
-          main {
-             padding: 0 !important;
-          }
           .no-print, .no-print * { display: none !important; }
-          .main-content {
-            box-shadow: none !important;
-            border: none !important;
+          main.main-content {
+            display: block !important;
             padding: 0 !important;
+            box-shadow: none !important;
             max-width: 100% !important;
             width: 100%;
-            height: auto;
-            flex-grow: 0;
-            border-radius: 0 !important;
           }
           .module-section {
               display: flex !important;
               flex-direction: column;
               justify-content: center;
-              align-items: center;
               box-sizing: border-box;
               width: 210mm;
               min-height: 297mm;
@@ -435,6 +425,21 @@ export const handleExportZip = async ({
                                 '--tw-prose-th-borders': 'hsl(var(--border))',
                                 '--tw-prose-td-borders': 'hsl(var(--border))',
                                 '--tw-prose-invert-body': 'hsl(var(--foreground))',
+                                '--tw-prose-invert-headings': 'hsl(var(--foreground))',
+                                '--tw-prose-invert-lead': 'hsl(var(--background))',
+                                '--tw-prose-invert-links': 'hsl(var(--primary))',
+                                '--tw-prose-invert-bold': 'hsl(var(--background))',
+                                '--tw-prose-invert-counters': 'hsl(var(--muted-foreground))',
+                                '--tw-prose-invert-bullets': 'hsl(var(--muted-foreground))',
+                                '--tw-prose-invert-hr': 'hsl(var(--border))',
+                                '--tw-prose-invert-quotes': 'hsl(var(--background))',
+                                '--tw-prose-invert-quote-borders': 'hsl(var(--border))',
+                                '--tw-prose-invert-captions': 'hsl(var(--muted-foreground))',
+                                '--tw-prose-invert-code': 'hsl(var(--background))',
+                                '--tw-prose-invert-pre-code': 'hsl(var(--background))',
+                                '--tw-prose-invert-pre-bg': 'rgb(0 0 0 / 50%)',
+                                '--tw-prose-invert-th-borders': 'hsl(var(--border))',
+                                '--tw-prose-invert-td-borders': 'hsl(var(--border))',
                               },
                             },
                           }),
@@ -459,7 +464,9 @@ export const handleExportZip = async ({
                     </div>
                 </header>
                  <main class="main-content">
-                    ${interactiveContentHtml}
+                    <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                        ${interactiveContentHtml}
+                    </div>
                 </main>
                 ${floatingNavHtml}
                 <script>${getInteractiveScript()}</script>
