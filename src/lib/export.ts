@@ -300,56 +300,53 @@ const getGlobalCss = (theme: Theme) => `
       .video-print-placeholder-export { display: none; }
 
       @media print {
-          @page { 
-            size: A4; 
-            margin: 0; 
+          @page {
+              size: A4;
+              margin: 2cm;
           }
           html, body {
-            width: 100%;
-            height: auto;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            color: black !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+              width: 100%;
+              height: auto;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
+              color: black !important;
+              font-size: 11pt;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
-            display: block !important;
-            padding: 0 !important;
-            margin: 0 !important;
+              display: block !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              width: auto;
+              height: auto;
           }
           #handbook-root {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
+              box-shadow: none !important;
+              border-radius: 0 !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
           }
           .module-section {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            width: 210mm;
-            min-height: 297mm; /* A4 height */
-            height: 100vh; /* Fallback */
-            padding: 2cm;
-            box-sizing: border-box;
-            page-break-after: always;
-            overflow: hidden;
+              display: block !important; /* Allow content to flow */
+              width: 100%;
+              height: auto; /* Let content determine height */
+              page-break-before: always; /* Each module starts on a new page */
           }
-           .module-content-wrapper {
+          .module-section:first-child {
+             page-break-before: auto;
+          }
+          .module-content-wrapper {
              width: 100%;
              max-width: 100%;
            }
-          .module-section:last-of-type { 
-            page-break-after: auto; 
-          }
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
-          
+
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
       }
@@ -396,7 +393,7 @@ export const handleExportZip = async ({
             ...p,
             blocks: p.blocks.map(b => {
                 if (b.type === 'text' && b.content.text) {
-                    return { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } };
+                    return { ...b, content: { ...b, content: { ...b.content, text: DOMPurify.sanitize(b.content.text) } } };
                 }
                 return b;
             })
@@ -517,3 +514,5 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+    
