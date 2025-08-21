@@ -5,7 +5,7 @@ import type { Block, QuizOption, VideoType } from '@/lib/types';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { GripVertical, Trash2, ArrowUp, ArrowDown, Copy, PlusCircle, Save } from 'lucide-react';
+import { GripVertical, Trash2, ArrowUp, ArrowDown, Copy, PlusCircle, Save, Upload } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 import {
     AlertDialog,
@@ -28,6 +28,8 @@ import { Slider } from './ui/slider';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
@@ -36,6 +38,40 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
         updateQuizOption,
         deleteQuizOption
     } = useProjectStore();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            toast({
+                variant: 'destructive',
+                title: 'Imagem muito grande',
+                description: 'Por favor, escolha uma imagem com menos de 2MB.',
+            });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+            const base64Url = loadEvent.target?.result as string;
+            updateBlockContent(block.id, { url: base64Url });
+            toast({
+                title: 'Upload concluído',
+                description: 'A imagem foi incorporada com sucesso.',
+            });
+        };
+        reader.onerror = () => {
+             toast({
+                variant: 'destructive',
+                title: 'Erro no Upload',
+                description: 'Não foi possível ler o arquivo da imagem.',
+            });
+        }
+        reader.readAsDataURL(file);
+    };
 
     const renderContent = () => {
         switch (block.type) {
@@ -70,9 +106,25 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                                 id={`image-url-${block.id}`} 
                                 value={block.content.url || ''} 
                                 onChange={e => updateBlockContent(block.id, { url: e.target.value })} 
-                                placeholder="https://placehold.co/600x400.png"
+                                placeholder="https://exemplo.com/imagem.png ou faça upload"
                             />
                         </div>
+
+                         <div className="space-y-2">
+                             <Label>Fazer Upload</Label>
+                             <Button variant="outline" className='w-full' onClick={() => fileInputRef.current?.click()}>
+                                 <Upload className='mr-2' />
+                                 Escolher Imagem (Max 2MB)
+                             </Button>
+                             <Input 
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/png, image/jpeg, image/gif, image/webp"
+                                onChange={handleImageUpload}
+                            />
+                        </div>
+                        
                         <div className="space-y-2">
                             <Label htmlFor={`image-alt-${block.id}`}>Texto Alternativo (Alt)</Label>
                             <Input 
@@ -358,3 +410,5 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
 }
 
 export default BlockEditor;
+
+    
