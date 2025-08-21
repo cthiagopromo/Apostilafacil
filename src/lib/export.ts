@@ -2,6 +2,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
+import DOMPurify from 'dompurify';
 
 const getInteractiveScript = (theme: Theme): string => {
     return `
@@ -153,7 +154,7 @@ const renderBlockToHtml = (block: Block): string => {
     
     switch (block.type) {
         case 'text':
-            return `<div class="prose max-w-none">${block.content.text || ''}</div>`;
+             return `<div class="prose max-w-none">${DOMPurify.sanitize(block.content.text || '')}</div>`;
         case 'image':
             const { url, alt, caption, width } = block.content;
             return `
@@ -268,11 +269,11 @@ const getGlobalCss = (theme: Theme) => `
       :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
       body.high-contrast { background-color: black !important; color: white !important; }
-      body.high-contrast .bg-card, body.high-contrast .bg-primary, body.high-contrast .bg-muted\\/30 { background-color: black !important; border: 1px solid white; color: white; }
-      body.high-contrast .text-primary-foreground { color: white; }
-      body.high-contrast .text-primary { color: yellow; }
-      body.high-contrast .text-muted-foreground { color: lightgray; }
-      body.high-contrast .border-primary { border-color: yellow; }
+      body.high-contrast .bg-card, body.high-contrast .bg-muted\\/30, body.high-contrast .bg-primary { background-color: black !important; border: 1px solid white; }
+      body.high-contrast .prose { color: white !important; }
+      body.high-contrast .text-primary-foreground, body.high-contrast .text-muted-foreground, body.high-contrast h1, body.high-contrast h2, body.high-contrast h3, body.high-contrast p { color: white !important; }
+      body.high-contrast .text-primary { color: yellow !important; }
+      body.high-contrast .border-primary { border-color: yellow !important; }
       
       .module-section {
           display: none;
@@ -317,6 +318,7 @@ const getGlobalCss = (theme: Theme) => `
 
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
+          .prose { color: black; }
       }
 `;
 
@@ -450,7 +452,7 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main class="max-w-4xl mx-auto main-content">
+                 <main class="max-w-4xl mx-auto main-content p-4 sm:p-8 md:p-12">
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                         ${interactiveContentHtml}
                     </div>
