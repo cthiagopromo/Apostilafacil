@@ -43,6 +43,14 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
       <DialogContent className="max-w-[95vw] h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
           <DialogTitle className="text-xl">Pré-visualização Interativa</DialogTitle>
+          <Button onClick={onExportClick} disabled={isExporting}>
+            {isExporting ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Download className="mr-2 h-4 w-4" />
+            )}
+            {isExporting ? 'Exportando...' : 'Exportar ZIP'}
+          </Button>
         </DialogHeader>
         <div className="flex-1 w-full h-full overflow-hidden">
            <iframe
