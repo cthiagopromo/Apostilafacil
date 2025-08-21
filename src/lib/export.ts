@@ -156,11 +156,14 @@ const renderBlockToHtml = (block: Block): string => {
         case 'text':
             return `<div class="prose dark:prose-invert max-w-none">${sanitizedText(block.content.text)}</div>`;
         case 'image':
+            const { url, isUploaded } = block.content;
+            const accountHash = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_HASH || '';
+            const imageUrl = isUploaded && accountHash ? `https://imagedelivery.net/${accountHash}/${url}/public` : url;
             const width = block.content.width || 100;
             return `
                 <div class="flex justify-center">
                     <figure class="flex flex-col items-center gap-2" style="width: ${width}%">
-                        <img src="${block.content.url || 'https://placehold.co/600x400.png'}" alt="${block.content.alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
+                        <img src="${imageUrl || 'https://placehold.co/600x400.png'}" alt="${block.content.alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
                         ${block.content.caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${block.content.caption}</figcaption>` : ''}
                     </figure>
                 </div>`;
