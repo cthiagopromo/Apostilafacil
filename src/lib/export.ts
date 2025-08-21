@@ -182,7 +182,7 @@ const renderBlockToHtml = (block: Block): string => {
                 videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
             }
 
-            const videoLink = videoType === 'youtube' && videoUrl ? videoUrl : '';
+            const videoLink = (videoType === 'youtube' && videoUrl) ? videoUrl : '';
             
             return `
                 <div class="video-container-export">
@@ -285,7 +285,7 @@ const getGlobalCss = () => `
       
       #handbook-root {
          width: 100%;
-         max-width: 80rem;
+         max-width: 56rem;
       }
 
       .video-print-placeholder-export { display: none; }
