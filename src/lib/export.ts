@@ -222,6 +222,29 @@ const renderBlockToHtml = (block: Block): string => {
     }
 };
 
+const renderBlockToHtmlForPrint = (block: Block): string => {
+    const sanitizedText = (text: string | undefined) => text ? DOMPurify.sanitize(text) : '';
+    switch (block.type) {
+        case 'video':
+            const { videoType, videoUrl, videoTitle } = block.content;
+            let videoLink = '';
+            if (videoType === 'youtube' && videoUrl) {
+                videoLink = `<div class="text-sm">Link: <a href="${videoUrl}" target="_blank" class="text-primary underline">${videoUrl}</a></div>`;
+            }
+            return `
+                <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-muted-foreground flex-shrink-0"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                    <div>
+                        <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
+                        <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
+                        ${videoLink}
+                    </div>
+                </div>`;
+        default:
+            return renderBlockToHtml(block);
+    }
+}
+
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section hidden max-w-4xl w-full bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16" data-module-id="${project.id}">
@@ -255,7 +278,7 @@ const getPrintableHtml = (projects: Project[]): string => {
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
             <div class="space-y-8">
-                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtmlForPrint(block)}</div>`).join('')}
             </div>
         </section>
     `).join('');
@@ -278,12 +301,13 @@ const getGlobalCss = () => `
       .module-section { display: flex; flex-direction: column; }
       @media print { 
           @page { size: A4; margin: 0; }
-          html, body { height: 100%; width: 100%; }
+          html, body { height: auto; width: 100%; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print, .no-print * { display: none !important; }
           main { display: none !important; }
-          #printable-content { display: block !important; }
-          .module-section-printable { display: flex !important; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100vh; page-break-after: always; padding: 2cm; box-sizing: border-box; }
+          #handbook-root-container { display: block !important; }
+          #printable-content { display: block !important; padding: 2cm; }
+          .module-section-printable { display: flex !important; flex-direction: column; justify-content: flex-start; align-items: stretch; page-break-after: always; }
           .module-section-printable:last-of-type { page-break-after: auto; }
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote { page-break-inside: avoid; }
