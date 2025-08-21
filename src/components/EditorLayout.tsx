@@ -10,6 +10,17 @@ import RightSidebar from './RightSidebar';
 export function EditorLayout() {
   const { activeProject } = useProjectStore();
 
+  useEffect(() => {
+    if (activeProject?.theme?.colorPrimary) {
+      document.documentElement.style.setProperty('--primary', activeProject.theme.colorPrimary);
+    }
+    // Cleanup function to reset to default when component unmounts or project changes
+    return () => {
+      // You might want to reset to a default color or remove the property
+      document.documentElement.style.removeProperty('--primary');
+    };
+  }, [activeProject?.theme?.colorPrimary]);
+
   if (!activeProject) {
     return (
       <div className="flex items-center justify-center h-screen bg-secondary">
