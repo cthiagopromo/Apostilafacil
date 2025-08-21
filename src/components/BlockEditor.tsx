@@ -119,6 +119,7 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="youtube">YouTube</SelectItem>
+                                    <SelectItem value="vimeo">Vimeo</SelectItem>
                                     <SelectItem value="cloudflare">Cloudflare</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -126,12 +127,24 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
 
                         {videoType === 'youtube' && (
                             <div className="space-y-2">
-                                <Label htmlFor={`video-url-${block.id}`}>URL do Vídeo</Label>
+                                <Label htmlFor={`video-url-${block.id}`}>URL do Vídeo no YouTube</Label>
                                 <Input 
                                     id={`video-url-${block.id}`} 
                                     value={block.content.videoUrl || ''} 
                                     onChange={e => updateBlockContent(block.id, { videoUrl: e.target.value })} 
                                     placeholder="https://www.youtube.com/watch?v=..."
+                                />
+                            </div>
+                        )}
+
+                        {videoType === 'vimeo' && (
+                            <div className="space-y-2">
+                                <Label htmlFor={`video-vimeo-${block.id}`}>ID do Vídeo no Vimeo</Label>
+                                <Input 
+                                    id={`video-vimeo-${block.id}`} 
+                                    value={block.content.vimeoVideoId || ''} 
+                                    onChange={e => updateBlockContent(block.id, { vimeoVideoId: e.target.value })} 
+                                    placeholder="Ex: 123456789"
                                 />
                             </div>
                         )}

@@ -173,25 +173,32 @@ const renderBlockToHtml = (block: Block): string => {
                     </blockquote>
                  </div>`;
         case 'video':
-            const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
             let videoEmbedUrl = '';
+            let videoLink = '#';
+
             if (videoType === 'youtube' && videoUrl) {
                 try {
                     const urlObj = new URL(videoUrl);
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
-                    if (videoId) videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                    if (videoId) {
+                        videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                        videoLink = videoUrl;
+                    }
                 } catch(e) {}
+            } else if (videoType === 'vimeo' && vimeoVideoId) {
+                videoEmbedUrl = `https://player.vimeo.com/video/${vimeoVideoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                videoLink = `https://vimeo.com/${vimeoVideoId}`;
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
                 videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+                videoLink = '#'; // Cloudflare does not have a standard public URL structure
             }
-
-            const videoLink = (videoType === 'youtube' && videoUrl) ? videoUrl : '';
             
             return `
                 <div class="video-container-export">
                     <div class="video-player-export">
-                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>`}
+                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
                     </div>
                     <div class="video-print-placeholder-export">
                         <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -199,7 +206,7 @@ const renderBlockToHtml = (block: Block): string => {
                             <div>
                                 <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
                                 <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
-                                ${videoLink ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
+                                ${videoLink !== '#' ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -449,7 +456,7 @@ export const handleExportZip = async ({
                                 '--tw-prose-th-borders': 'hsl(var(--border))',
                                 '--tw-prose-td-borders': 'hsl(var(--border))',
                                 '--tw-prose-invert-body': 'hsl(var(--foreground))',
-                                '--tw-prose-invert-headings': 'hsl(var(--foreground))',
+                                '--tw-prose-invert-headings': 'hsl(var(--primary))',
                                 '--tw-prose-invert-lead': 'hsl(var(--background))',
                                 '--tw-prose-invert-links': 'hsl(var(--primary))',
                                 '--tw-prose-invert-bold': 'hsl(var(--background))',
@@ -509,5 +516,3 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
-    

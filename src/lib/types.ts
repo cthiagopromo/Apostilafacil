@@ -13,7 +13,7 @@ export interface QuizOption {
   isCorrect: boolean;
 }
 
-export type VideoType = 'youtube' | 'cloudflare';
+export type VideoType = 'youtube' | 'vimeo' | 'cloudflare';
 
 export interface BlockContent {
   // Common fields
@@ -26,6 +26,7 @@ export interface BlockContent {
   // Video
   videoType?: VideoType;
   videoUrl?: string; // For YouTube
+  vimeoVideoId?: string; // For Vimeo
   cloudflareVideoId?: string; // For Cloudflare
   videoTitle?: string;
   autoplay?: boolean;
@@ -74,5 +75,3 @@ export interface HandbookData {
   projects: Project[];
   updatedAt: string;
 }
-
-    

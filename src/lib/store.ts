@@ -330,6 +330,7 @@ const useProjectStore = create<State & Actions>()(
                 content = { 
                     videoType: 'youtube',
                     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    vimeoVideoId: '824804258',
                     cloudflareVideoId: '',
                     videoTitle: 'Título do Vídeo',
                     autoplay: false,
@@ -510,5 +511,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
-
-    

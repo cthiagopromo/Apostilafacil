@@ -37,6 +37,22 @@ const YoutubeEmbed = ({ url, title, autoplay, showControls }: { url: string, tit
     }
 };
 
+const VimeoEmbed = ({ videoId, title, autoplay, showControls }: { videoId: string, title?: string, autoplay?: boolean, showControls?: boolean }) => {
+    if (!videoId) return <p className="text-destructive">ID do vídeo do Vimeo inválido.</p>;
+
+    const src = `https://player.vimeo.com/video/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+
+    return (
+        <iframe
+            className="w-full aspect-video rounded-md"
+            src={src}
+            title={title || "Vimeo video player"}
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+        ></iframe>
+    );
+};
+
 const CloudflareEmbed = ({ videoId, title, autoplay, showControls }: { videoId: string, title?: string, autoplay?: boolean, showControls?: boolean }) => {
     if (!videoId) return <p className="text-destructive">ID do vídeo do Cloudflare inválido.</p>;
 
@@ -144,13 +160,19 @@ const BlockRenderer = ({ block }: { block: Block }) => {
                  </div>
             )
         case 'video':
-            const { videoType, videoUrl, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
 
             if (videoType === 'cloudflare') {
                 if (!cloudflareVideoId) return <p className="text-muted-foreground">ID do vídeo do Cloudflare não definido.</p>
                 return <CloudflareEmbed videoId={cloudflareVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
             }
+
+            if (videoType === 'vimeo') {
+                if (!vimeoVideoId) return <p className="text-muted-foreground">ID do vídeo do Vimeo não definido.</p>
+                return <VimeoEmbed videoId={vimeoVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+            }
             
+            // Default to YouTube
             if (!videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
             return <YoutubeEmbed url={videoUrl} title={videoTitle} autoplay={autoplay} showControls={showControls} />
         case 'button':
