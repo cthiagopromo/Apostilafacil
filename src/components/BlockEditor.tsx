@@ -5,7 +5,7 @@ import type { Block, QuizOption, VideoType } from '@/lib/types';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { GripVertical, Trash2, ArrowUp, ArrowDown, Copy, PlusCircle, Save, Upload } from 'lucide-react';
+import { GripVertical, Trash2, ArrowUp, ArrowDown, Copy, PlusCircle, Save } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 import {
     AlertDialog,
@@ -28,8 +28,6 @@ import { Slider } from './ui/slider';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useRef, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
@@ -38,43 +36,6 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
         updateQuizOption,
         deleteQuizOption
     } = useProjectStore();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const { toast } = useToast();
-
-
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Falha no upload da imagem.');
-            }
-
-            const data = await response.json();
-            updateBlockContent(block.id, { 
-                url: data.id, // Store Cloudflare image ID
-                isUploaded: true
-            });
-            toast({ title: 'Sucesso!', description: 'Imagem enviada com sucesso.' });
-        } catch (error: any) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Erro de Upload', description: error.message });
-        } finally {
-            setIsUploading(false);
-        }
-    };
 
     const renderContent = () => {
         switch (block.type) {
@@ -104,31 +65,13 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                  return (
                     <div className='space-y-4'>
                         <div className="space-y-2">
-                            <Label htmlFor={`image-url-${block.id}`}>URL da Imagem ou Upload</Label>
-                            <div className="flex items-center gap-2">
-                                <Input 
-                                    id={`image-url-${block.id}`} 
-                                    value={block.content.url || ''} 
-                                    onChange={e => updateBlockContent(block.id, { url: e.target.value, isUploaded: false })} 
-                                    placeholder={block.content.isUploaded ? "ID da imagem do Cloudflare" : "https://placehold.co/600x400.png"}
-                                    disabled={isUploading}
-                                />
-                                <Button 
-                                    variant="outline"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isUploading}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {isUploading ? 'Enviando...' : 'Upload'}
-                                </Button>
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    className="hidden" 
-                                    onChange={handleImageUpload}
-                                    accept="image/png, image/jpeg, image/gif, image/webp"
-                                />
-                            </div>
+                            <Label htmlFor={`image-url-${block.id}`}>URL da Imagem</Label>
+                             <Input 
+                                id={`image-url-${block.id}`} 
+                                value={block.content.url || ''} 
+                                onChange={e => updateBlockContent(block.id, { url: e.target.value })} 
+                                placeholder="https://placehold.co/600x400.png"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor={`image-alt-${block.id}`}>Texto Alternativo (Alt)</Label>

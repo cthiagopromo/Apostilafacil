@@ -132,15 +132,13 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         case 'text':
              return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} className="prose dark:prose-invert max-w-none" />;
         case 'image':
-            const { url, isUploaded } = block.content;
-            const accountHash = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_HASH;
-            const imageUrl = isUploaded && accountHash ? `https://imagedelivery.net/${accountHash}/${url}/public` : url;
+            const { url } = block.content;
             const width = block.content.width ?? 100;
             return (
                 <div className='flex justify-center'>
                     <figure className='flex flex-col items-center gap-2' style={{ width: `${width}%` }}>
                         <img 
-                          src={imageUrl || 'https://placehold.co/600x400.png'} 
+                          src={url || 'https://placehold.co/600x400.png'} 
                           alt={block.content.alt || 'Placeholder image'} 
                           className="rounded-md shadow-md max-w-full h-auto" 
                         />

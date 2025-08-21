@@ -324,7 +324,7 @@ const useProjectStore = create<State & Actions>()(
                 content = { text: '<p>Novo bloco de texto...</p>' };
                 break;
             case 'image':
-                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '', width: 100, isUploaded: false };
+                content = { url: 'https://placehold.co/600x400.png', alt: 'Placeholder image', caption: '', width: 100 };
                 break;
             case 'video':
                 content = { 

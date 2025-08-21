@@ -23,7 +23,6 @@ export interface BlockContent {
   alt?: string;
   caption?: string; // Legenda opcional para a imagem
   width?: number; // Largura da imagem em %
-  isUploaded?: boolean; // Flag to indicate if the image is from Cloudflare
   // Video
   videoType?: VideoType;
   videoUrl?: string; // For YouTube
