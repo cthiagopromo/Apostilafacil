@@ -59,7 +59,7 @@ const getInteractiveScript = (): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -284,9 +284,6 @@ const getGlobalCss = () => `
           flex-direction: column;
           width: 100%;
       }
-      .module-section-visible {
-          display: flex;
-      }
       
       #handbook-root {
          width: 100%;
@@ -436,7 +433,7 @@ export const handleExportZip = async ({
                             DEFAULT: {
                               css: {
                                 '--tw-prose-body': 'hsl(var(--foreground))',
-                                '--tw-prose-headings': 'hsl(var(--foreground))',
+                                '--tw-prose-headings': theme('colors.foreground'),
                                 '--tw-prose-lead': 'hsl(var(--foreground))',
                                 '--tw-prose-links': 'hsl(var(--primary))',
                                 '--tw-prose-bold': 'hsl(var(--foreground))',
