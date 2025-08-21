@@ -301,21 +301,21 @@ const getGlobalCss = (theme: Theme) => `
 
       @media print {
           @page {
-              size: A4;
-              margin: 0;
+            size: A4;
+            margin: 0;
           }
           html, body {
-              width: 100%;
-              height: auto;
-              margin: 0 !important;
-              background: white !important;
-              color: black !important;
-              font-size: 11pt;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
+            width: 100%;
+            height: auto;
+            background: white !important;
+            color: black !important;
+            font-size: 11pt;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          body {
-            padding: 1.5cm;
+           body {
+            margin: 0 !important;
+            padding: 1.5cm !important;
           }
           .no-print, .no-print * { display: none !important; }
           main.main-content {
