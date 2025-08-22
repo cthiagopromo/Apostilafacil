@@ -69,6 +69,22 @@ const CloudflareEmbed = ({ videoId, title, autoplay, showControls }: { videoId: 
     );
 };
 
+const SmartplayEmbed = ({ url, title }: { url: string, title?: string }) => {
+    if (!url || !url.startsWith('https://play.smartplayer.com.br/')) {
+        return <p className="text-destructive">URL do Smartplay inválida.</p>;
+    }
+
+    return (
+        <iframe
+            className="w-full aspect-video rounded-md"
+            src={url}
+            title={title || "Smartplay video player"}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+        ></iframe>
+    );
+};
+
 
 const QuizBlock = ({ block }: { block: Block }) => {
     const { updateBlockContent, resetQuiz } = useProjectStore();
@@ -158,7 +174,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
                  </div>
             )
         case 'video':
-            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, smartplayUrl, videoTitle, autoplay, showControls } = block.content;
 
             if (videoType === 'cloudflare') {
                 if (!cloudflareVideoId) return <p className="text-muted-foreground">ID do vídeo do Cloudflare não definido.</p>
@@ -168,6 +184,11 @@ const BlockRenderer = ({ block }: { block: Block }) => {
             if (videoType === 'vimeo') {
                 if (!vimeoVideoId) return <p className="text-muted-foreground">ID do vídeo do Vimeo não definido.</p>
                 return <VimeoEmbed videoId={vimeoVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+            }
+            
+            if (videoType === 'smartplay') {
+                if (!smartplayUrl) return <p className="text-muted-foreground">URL do vídeo do Smartplay não definida.</p>
+                return <SmartplayEmbed url={smartplayUrl} title={videoTitle} />
             }
             
             // Default to YouTube

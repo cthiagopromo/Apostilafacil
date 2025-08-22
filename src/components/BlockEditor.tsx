@@ -173,6 +173,7 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                                     <SelectItem value="youtube">YouTube</SelectItem>
                                     <SelectItem value="vimeo">Vimeo</SelectItem>
                                     <SelectItem value="cloudflare">Cloudflare</SelectItem>
+                                    <SelectItem value="smartplay">Smartplay</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -213,6 +214,17 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                             </div>
                         )}
                         
+                        {videoType === 'smartplay' && (
+                             <div className="space-y-2">
+                                <Label htmlFor={`video-smartplay-${block.id}`}>URL do Vídeo no Smartplay</Label>
+                                <Input 
+                                    id={`video-smartplay-${block.id}`} 
+                                    value={block.content.smartplayUrl || ''} 
+                                    onChange={e => updateBlockContent(block.id, { smartplayUrl: e.target.value })} 
+                                    placeholder="Ex: https://play.smartplayer.com.br/..."
+                                />
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor={`video-title-${block.id}`}>Título do Vídeo</Label>
                             <Input 
@@ -410,5 +422,3 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
 }
 
 export default BlockEditor;
-
-    

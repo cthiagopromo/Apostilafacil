@@ -332,6 +332,7 @@ const useProjectStore = create<State & Actions>()(
                     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                     vimeoVideoId: '824804258',
                     cloudflareVideoId: '',
+                    smartplayUrl: '',
                     videoTitle: 'Título do Vídeo',
                     autoplay: false,
                     showControls: true,

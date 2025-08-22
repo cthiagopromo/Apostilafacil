@@ -173,7 +173,7 @@ const renderBlockToHtml = (block: Block): string => {
                     </blockquote>
                  </div>`;
         case 'video':
-            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, videoTitle, autoplay, showControls } = block.content;
+            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, smartplayUrl, videoTitle, autoplay, showControls } = block.content;
             let videoEmbedUrl = '';
             let videoLink = '#';
 
@@ -193,6 +193,9 @@ const renderBlockToHtml = (block: Block): string => {
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
                 videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
                 videoLink = '#'; // Cloudflare does not have a standard public URL structure
+            } else if (videoType === 'smartplay' && smartplayUrl) {
+                videoEmbedUrl = smartplayUrl;
+                videoLink = smartplayUrl;
             }
             
             return `
@@ -479,4 +482,3 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
