@@ -221,7 +221,7 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                                     id={`video-smartplay-${block.id}`} 
                                     value={block.content.smartplayUrl || ''} 
                                     onChange={e => updateBlockContent(block.id, { smartplayUrl: e.target.value })} 
-                                    placeholder="Ex: https://play.smartplayer.com.br/..."
+                                    placeholder="Cole a URL completa do 'src' do iframe de embed"
                                 />
                             </div>
                         )}

@@ -70,7 +70,7 @@ const CloudflareEmbed = ({ videoId, title, autoplay, showControls }: { videoId: 
 };
 
 const SmartplayEmbed = ({ url, title }: { url: string, title?: string }) => {
-    if (!url || !url.startsWith('https://play.smartplayer.com.br/')) {
+    if (!url) {
         return <p className="text-destructive">URL do Smartplay inválida.</p>;
     }
 
