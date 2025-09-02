@@ -36,7 +36,8 @@ type Actions = {
   updateHandbookTitle: (title: string) => void;
   updateHandbookDescription: (description: string) => void;
   updateHandbookTheme: (theme: Partial<Theme>) => void;
-  createNewHandbook: () => void;
+  createNewHandbook: () => Project | null;
+  loadHandbookData: (data: HandbookData) => Project | null;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
   saveData: () => void;
@@ -72,7 +73,7 @@ const useProjectStore = create<State & Actions>()(
           const storedData = localStorage.getItem(STORE_KEY);
           let data: HandbookData | null = storedData ? JSON.parse(storedData) : null;
           
-          if (data && data.projects) {
+          if (data && data.projects && data.projects.length > 0) {
              const migratedData = produce(data, draft => {
                 if (!draft.theme) {
                     draft.theme = { colorPrimary: '221 83% 53%' };
@@ -102,13 +103,30 @@ const useProjectStore = create<State & Actions>()(
                 handbookTheme: migratedData.theme
             });
           } else {
+             const initialData = initialHandbookData;
+             if (initialData.projects.length === 0) {
+                 initialData.projects.push({
+                    id: getUniqueId('proj'),
+                    title: 'Primeiro Módulo',
+                    description: 'Comece a adicionar blocos a este módulo.',
+                    layoutSettings: {
+                        containerWidth: 'large',
+                        sectionSpacing: 'standard',
+                        navigationType: 'sidebar',
+                    },
+                    blocks: [],
+                    version: '1.0.0',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                });
+             }
             set({ 
-                handbookId: initialHandbookData.id,
-                projects: initialHandbookData.projects,
-                handbookTitle: initialHandbookData.title,
-                handbookDescription: initialHandbookData.description,
-                handbookUpdatedAt: initialHandbookData.updatedAt,
-                handbookTheme: initialHandbookData.theme,
+                handbookId: initialData.id,
+                projects: initialData.projects,
+                handbookTitle: initialData.title,
+                handbookDescription: initialData.description,
+                handbookUpdatedAt: initialData.updatedAt,
+                handbookTheme: initialData.theme,
             });
           }
         } catch (e) {
@@ -167,36 +185,50 @@ const useProjectStore = create<State & Actions>()(
     },
 
     createNewHandbook: () => {
-        const newHandbook = initialHandbookData;
+        const newProject: Project = {
+            id: getUniqueId('proj'),
+            title: 'Novo Módulo',
+            description: 'Uma nova apostila com blocos editáveis.',
+            layoutSettings: {
+                containerWidth: 'large',
+                sectionSpacing: 'standard',
+                navigationType: 'sidebar',
+            },
+            blocks: [],
+            version: '1.0.0',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
         set({
             handbookId: getUniqueId('handbook'),
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
             handbookTheme: { colorPrimary: '221 83% 53%' },
-            projects: [
-                {
-                    id: getUniqueId('proj'),
-                    title: 'Novo Módulo',
-                    description: 'Uma nova apostila com blocos editáveis.',
-                    layoutSettings: {
-                        containerWidth: 'large',
-                        sectionSpacing: 'standard',
-                        navigationType: 'sidebar',
-                    },
-                    blocks: [],
-                    version: '1.0.0',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                }
-            ],
-            activeProject: null,
+            projects: [newProject],
+            activeProject: JSON.parse(JSON.stringify(newProject)),
             activeBlockId: null,
             isDirty: true,
         });
-        const newActiveProject = get().projects[0];
-        set({ activeProject: JSON.parse(JSON.stringify(newActiveProject)) });
         get().saveData();
+        return newProject;
+    },
+
+    loadHandbookData: (data) => {
+        set({
+            handbookId: data.id,
+            handbookTitle: data.title,
+            handbookDescription: data.description,
+            handbookTheme: data.theme,
+            projects: data.projects,
+            handbookUpdatedAt: data.updatedAt,
+            activeProject: data.projects[0] ? JSON.parse(JSON.stringify(data.projects[0])) : null,
+            activeBlockId: null,
+            isDirty: true,
+        });
+        get().saveData();
+        return data.projects[0] || null;
     },
 
     addProject: () => {
@@ -228,7 +260,7 @@ const useProjectStore = create<State & Actions>()(
         const projectIndex = state.projects.findIndex(p => p.id === projectId);
         if (projectIndex === -1) return;
 
-        if (state.projects.length === 1) {
+        if (state.projects.length <= 1) {
             console.warn("Cannot delete the last module.");
             return;
         }
@@ -259,7 +291,9 @@ const useProjectStore = create<State & Actions>()(
 
     saveData: () => {
       set(state => {
-        if (!state.isDirty) return; 
+        // No need to save if nothing has changed.
+        // Also prevents saving initial empty state on first load.
+        if (!state.isDirty && localStorage.getItem(STORE_KEY)) return; 
 
         if (state.activeProject) {
             const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
@@ -496,19 +530,32 @@ const useProjectStore = create<State & Actions>()(
 if (typeof window !== 'undefined') {
   useProjectStore.getState().initializeStore();
   
-  window.addEventListener('beforeunload', (event) => {
-    if (useProjectStore.getState().isDirty) {
-      useProjectStore.getState().saveData();
-      event.preventDefault();
-      event.returnValue = '';
-    }
+  // Debounce save function
+  let saveTimeout: NodeJS.Timeout;
+  const debouncedSave = () => {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        if (useProjectStore.getState().isDirty) {
+            useProjectStore.getState().saveData();
+        }
+    }, 1000); // Save after 1 second of inactivity
+  };
+  
+  window.addEventListener('beforeunload', () => {
+      if (useProjectStore.getState().isDirty) {
+        useProjectStore.getState().saveData();
+      }
   });
 
   window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
+    if (document.visibilityState === 'hidden' && useProjectStore.getState().isDirty) {
       useProjectStore.getState().saveData();
     }
   });
+
+  // Also, you might want to replace direct calls to saveData with debouncedSave
+  // in parts of the store where changes happen frequently.
+  // For now, this periodic check and save-on-close is a good safety net.
 }
 
 export default useProjectStore;

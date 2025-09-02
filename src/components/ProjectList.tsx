@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import useProjectStore from '@/lib/store';
 import {
   Card,
@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, PlusCircle, Trash2, FileText, Loader } from 'lucide-react';
+import { ArrowRight, PlusCircle, Trash2, FileText, Loader, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -31,16 +31,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { LoadingModal } from './LoadingModal';
+import { useToast } from '@/hooks/use-toast';
+import type { HandbookData } from '@/lib/types';
 
 export function ProjectList() {
-  const { handbookTitle, handbookUpdatedAt, projects, createNewHandbook, activeProject } = useProjectStore();
+  const { handbookTitle, handbookUpdatedAt, projects, createNewHandbook, loadHandbookData } = useProjectStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleNavigation = (path: string) => {
     setIsLoading(true);
-    // O timeout é opcional, mas ajuda a garantir que o estado de loading seja visível
-    // antes que a transição de página bloqueie a thread principal.
     setTimeout(() => {
       router.push(path);
     }, 100);
@@ -49,29 +51,81 @@ export function ProjectList() {
   const handleNewHandbook = () => {
     setIsLoading(true);
      setTimeout(() => {
-        createNewHandbook();
-        const newActiveProject = useProjectStore.getState().activeProject;
+        const newActiveProject = createNewHandbook();
         if (newActiveProject) {
             router.push(`/editor/${newActiveProject.id}`);
         } else {
-            // Fallback
             setIsLoading(false);
         }
     }, 100);
   };
 
   const handleDeleteHandbook = () => {
-    // For now, we just create a new one, effectively deleting the old one from view
-    // In a real multi-document app, you'd have a proper delete mechanism.
     handleNewHandbook();
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const htmlContent = e.target?.result as string;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        const dataElement = doc.getElementById('handbook-data');
+        
+        if (!dataElement || !dataElement.textContent) {
+          throw new Error('Arquivo HTML inválido ou não contém dados da apostila.');
+        }
+
+        const importedData: HandbookData = JSON.parse(dataElement.textContent);
+        const firstProject = loadHandbookData(importedData);
+
+        toast({ title: 'Apostila importada com sucesso!' });
+
+        if (firstProject) {
+          router.push(`/editor/${firstProject.id}`);
+        } else {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error("Falha ao importar arquivo:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro na Importação',
+          description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.',
+        });
+        setIsLoading(false);
+      }
+    };
+
+    reader.onerror = () => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Leitura',
+        description: 'Não foi possível ler o arquivo selecionado.',
+      });
+      setIsLoading(false);
+    };
+
+    reader.readAsText(file);
+    // Reset file input to allow re-uploading the same file
+    event.target.value = ''; 
   };
 
   const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);
   const firstProjectId = projects.length > 0 ? projects[0].id : null;
 
-
   if (isLoading) {
-    return <LoadingModal isOpen={true} text="Carregando editor..." />;
+    return <LoadingModal isOpen={true} text="Carregando apostila..." />;
   }
 
   if (projects.length === 0) {
@@ -83,12 +137,25 @@ export function ProjectList() {
             Nenhuma apostila encontrada.
           </h3>
           <p className="text-muted-foreground my-4">
-            Comece a criar sua primeira apostila interativa agora mesmo.
+            Comece do zero ou importe uma apostila existente para editar.
           </p>
-          <Button onClick={handleNewHandbook} size="lg">
-            {isLoading ? <Loader className="mr-2 animate-spin" /> : <PlusCircle className="mr-2" />}
-            {isLoading ? 'Criando...' : 'Criar minha primeira apostila'}
-          </Button>
+          <div className="flex justify-center gap-4">
+            <Button onClick={handleNewHandbook} size="lg">
+              <PlusCircle className="mr-2" />
+              Criar Nova Apostila
+            </Button>
+             <Button onClick={handleImportClick} size="lg" variant="outline">
+              <Upload className="mr-2" />
+              Importar Apostila
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileImport}
+              accept=".html"
+              className="hidden"
+            />
+          </div>
         </div>
       </div>
     );
@@ -96,11 +163,22 @@ export function ProjectList() {
 
   return (
     <div className="space-y-6">
-       <div className="flex justify-center">
+       <div className="flex justify-center gap-4">
         <Button onClick={handleNewHandbook} size="lg" disabled={isLoading}>
           {isLoading ? <Loader className="mr-2 animate-spin" /> : <PlusCircle className="mr-2" />}
           {isLoading ? 'Criando...' : 'Nova Apostila'}
         </Button>
+        <Button onClick={handleImportClick} size="lg" variant="outline">
+          <Upload className="mr-2" />
+          Importar Apostila
+        </Button>
+        <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileImport}
+            accept=".html"
+            className="hidden"
+        />
       </div>
       <Card>
         <CardContent className="p-0">
@@ -145,8 +223,7 @@ export function ProjectList() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isto irá deletar a
-                            apostila e todos os seus módulos permanentemente.
+                            Esta ação não pode ser desfeita. A apostila atual será substituída por uma nova em branco.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
