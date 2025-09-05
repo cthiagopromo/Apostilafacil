@@ -146,8 +146,9 @@ const useProjectStore = create<State & Actions>()(
         });
       } finally {
           const projects = get().projects;
-          if (projects.length > 0 && !get().activeProject) {
+          if (projects.length > 0) {
             set(state => {
+              // Ensure activeProject is a valid object, not null, before initialization finishes.
               state.activeProject = JSON.parse(JSON.stringify(projects[0]));
             });
           }
