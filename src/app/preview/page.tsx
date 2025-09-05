@@ -148,18 +148,5 @@ function PreviewPageContent() {
 
 
 export default function PreviewPage() {
-    const [isClient, setIsClient] = useState(false);
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    if (!isClient) {
-        return <LoadingModal isOpen={true} text="Carregando..." />
-    }
-
-    return (
-        <React.Suspense fallback={<LoadingModal isOpen={true} text="Carregando..." />}>
-            <PreviewPageContent />
-        </React.Suspense>
-    )
+    return <PreviewPageContent />;
 }
