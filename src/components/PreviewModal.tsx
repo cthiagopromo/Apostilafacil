@@ -13,6 +13,9 @@ import { Button } from './ui/button';
 import useProjectStore from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { handleExportZip } from '@/lib/export';
+import PreviewContent from './PreviewContent';
+import type { HandbookData } from '@/lib/types';
+import { LoadingModal } from './LoadingModal';
 
 interface PreviewModalProps {
   isOpen: boolean;
@@ -20,11 +23,9 @@ interface PreviewModalProps {
 }
 
 export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
-  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects } = useProjectStore();
+  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects, isInitialized } = useProjectStore();
   const [isExporting, setIsExporting] = React.useState(false);
   const { toast } = useToast();
-
-  if (!isOpen) return null;
 
   const onExportClick = async () => {
     await handleExportZip({ 
@@ -38,6 +39,17 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
         toast 
     });
   }
+
+  const handbookData: HandbookData | null = isInitialized ? {
+      id: handbookId,
+      title: handbookTitle,
+      description: handbookDescription,
+      theme: handbookTheme,
+      projects,
+      updatedAt: handbookUpdatedAt,
+  } : null;
+  
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -54,12 +66,11 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
           </Button>
         </DialogHeader>
         <div className="flex-1 w-full h-full overflow-hidden relative">
-           <iframe
-            key={handbookUpdatedAt} // Force re-render on data change
-            src={`/preview?ts=${handbookUpdatedAt}`}
-            className="w-full h-full border-0"
-            title="Pré-visualização da Apostila"
-          />
+            {!isInitialized ? (
+                 <LoadingModal isOpen={true} text="Carregando visualização..." />
+            ) : (
+                <PreviewContent handbookData={handbookData} />
+            )}
         </div>
       </DialogContent>
     </Dialog>

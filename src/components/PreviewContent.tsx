@@ -1,67 +1,26 @@
 
 'use client';
 
-import React from 'react';
-import useProjectStore from '@/lib/store';
+import React, { useEffect, useState } from 'react';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData } from '@/lib/types';
 import FloatingNav from '@/components/FloatingNav';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { Toaster } from './ui/toaster';
 
+interface PreviewContentProps {
+    handbookData: HandbookData | null;
+}
 
-export default function PreviewPage() {
-    const { 
-        isInitialized,
-        projects, 
-        handbookTitle, 
-        handbookDescription, 
-        handbookId, 
-        handbookUpdatedAt, 
-        handbookTheme,
-        initializeStore,
-    } = useProjectStore();
-    const router = useRouter();
-
-    useEffect(() => {
-        initializeStore();
-    }, [initializeStore]);
-
-
-    if (!isInitialized) {
-        return <LoadingModal isOpen={true} text="Carregando visualização..." />;
-    }
-
-    if (!projects || projects.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen bg-secondary">
-                <p className="text-xl mb-4">Nenhum conteúdo para visualizar.</p>
-                <Button onClick={() => router.push('/')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar ao Editor
-                </Button>
-            </div>
-        );
-    }
-    
-    const handbookData: HandbookData = { 
-        id: handbookId, 
-        title: handbookTitle, 
-        description: handbookDescription, 
-        updatedAt: handbookUpdatedAt,
-        theme: handbookTheme,
-        projects 
-    };
-
+export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
-    const primaryColor = handbookData.theme?.colorPrimary;
+    const primaryColor = handbookData?.theme?.colorPrimary;
 
     useEffect(() => {
         if (isPreparingPrint) {
@@ -76,26 +35,45 @@ export default function PreviewPage() {
 
     useEffect(() => {
         if (primaryColor) {
-            document.documentElement.style.setProperty('--primary', primaryColor);
+            const root = document.querySelector(':root') as HTMLElement;
+            if (root) {
+                 root.style.setProperty('--primary', primaryColor);
+            }
         }
         return () => {
-            document.documentElement.style.removeProperty('--primary');
+             const root = document.querySelector(':root') as HTMLElement;
+            if (root) {
+                root.style.removeProperty('--primary');
+            }
         }
     }, [primaryColor]);
 
+
+    if (!handbookData || !handbookData.projects || handbookData.projects.length === 0) {
+        return (
+             <div className="flex flex-col items-center justify-center h-full bg-secondary">
+                <p className="text-xl mb-4">Nenhum conteúdo para visualizar.</p>
+            </div>
+        );
+    }
+    
     const handleModuleChange = (index: number) => {
         if (index >= 0 && index < handbookData.projects.length) {
             setCurrentModuleIndex(index);
-            window.scrollTo(0, 0);
+            const contentArea = document.getElementById('preview-scroll-area');
+            if (contentArea) {
+                contentArea.scrollTo(0, 0);
+            }
         }
     };
 
     return (
         <>
+            <Toaster />
             <LoadingModal isOpen={isPreparingPrint} text="Preparando para impressão..." />
-            <div id="handbook-root-container">
-                <div className="bg-secondary/40 min-h-screen">
-                    <PreviewHeader setIsExporting={setIsPreparingPrint} />
+            <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
+                <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
+                <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
                     <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12 relative">
                         <FloatingNav 
                             modules={handbookData.projects} 

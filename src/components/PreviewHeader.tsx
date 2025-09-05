@@ -1,11 +1,9 @@
 
 'use client';
 
-import useProjectStore from '@/lib/store';
 import { AccessibilityToolbar } from '@/components/AccessibilityToolbar';
 
-export function PreviewHeader({ setIsExporting }: { setIsExporting: (isExporting: boolean) => void }) {
-  const { handbookTitle } = useProjectStore();
+export function PreviewHeader({ setIsExporting, handbookTitle }: { setIsExporting: (isExporting: boolean) => void, handbookTitle: string }) {
 
   return (
     <header className="py-4 px-6 bg-primary text-primary-foreground no-print no-export">
