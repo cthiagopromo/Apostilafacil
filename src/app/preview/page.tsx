@@ -6,7 +6,7 @@ import useProjectStore from '@/lib/store';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData } from '@/lib/types';
@@ -106,17 +106,19 @@ const PreviewContent = ({ handbookData }: { handbookData: HandbookData }) => {
   );
 };
 
-
-export default function PreviewPage() {
-  const { isInitialized, projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme } = useProjectStore();
+function PreviewPageContent() {
+  const { isInitialized, projects, handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, initializeStore } = useProjectStore();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
+  const searchParams = useSearchParams();
+  const timestamp = searchParams.get('ts');
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  if (!isClient || !isInitialized) {
+    // This effect ensures that if the timestamp changes, we re-initialize the store
+    // to guarantee we have the latest data from the main window's state.
+    initializeStore();
+  }, [timestamp, initializeStore]);
+
+  if (!isInitialized) {
     return <LoadingModal isOpen={true} text="Carregando visualização..." />
   }
 
@@ -141,6 +143,23 @@ export default function PreviewPage() {
     projects 
   };
   
-  // Use key to force remount on handbookId change
   return <PreviewContent key={handbookId} handbookData={handbookData} />;
+}
+
+
+export default function PreviewPage() {
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return <LoadingModal isOpen={true} text="Carregando..." />
+    }
+
+    return (
+        <React.Suspense fallback={<LoadingModal isOpen={true} text="Carregando..." />}>
+            <PreviewPageContent />
+        </React.Suspense>
+    )
 }

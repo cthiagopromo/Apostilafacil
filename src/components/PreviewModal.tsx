@@ -56,7 +56,7 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
         <div className="flex-1 w-full h-full overflow-hidden relative">
            <iframe
             key={handbookUpdatedAt} // Force re-render on data change
-            src="/preview"
+            src={`/preview?ts=${handbookUpdatedAt}`}
             className="w-full h-full border-0"
             title="Pré-visualização da Apostila"
           />
