@@ -539,33 +539,42 @@ const useProjectStore = create<State & Actions>()(
   }))
 );
 
+// Initialize store only once
 if (typeof window !== 'undefined') {
-  useProjectStore.getState().initializeStore();
-  
-  let saveTimeout: NodeJS.Timeout;
-  
-  useProjectStore.subscribe((state, prevState) => {
-    if (state.isDirty && !prevState.isDirty) {
-      // Clear any existing timeout to avoid multiple saves
-      if (saveTimeout) clearTimeout(saveTimeout);
-      
-      saveTimeout = setTimeout(() => {
-        useProjectStore.getState().saveData();
-      }, 2000); // Autosave after 2 seconds of inactivity
-    }
-  });
+  const SCRIPT_TAG_ID = 'zustand-init-script';
+  if (!document.getElementById(SCRIPT_TAG_ID)) {
+    useProjectStore.getState().initializeStore();
 
-  window.addEventListener('beforeunload', () => {
-      if (useProjectStore.getState().isDirty) {
+    let saveTimeout: NodeJS.Timeout;
+  
+    useProjectStore.subscribe((state, prevState) => {
+      if (state.isDirty && state.isInitialized) { // Only save if initialized
+        if (saveTimeout) clearTimeout(saveTimeout);
+        
+        saveTimeout = setTimeout(() => {
+          useProjectStore.getState().saveData();
+        }, 2000); 
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (useProjectStore.getState().isDirty) {
+          useProjectStore.getState().saveData();
+        }
+    });
+
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && useProjectStore.getState().isDirty) {
         useProjectStore.getState().saveData();
       }
-  });
+    });
 
-  window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && useProjectStore.getState().isDirty) {
-      useProjectStore.getState().saveData();
-    }
-  });
+    const script = document.createElement('script');
+    script.id = SCRIPT_TAG_ID;
+    document.head.appendChild(script);
+  }
 }
 
 export default useProjectStore;
+
+    
