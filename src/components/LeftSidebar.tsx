@@ -29,18 +29,18 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export default function LeftSidebar() {
-  const { projects, activeProject, addProject, setActiveProject, deleteProject } = useProjectStore();
+  const { projects, activeProject, addProject, setActiveProject, deleteProject, handbookId } = useProjectStore();
   const router = useRouter();
   const { toast } = useToast();
   
   const handleNewProject = () => {
     const newProject = addProject();
-    router.push(`/editor/${newProject.id}`);
+    router.push(`/editor/${handbookId}/${newProject.id}`);
   };
 
   const handleProjectSelect = (projectId: string) => {
     setActiveProject(projectId);
-    router.push(`/editor/${projectId}`);
+    router.push(`/editor/${handbookId}/${projectId}`);
   }
 
   const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
@@ -57,7 +57,7 @@ export default function LeftSidebar() {
 
     const nextProjectId = deleteProject(projectId);
     if (nextProjectId) {
-      router.push(`/editor/${nextProjectId}`);
+      router.push(`/editor/${handbookId}/${nextProjectId}`);
     } else {
       router.push('/');
     }
@@ -127,12 +127,7 @@ export default function LeftSidebar() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={(e) => handleDeleteProject(e, project.id)}
-                      >
-                        Deletar
-                      </AlertDialogAction>
+                      <AlertDialogAction onClick={(e) => handleDeleteProject(e, project.id)}>Deletar</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -140,10 +135,6 @@ export default function LeftSidebar() {
             ))}
         </div>
       </ScrollArea>
-      <div className='p-3 border-t text-xs text-center text-muted-foreground'>
-          <p>Última atualização: {new Date().toLocaleTimeString()}</p>
-          <p className='text-primary font-semibold'>Salvo automaticamente</p>
-      </div>
     </aside>
   );
 }
