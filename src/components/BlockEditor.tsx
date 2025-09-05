@@ -30,6 +30,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import ClientOnly from './ClientOnly';
 
 const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: React.MouseEvent) => void }) => {
     const { 
@@ -79,10 +80,12 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
                 return (
                     <div className="space-y-2">
                         <Label htmlFor={`text-content-${block.id}`}>Conteúdo do Texto</Label>
-                        <RichTextEditor 
-                            value={block.content.text || ''}
-                            onChange={(value) => updateBlockContent(block.id, { text: value })}
-                        />
+                        <ClientOnly>
+                          <RichTextEditor 
+                              value={block.content.text || ''}
+                              onChange={(value) => updateBlockContent(block.id, { text: value })}
+                          />
+                        </ClientOnly>
                     </div>
                 )
             case 'quote':

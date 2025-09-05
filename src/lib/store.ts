@@ -5,7 +5,6 @@ import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSetting
 import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
 import localforage from 'localforage';
-import { sql } from '@vercel/postgres';
 
 const STORE_KEY = 'apostila-facil-data';
 
@@ -56,6 +55,31 @@ type Actions = {
   updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
   deleteQuizOption: (blockId: string, optionId: string) => void;
   resetQuiz: (blockId: string) => void;
+};
+
+// This function will be called outside of the 'set' callback to avoid proxy issues.
+const performSave = async (dataToSave: HandbookData) => {
+    if (!dataToSave || typeof window === 'undefined') return;
+
+    try {
+        // Sanitize the data to ensure it's cloneable for IndexedDB
+        const cleanData = JSON.parse(JSON.stringify(dataToSave));
+        await localforage.setItem(STORE_KEY, cleanData);
+
+        // Save to Vercel Postgres
+        await fetch('/api/saveApostila', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                apostila_id: cleanData.id,
+                data: cleanData
+            })
+        });
+    } catch (error) {
+        console.error('[Store] Falha crítica ao salvar os dados:', error);
+        // Re-mark as dirty if save fails, but do it in the main store action.
+        throw error;
+    }
 };
 
 const useProjectStore = create<State & Actions>()(
@@ -299,51 +323,40 @@ const useProjectStore = create<State & Actions>()(
     },
 
     saveData: async () => {
+      if (!get().isDirty && get().isInitialized) {
+        return;
+      }
+
       let dataToSave: HandbookData | null = null;
+      
       set(state => {
-        if (!state.isDirty && state.isInitialized) return; // Also check if initialized
-
-        if (state.activeProject) {
-            const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
-            if (projectIndex !== -1) {
-                state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
-                state.projects[projectIndex].updatedAt = new Date().toISOString();
-            }
-        }
-        
-        state.handbookUpdatedAt = new Date().toISOString();
-
-        dataToSave = {
-            id: state.handbookId,
-            title: state.handbookTitle,
-            description: state.handbookDescription,
-            projects: state.projects,
-            updatedAt: state.handbookUpdatedAt,
-            theme: state.handbookTheme
-        };
-        state.isDirty = false;
+          if (state.activeProject) {
+              const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
+              if (projectIndex !== -1) {
+                  // This is the crucial part: we deep copy here to avoid proxy issues later
+                  state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
+                  state.projects[projectIndex].updatedAt = new Date().toISOString();
+              }
+          }
+          state.handbookUpdatedAt = new Date().toISOString();
+          state.isDirty = false; // Mark as not dirty before the async operation
       });
 
-      if (dataToSave && typeof window !== 'undefined') {
-          try {
-              // Sanitize the data to ensure it's cloneable for IndexedDB
-              const cleanData = JSON.parse(JSON.stringify(dataToSave));
-              await localforage.setItem(STORE_KEY, cleanData);
-
-              // Save to Vercel Postgres
-              await fetch('/api/saveApostila', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    apostila_id: cleanData.id,
-                    data: cleanData
-                })
-              });
-
-          } catch (error) {
-              console.error('[Store] Falha crítica ao salvar os dados:', error);
-              set({ isDirty: true }); // Re-mark as dirty if save fails
-          }
+      // Now, get the plain (non-proxy) state object
+      const currentState = get();
+      dataToSave = {
+          id: currentState.handbookId,
+          title: currentState.handbookTitle,
+          description: currentState.handbookDescription,
+          projects: currentState.projects,
+          updatedAt: currentState.handbookUpdatedAt,
+          theme: currentState.handbookTheme
+      };
+      
+      try {
+        await performSave(dataToSave);
+      } catch (error) {
+        set({ isDirty: true }); // Re-mark as dirty only if save fails
       }
     },
 
