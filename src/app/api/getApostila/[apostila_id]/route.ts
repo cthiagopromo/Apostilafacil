@@ -16,13 +16,17 @@ export async function GET(
       SELECT data FROM apostilas WHERE apostila_id = ${apostila_id};
     `;
     
-    if (result.length === 0 || !result[0]) {
+    // A consulta com 'rows' vazios indica que não foi encontrado
+    if (result.rowCount === 0) {
       return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
     }
     
-    // O neon/serverless retorna os resultados como um array de objetos
     // Acessamos a primeira linha e a coluna 'data'
-    const apostilaData = result[0].data;
+    const apostilaData = result.rows[0].data;
+
+    if (!apostilaData) {
+      return NextResponse.json({ error: 'Dados da apostila estão vazios ou corrompidos' }, { status: 404 });
+    }
 
     return NextResponse.json(apostilaData, { status: 200 });
   } catch (error) {

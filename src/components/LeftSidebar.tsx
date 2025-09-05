@@ -1,4 +1,3 @@
-
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -35,12 +34,16 @@ export default function LeftSidebar() {
   
   const handleNewProject = () => {
     const newProject = addProject();
-    router.push(`/editor/${handbookId}/${newProject.id}`);
+    if (handbookId) {
+        router.push(`/editor/${handbookId}/${newProject.id}`);
+    }
   };
 
   const handleProjectSelect = (projectId: string) => {
     setActiveProject(projectId);
-    router.push(`/editor/${handbookId}/${projectId}`);
+    if (handbookId) {
+        router.push(`/editor/${handbookId}/${projectId}`);
+    }
   }
 
   const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
@@ -56,7 +59,7 @@ export default function LeftSidebar() {
     }
 
     const nextProjectId = deleteProject(projectId);
-    if (nextProjectId) {
+    if (nextProjectId && handbookId) {
       router.push(`/editor/${handbookId}/${nextProjectId}`);
     } else {
       router.push('/');

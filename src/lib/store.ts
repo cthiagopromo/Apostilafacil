@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData, Theme } from './types';
@@ -8,15 +7,12 @@ import localforage from 'localforage';
 
 const STORE_KEY = 'apostila-facil-data';
 
-// Helper for unique IDs
 const getUniqueId = (prefix: 'proj' | 'block' | 'opt' | 'handbook') => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback for older environments
   return `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 9)}`;
 };
-
 
 type State = {
   handbookId: string;
@@ -27,18 +23,18 @@ type State = {
   projects: Project[];
   activeProject: Project | null;
   activeBlockId: string | null;
-  isDirty: boolean; // To track unsaved changes
+  isDirty: boolean;
   isInitialized: boolean;
 };
 
 type Actions = {
-  initializeStore: () => Promise<void>;
+  initializeStore: (handbookIdFromUrl: string | null) => Promise<void>;
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   updateHandbookTitle: (title: string) => void;
   updateHandbookDescription: (description: string) => void;
   updateHandbookTheme: (theme: Partial<Theme>) => void;
-  createNewHandbook: () => Project | null;
+  createNewHandbook: () => { handbookId: string, projectId: string };
   loadHandbookData: (data: HandbookData) => Promise<void>;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
@@ -57,16 +53,11 @@ type Actions = {
   resetQuiz: (blockId: string) => void;
 };
 
-// This function will be called outside of the 'set' callback to avoid proxy issues.
 const performSave = async (dataToSave: HandbookData) => {
     if (!dataToSave || typeof window === 'undefined') return;
-
     try {
-        // Sanitize the data to ensure it's cloneable for IndexedDB
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await localforage.setItem(STORE_KEY, cleanData);
-
-        // Save to Vercel Postgres
         await fetch('/api/saveApostila', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -77,7 +68,6 @@ const performSave = async (dataToSave: HandbookData) => {
         });
     } catch (error) {
         console.error('[Store] Falha crítica ao salvar os dados:', error);
-        // Re-mark as dirty if save fails, but do it in the main store action.
         throw error;
     }
 };
@@ -95,101 +85,77 @@ const useProjectStore = create<State & Actions>()(
     isDirty: false,
     isInitialized: false,
 
-    initializeStore: async () => {
+    initializeStore: async (handbookIdFromUrl: string | null) => {
       if (get().isInitialized || typeof window === 'undefined') {
         return;
       }
-      try {
-        const storedData = await localforage.getItem<HandbookData>(STORE_KEY);
-        let data: HandbookData | null = storedData;
-        
-        if (data && data.projects && data.projects.length > 0) {
-           const migratedData = produce(data, draft => {
-              if (!draft.theme) {
-                  draft.theme = { colorPrimary: '221 83% 53%' };
-              }
-              draft.projects.forEach(p => {
-                if (!p.layoutSettings) {
-                  p.layoutSettings = {
-                    containerWidth: 'large',
-                    sectionSpacing: 'standard',
-                    navigationType: 'sidebar',
-                  };
-                }
-                // @ts-ignore
-                if (p.theme) {
-                  // @ts-ignore
-                  delete p.theme;
-                }
-              });
-           });
 
-          set({ 
-              handbookId: migratedData.id || getUniqueId('handbook'),
-              projects: migratedData.projects,
-              handbookTitle: migratedData.title,
-              handbookDescription: migratedData.description,
-              handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
-              handbookTheme: migratedData.theme
-          });
-        } else {
-           const initialData = initialHandbookData;
-           if (initialData.projects.length === 0) {
-               initialData.projects.push({
-                  id: getUniqueId('proj'),
-                  title: 'Primeiro Módulo',
-                  description: 'Comece a adicionar blocos a este módulo.',
-                  layoutSettings: {
-                      containerWidth: 'large',
-                      sectionSpacing: 'standard',
-                      navigationType: 'sidebar',
-                  },
-                  blocks: [],
-                  version: '1.0.0',
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-              });
-           }
-          set({ 
-              handbookId: initialData.id,
-              projects: initialData.projects,
-              handbookTitle: initialData.title,
-              handbookDescription: initialData.description,
-              handbookUpdatedAt: initialData.updatedAt,
-              handbookTheme: initialData.theme,
-          });
+      let dataToLoad: HandbookData | null = null;
+
+      try {
+        // 1. Prioritize loading from URL if ID is present
+        if (handbookIdFromUrl) {
+            try {
+                const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
+                if (response.ok) {
+                    dataToLoad = await response.json();
+                } else {
+                    console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB.`);
+                }
+            } catch (e) {
+                console.error("Erro ao buscar apostila da API:", e);
+            }
         }
-      } catch (e) {
-        console.error("Failed to parse projects from localforage", e);
-        set({ 
-          handbookId: initialHandbookData.id,
-          projects: initialHandbookData.projects,
-          handbookTitle: initialHandbookData.title,
-          handbookDescription: initialHandbookData.description,
-          handbookUpdatedAt: initialHandbookData.updatedAt,
-          handbookTheme: initialHandbookData.theme,
+        
+        // 2. Fallback to local storage if no URL or API fetch fails
+        if (!dataToLoad) {
+            dataToLoad = await localforage.getItem<HandbookData>(STORE_KEY);
+        }
+
+        // 3. If still nothing, use initial data
+        if (!dataToLoad || !dataToLoad.projects || dataToLoad.projects.length === 0) {
+            dataToLoad = initialHandbookData;
+        }
+
+        // Migration and setting state
+        const migratedData = produce(dataToLoad, draft => {
+            if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
+            draft.projects.forEach(p => {
+                if (!p.layoutSettings) {
+                    p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
+                }
+            });
         });
+
+        set({ 
+            handbookId: migratedData.id,
+            projects: migratedData.projects,
+            handbookTitle: migratedData.title,
+            handbookDescription: migratedData.description,
+            handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
+            handbookTheme: migratedData.theme
+        });
+        
+      } catch (e) {
+        console.error("Falha ao inicializar a store", e);
+        set({ ...initialHandbookData });
       } finally {
           const projects = get().projects;
           if (projects.length > 0) {
-            const firstProject = projects[0];
-            if (firstProject) {
-              set(state => {
-                // Ensure activeProject is a valid object, not null, before initialization finishes.
-                state.activeProject = JSON.parse(JSON.stringify(firstProject));
-              });
-            }
+            set(state => {
+              state.activeProject = JSON.parse(JSON.stringify(projects[0]));
+            });
           }
           set({ isInitialized: true });
       }
     },
     
     setActiveProject: (projectId) => {
-      get().saveData(); // Autosave when switching
+      get().saveData();
       set(state => {
         const projectToActivate = state.projects.find((p) => p.id === projectId);
         if (projectToActivate) {
-          state.activeProject = JSON.parse(JSON.stringify(projectToActivate)); // Deep copy
+          state.activeProject = JSON.parse(JSON.stringify(projectToActivate));
           state.activeBlockId = null;
         }
       });
@@ -219,8 +185,10 @@ const useProjectStore = create<State & Actions>()(
     },
 
     createNewHandbook: () => {
+        const newHandbookId = getUniqueId('handbook');
+        const newProjectId = getUniqueId('proj');
         const newProject: Project = {
-            id: getUniqueId('proj'),
+            id: newProjectId,
             title: 'Novo Módulo',
             description: 'Uma nova apostila com blocos editáveis.',
             layoutSettings: {
@@ -235,7 +203,7 @@ const useProjectStore = create<State & Actions>()(
         };
 
         set({
-            handbookId: getUniqueId('handbook'),
+            handbookId: newHandbookId,
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
@@ -246,7 +214,7 @@ const useProjectStore = create<State & Actions>()(
             isDirty: true,
         });
         get().saveData();
-        return newProject;
+        return { handbookId: newHandbookId, projectId: newProjectId };
     },
 
     loadHandbookData: async (data) => {
@@ -256,7 +224,7 @@ const useProjectStore = create<State & Actions>()(
             handbookDescription: data.description,
             handbookTheme: data.theme,
             projects: data.projects,
-            handbookUpdatedAt: new Date().toISOString(), // Force update timestamp
+            handbookUpdatedAt: new Date().toISOString(),
             activeProject: data.projects[0] ? JSON.parse(JSON.stringify(data.projects[0])) : null,
             activeBlockId: null,
             isDirty: true,
@@ -326,25 +294,20 @@ const useProjectStore = create<State & Actions>()(
       if (!get().isDirty && get().isInitialized) {
         return;
       }
-
-      let dataToSave: HandbookData | null = null;
-      
       set(state => {
           if (state.activeProject) {
               const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
               if (projectIndex !== -1) {
-                  // This is the crucial part: we deep copy here to avoid proxy issues later
                   state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
                   state.projects[projectIndex].updatedAt = new Date().toISOString();
               }
           }
           state.handbookUpdatedAt = new Date().toISOString();
-          state.isDirty = false; // Mark as not dirty before the async operation
+          state.isDirty = false;
       });
 
-      // Now, get the plain (non-proxy) state object
       const currentState = get();
-      dataToSave = {
+      const dataToSave: HandbookData = {
           id: currentState.handbookId,
           title: currentState.handbookTitle,
           description: currentState.handbookDescription,
@@ -356,7 +319,7 @@ const useProjectStore = create<State & Actions>()(
       try {
         await performSave(dataToSave);
       } catch (error) {
-        set({ isDirty: true }); // Re-mark as dirty only if save fails
+        set({ isDirty: true });
       }
     },
 
@@ -567,18 +530,13 @@ const useProjectStore = create<State & Actions>()(
   }))
 );
 
-// Initialize store only once
 if (typeof window !== 'undefined') {
   const SCRIPT_TAG_ID = 'zustand-init-script';
   if (!document.getElementById(SCRIPT_TAG_ID)) {
-    useProjectStore.getState().initializeStore();
-
     let saveTimeout: NodeJS.Timeout;
-  
-    useProjectStore.subscribe((state, prevState) => {
-      if (state.isDirty && state.isInitialized) { // Only save if initialized
+    useProjectStore.subscribe((state) => {
+      if (state.isDirty && state.isInitialized) {
         if (saveTimeout) clearTimeout(saveTimeout);
-        
         saveTimeout = setTimeout(() => {
           useProjectStore.getState().saveData();
         }, 2000); 

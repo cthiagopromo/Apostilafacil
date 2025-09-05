@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -34,26 +33,24 @@ import { LoadingModal } from './LoadingModal';
 import { useToast } from '@/hooks/use-toast';
 import type { HandbookData } from '@/lib/types';
 
-export function ProjectList() {
-  const { handbookTitle, handbookUpdatedAt, projects, createNewHandbook, loadHandbookData } = useProjectStore();
+interface ProjectListProps {
+  onNavigate: (handbookId: string, projectId: string) => void;
+}
+
+
+export function ProjectList({ onNavigate }: ProjectListProps) {
+  const { handbookId, handbookTitle, handbookUpdatedAt, projects, createNewHandbook, loadHandbookData } = useProjectStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  const handleNavigation = (path: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      router.push(path);
-    }, 100);
-  };
   
   const handleNewHandbook = () => {
     setIsLoading(true);
      setTimeout(() => {
-        const newActiveProject = createNewHandbook();
-        if (newActiveProject) {
-            router.push(`/editor/${newActiveProject.id}`);
+        const { handbookId, projectId } = createNewHandbook();
+        if (handbookId && projectId) {
+            onNavigate(handbookId, projectId);
         } else {
             setIsLoading(false);
         }
@@ -88,18 +85,16 @@ export function ProjectList() {
 
         const importedData: HandbookData = JSON.parse(dataElement.textContent);
         
-        // Aguarda a conclusão do carregamento dos dados no estado
         await loadHandbookData(importedData);
         
-        const firstProject = useProjectStore.getState().projects[0];
+        const state = useProjectStore.getState();
+        const firstProject = state.projects[0];
 
         toast({ title: 'Apostila importada com sucesso!' });
 
         if (firstProject) {
-          // A navegação ocorre após o estado ser atualizado
-          router.push(`/editor/${firstProject.id}`);
+          onNavigate(state.handbookId, firstProject.id);
         } else {
-          // Fallback, caso a apostila importada não tenha projetos
           router.push('/');
           setIsLoading(false);
         }
@@ -124,7 +119,6 @@ export function ProjectList() {
     };
 
     reader.readAsText(file);
-    // Reset file input to allow re-uploading the same file
     if (event.target) {
         event.target.value = ''; 
     }
@@ -218,7 +212,7 @@ export function ProjectList() {
                       variant="outline" 
                       size="sm" 
                       disabled={!firstProjectId || isLoading}
-                      onClick={() => firstProjectId && handleNavigation(`/editor/${firstProjectId}`)}
+                      onClick={() => firstProjectId && onNavigate(handbookId, firstProjectId)}
                     >
                       Editar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
