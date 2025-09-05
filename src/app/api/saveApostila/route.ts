@@ -7,8 +7,8 @@ export async function POST(request: Request) {
     const { apostila_id, data } = await request.json();
     const jsonData = JSON.stringify(data);
 
-    // Usando consulta parametrizada para prevenir injeção de SQL
-    const result = await db.sql`
+    // Usando a sintaxe de template string do Neon para consulta parametrizada
+    const result = await db`
       INSERT INTO apostilas (apostila_id, data, updated_at)
       VALUES (${apostila_id}, ${jsonData}, NOW())
       ON CONFLICT (apostila_id)

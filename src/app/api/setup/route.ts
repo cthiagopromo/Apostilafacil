@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
  
 export async function GET() {
   try {
-    const result = await db.sql`
+    // Usando a sintaxe de template string do Neon
+    const result = await db`
       CREATE TABLE IF NOT EXISTS apostilas (
         apostila_id VARCHAR(255) PRIMARY KEY,
         data JSONB,
