@@ -144,5 +144,3 @@ export default function PreviewPage() {
   // Use key to force remount on handbookId change
   return <PreviewContent key={handbookId} handbookData={handbookData} />;
 }
-
-    
