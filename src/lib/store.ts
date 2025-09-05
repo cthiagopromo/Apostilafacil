@@ -323,7 +323,9 @@ const useProjectStore = create<State & Actions>()(
 
       if (dataToSave && typeof window !== 'undefined') {
           try {
-              await localforage.setItem(STORE_KEY, dataToSave);
+              // Sanitize the data to ensure it's cloneable for IndexedDB
+              const cleanData = JSON.parse(JSON.stringify(dataToSave));
+              await localforage.setItem(STORE_KEY, cleanData);
           } catch (error) {
               console.error('[Store] Falha crítica ao salvar os dados:', error);
               set({ isDirty: true }); // Re-mark as dirty if save fails
