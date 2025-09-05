@@ -69,6 +69,7 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
             </div>
            )}
            <iframe
+            key={handbookUpdatedAt} // Force re-render on data change
             src="/preview"
             className="w-full h-full border-0"
             title="Pré-visualização da Apostila"
@@ -80,5 +81,3 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
     </Dialog>
   );
 }
-
-    

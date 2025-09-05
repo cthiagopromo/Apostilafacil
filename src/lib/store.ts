@@ -147,10 +147,13 @@ const useProjectStore = create<State & Actions>()(
       } finally {
           const projects = get().projects;
           if (projects.length > 0) {
-            set(state => {
-              // Ensure activeProject is a valid object, not null, before initialization finishes.
-              state.activeProject = JSON.parse(JSON.stringify(projects[0]));
-            });
+            const firstProject = projects[0];
+            if (firstProject) {
+              set(state => {
+                // Ensure activeProject is a valid object, not null, before initialization finishes.
+                state.activeProject = JSON.parse(JSON.stringify(firstProject));
+              });
+            }
           }
           set({ isInitialized: true });
       }
@@ -228,7 +231,7 @@ const useProjectStore = create<State & Actions>()(
             handbookDescription: data.description,
             handbookTheme: data.theme,
             projects: data.projects,
-            handbookUpdatedAt: data.updatedAt,
+            handbookUpdatedAt: new Date().toISOString(), // Force update timestamp
             activeProject: data.projects[0] ? JSON.parse(JSON.stringify(data.projects[0])) : null,
             activeBlockId: null,
             isDirty: true,
@@ -297,7 +300,7 @@ const useProjectStore = create<State & Actions>()(
     saveData: async () => {
       let dataToSave: HandbookData | null = null;
       set(state => {
-        if (!state.isDirty) return;
+        if (!state.isDirty && state.isInitialized) return; // Also check if initialized
 
         if (state.activeProject) {
             const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
@@ -576,5 +579,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
-
-    
