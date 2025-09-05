@@ -5,6 +5,7 @@ import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSetting
 import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
 import localforage from 'localforage';
+import { sql } from '@vercel/postgres';
 
 const STORE_KEY = 'apostila-facil-data';
 
@@ -328,6 +329,17 @@ const useProjectStore = create<State & Actions>()(
               // Sanitize the data to ensure it's cloneable for IndexedDB
               const cleanData = JSON.parse(JSON.stringify(dataToSave));
               await localforage.setItem(STORE_KEY, cleanData);
+
+              // Save to Vercel Postgres
+              await fetch('/api/saveApostila', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    apostila_id: cleanData.id,
+                    data: cleanData
+                })
+              });
+
           } catch (error) {
               console.error('[Store] Falha crítica ao salvar os dados:', error);
               set({ isDirty: true }); // Re-mark as dirty if save fails
