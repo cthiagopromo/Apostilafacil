@@ -7,7 +7,17 @@ export async function POST(request: Request) {
     const { apostila_id, data } = await request.json();
     const jsonData = JSON.stringify(data);
 
-    // Usando a sintaxe de template string do Neon para consulta parametrizada
+    // Etapa de Setup Automático: Garante que a tabela exista antes de salvar.
+    // É seguro executar isso todas as vezes, pois "IF NOT EXISTS" previne a recriação.
+    await db`
+      CREATE TABLE IF NOT EXISTS apostilas (
+        apostila_id VARCHAR(255) PRIMARY KEY,
+        data JSONB,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+
+    // Lógica de Salvamento: Insere ou atualiza a apostila.
     const result = await db`
       INSERT INTO apostilas (apostila_id, data, updated_at)
       VALUES (${apostila_id}, ${jsonData}, NOW())
@@ -17,11 +27,8 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ result }, { status: 200 });
   } catch (error) {
-    // É uma boa prática não expor mensagens de erro detalhadas ao cliente.
-    // Registre o erro real no servidor.
     console.error("Erro ao salvar apostila:", error);
     
-    // Verifique se o erro é um objeto com uma propriedade de mensagem
     const errorMessage = (error instanceof Error) ? error.message : 'Internal Server Error';
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
