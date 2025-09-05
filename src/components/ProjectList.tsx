@@ -75,7 +75,7 @@ export function ProjectList() {
     setIsLoading(true);
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const htmlContent = e.target?.result as string;
         const parser = new DOMParser();
@@ -87,14 +87,21 @@ export function ProjectList() {
         }
 
         const importedData: HandbookData = JSON.parse(dataElement.textContent);
-        const firstProject = loadHandbookData(importedData);
+        
+        // Aguarda a conclusão do carregamento dos dados no estado
+        await loadHandbookData(importedData);
+        
+        const firstProject = useProjectStore.getState().projects[0];
 
         toast({ title: 'Apostila importada com sucesso!' });
 
         if (firstProject) {
+          // A navegação ocorre após o estado ser atualizado
           router.push(`/editor/${firstProject.id}`);
         } else {
+          // Fallback, caso a apostila importada não tenha projetos
           router.push('/');
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Falha ao importar arquivo:", error);
@@ -118,7 +125,9 @@ export function ProjectList() {
 
     reader.readAsText(file);
     // Reset file input to allow re-uploading the same file
-    event.target.value = ''; 
+    if (event.target) {
+        event.target.value = ''; 
+    }
   };
 
   const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);

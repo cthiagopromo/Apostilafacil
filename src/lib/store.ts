@@ -39,7 +39,7 @@ type Actions = {
   updateHandbookDescription: (description: string) => void;
   updateHandbookTheme: (theme: Partial<Theme>) => void;
   createNewHandbook: () => Project | null;
-  loadHandbookData: (data: HandbookData) => Project | null;
+  loadHandbookData: (data: HandbookData) => Promise<void>;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
   saveData: () => Promise<void>;
@@ -221,7 +221,7 @@ const useProjectStore = create<State & Actions>()(
         return newProject;
     },
 
-    loadHandbookData: (data) => {
+    loadHandbookData: async (data) => {
         set({
             handbookId: data.id,
             handbookTitle: data.title,
@@ -233,8 +233,7 @@ const useProjectStore = create<State & Actions>()(
             activeBlockId: null,
             isDirty: true,
         });
-        get().saveData();
-        return data.projects[0] || null;
+        await get().saveData();
     },
 
     addProject: () => {
@@ -545,6 +544,17 @@ if (typeof window !== 'undefined') {
   
   let saveTimeout: NodeJS.Timeout;
   
+  useProjectStore.subscribe((state, prevState) => {
+    if (state.isDirty && !prevState.isDirty) {
+      // Clear any existing timeout to avoid multiple saves
+      if (saveTimeout) clearTimeout(saveTimeout);
+      
+      saveTimeout = setTimeout(() => {
+        useProjectStore.getState().saveData();
+      }, 2000); // Autosave after 2 seconds of inactivity
+    }
+  });
+
   window.addEventListener('beforeunload', () => {
       if (useProjectStore.getState().isDirty) {
         useProjectStore.getState().saveData();
