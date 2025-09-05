@@ -4,6 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData, Theme } from './types';
 import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
+import localforage from 'localforage';
 
 const STORE_KEY = 'apostila-facil-data';
 
@@ -27,10 +28,11 @@ type State = {
   activeProject: Project | null;
   activeBlockId: string | null;
   isDirty: boolean; // To track unsaved changes
+  isInitialized: boolean;
 };
 
 type Actions = {
-  initializeStore: () => void;
+  initializeStore: () => Promise<void>;
   setActiveProject: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   updateHandbookTitle: (title: string) => void;
@@ -40,7 +42,7 @@ type Actions = {
   loadHandbookData: (data: HandbookData) => Project | null;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
-  saveData: () => void;
+  saveData: () => Promise<void>;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
   updateLayoutSetting: (projectId: string, setting: keyof LayoutSettings, value: string) => void;
@@ -66,87 +68,90 @@ const useProjectStore = create<State & Actions>()(
     activeProject: null,
     activeBlockId: null,
     isDirty: false,
+    isInitialized: false,
 
-    initializeStore: () => {
-      if (typeof window !== 'undefined') {
-        try {
-          const storedData = localStorage.getItem(STORE_KEY);
-          let data: HandbookData | null = storedData ? JSON.parse(storedData) : null;
-          
-          if (data && data.projects && data.projects.length > 0) {
-             const migratedData = produce(data, draft => {
-                if (!draft.theme) {
-                    draft.theme = { colorPrimary: '221 83% 53%' };
+    initializeStore: async () => {
+      if (get().isInitialized || typeof window === 'undefined') {
+        return;
+      }
+      try {
+        const storedData = await localforage.getItem<HandbookData>(STORE_KEY);
+        let data: HandbookData | null = storedData;
+        
+        if (data && data.projects && data.projects.length > 0) {
+           const migratedData = produce(data, draft => {
+              if (!draft.theme) {
+                  draft.theme = { colorPrimary: '221 83% 53%' };
+              }
+              draft.projects.forEach(p => {
+                if (!p.layoutSettings) {
+                  p.layoutSettings = {
+                    containerWidth: 'large',
+                    sectionSpacing: 'standard',
+                    navigationType: 'sidebar',
+                  };
                 }
-                draft.projects.forEach(p => {
-                  if (!p.layoutSettings) {
-                    p.layoutSettings = {
+                // @ts-ignore
+                if (p.theme) {
+                  // @ts-ignore
+                  delete p.theme;
+                }
+              });
+           });
+
+          set({ 
+              handbookId: migratedData.id || getUniqueId('handbook'),
+              projects: migratedData.projects,
+              handbookTitle: migratedData.title,
+              handbookDescription: migratedData.description,
+              handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
+              handbookTheme: migratedData.theme
+          });
+        } else {
+           const initialData = initialHandbookData;
+           if (initialData.projects.length === 0) {
+               initialData.projects.push({
+                  id: getUniqueId('proj'),
+                  title: 'Primeiro Módulo',
+                  description: 'Comece a adicionar blocos a este módulo.',
+                  layoutSettings: {
                       containerWidth: 'large',
                       sectionSpacing: 'standard',
                       navigationType: 'sidebar',
-                    };
-                  }
-                  // @ts-ignore
-                  if (p.theme) {
-                    // @ts-ignore
-                    delete p.theme;
-                  }
-                });
-             });
-
-            set({ 
-                handbookId: migratedData.id || getUniqueId('handbook'),
-                projects: migratedData.projects,
-                handbookTitle: migratedData.title,
-                handbookDescription: migratedData.description,
-                handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
-                handbookTheme: migratedData.theme
-            });
-          } else {
-             const initialData = initialHandbookData;
-             if (initialData.projects.length === 0) {
-                 initialData.projects.push({
-                    id: getUniqueId('proj'),
-                    title: 'Primeiro Módulo',
-                    description: 'Comece a adicionar blocos a este módulo.',
-                    layoutSettings: {
-                        containerWidth: 'large',
-                        sectionSpacing: 'standard',
-                        navigationType: 'sidebar',
-                    },
-                    blocks: [],
-                    version: '1.0.0',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                });
-             }
-            set({ 
-                handbookId: initialData.id,
-                projects: initialData.projects,
-                handbookTitle: initialData.title,
-                handbookDescription: initialData.description,
-                handbookUpdatedAt: initialData.updatedAt,
-                handbookTheme: initialData.theme,
+                  },
+                  blocks: [],
+                  version: '1.0.0',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+              });
+           }
+          set({ 
+              handbookId: initialData.id,
+              projects: initialData.projects,
+              handbookTitle: initialData.title,
+              handbookDescription: initialData.description,
+              handbookUpdatedAt: initialData.updatedAt,
+              handbookTheme: initialData.theme,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse projects from localforage", e);
+        set({ 
+          handbookId: initialHandbookData.id,
+          projects: initialHandbookData.projects,
+          handbookTitle: initialHandbookData.title,
+          handbookDescription: initialHandbookData.description,
+          handbookUpdatedAt: initialHandbookData.updatedAt,
+          handbookTheme: initialHandbookData.theme,
+        });
+      } finally {
+          const projects = get().projects;
+          if (projects.length > 0 && !get().activeProject) {
+            set(state => {
+              state.activeProject = JSON.parse(JSON.stringify(projects[0]));
             });
           }
-        } catch (e) {
-          console.error("Failed to parse projects from localStorage", e);
-          set({ 
-            handbookId: initialHandbookData.id,
-            projects: initialHandbookData.projects,
-            handbookTitle: initialHandbookData.title,
-            handbookDescription: initialHandbookData.description,
-            handbookUpdatedAt: initialHandbookData.updatedAt,
-            handbookTheme: initialHandbookData.theme,
-          });
-        }
-        
-        const projects = get().projects;
-        if (projects.length > 0 && !get().activeProject) {
-          set(state => {
-            state.activeProject = JSON.parse(JSON.stringify(projects[0]));
-          });
-        }
+          set({ isInitialized: true });
       }
     },
     
@@ -289,11 +294,10 @@ const useProjectStore = create<State & Actions>()(
       return nextActiveProjectId;
     },
 
-    saveData: () => {
+    saveData: async () => {
+      let dataToSave: HandbookData | null = null;
       set(state => {
-        // No need to save if nothing has changed.
-        // Also prevents saving initial empty state on first load.
-        if (!state.isDirty && localStorage.getItem(STORE_KEY)) return; 
+        if (!state.isDirty) return;
 
         if (state.activeProject) {
             const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
@@ -305,19 +309,25 @@ const useProjectStore = create<State & Actions>()(
         
         state.handbookUpdatedAt = new Date().toISOString();
 
-        if (typeof window !== 'undefined') {
-          const dataToSave: HandbookData = {
+        dataToSave = {
             id: state.handbookId,
             title: state.handbookTitle,
             description: state.handbookDescription,
             projects: state.projects,
             updatedAt: state.handbookUpdatedAt,
             theme: state.handbookTheme
-          };
-          localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
-        }
+        };
         state.isDirty = false;
       });
+
+      if (dataToSave && typeof window !== 'undefined') {
+          try {
+              await localforage.setItem(STORE_KEY, dataToSave);
+          } catch (error) {
+              console.error('[Store] Falha crítica ao salvar os dados:', error);
+              set({ isDirty: true }); // Re-mark as dirty if save fails
+          }
+      }
     },
 
     updateProjectTitle: (projectId, title) => {
@@ -530,16 +540,7 @@ const useProjectStore = create<State & Actions>()(
 if (typeof window !== 'undefined') {
   useProjectStore.getState().initializeStore();
   
-  // Debounce save function
   let saveTimeout: NodeJS.Timeout;
-  const debouncedSave = () => {
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        if (useProjectStore.getState().isDirty) {
-            useProjectStore.getState().saveData();
-        }
-    }, 1000); // Save after 1 second of inactivity
-  };
   
   window.addEventListener('beforeunload', () => {
       if (useProjectStore.getState().isDirty) {
@@ -552,10 +553,6 @@ if (typeof window !== 'undefined') {
       useProjectStore.getState().saveData();
     }
   });
-
-  // Also, you might want to replace direct calls to saveData with debouncedSave
-  // in parts of the store where changes happen frequently.
-  // For now, this periodic check and save-on-close is a good safety net.
 }
 
 export default useProjectStore;
