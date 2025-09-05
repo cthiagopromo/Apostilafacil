@@ -1,5 +1,5 @@
 
-import { db } from '@vercel/postgres';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
  
 export async function POST(request: Request) {
@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { apostila_id, data } = await request.json();
     const jsonData = JSON.stringify(data);
 
-    // Using parameterized query to prevent SQL injection
+    // Usando consulta parametrizada para prevenir injeção de SQL
     const result = await db.sql`
       INSERT INTO apostilas (apostila_id, data, updated_at)
       VALUES (${apostila_id}, ${jsonData}, NOW())
@@ -17,11 +17,11 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ result }, { status: 200 });
   } catch (error) {
-    // It's good practice to not expose detailed error messages to the client.
-    // Log the actual error on the server.
-    console.error("Error saving apostila:", error);
+    // É uma boa prática não expor mensagens de erro detalhadas ao cliente.
+    // Registre o erro real no servidor.
+    console.error("Erro ao salvar apostila:", error);
     
-    // Check if the error is an object with a message property
+    // Verifique se o erro é um objeto com uma propriedade de mensagem
     const errorMessage = (error instanceof Error) ? error.message : 'Internal Server Error';
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
