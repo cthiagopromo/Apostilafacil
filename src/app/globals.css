@@ -155,7 +155,7 @@
     border: none !important;
     border-radius: 0 !important;
     padding: 1.5cm !important;
-    margin-top: 0 !important; /* Remove margin for print */
+    margin-top: 1.5cm !important; /* Adiciona margem no topo para impressão */
   }
 
   .cover-section {
@@ -260,8 +260,4 @@
   z-index: 3;
   color: white;
   padding: 2rem;
-}
-
-#handbook-root {
-  margin-top: 3rem;
 }
