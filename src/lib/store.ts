@@ -94,36 +94,40 @@ const useProjectStore = create<State & Actions>()(
       }
 
       let dataToLoad: HandbookData | null = null;
-      let isNewHandbook = false;
+      let source: 'api' | 'local' | 'new' = 'new';
       
-      const localData = await localforage.getItem<HandbookData>(STORE_KEY);
-
+      // 1. Tentar carregar da API se um ID for fornecido na URL
       if (handbookIdFromUrl) {
           try {
               const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
               if (response.ok) {
                   dataToLoad = await response.json();
-              } else if (response.status === 404) {
-                  console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB. Verificando se é uma nova apostila.`);
-                  if (!localData || localData.id !== handbookIdFromUrl) {
-                      isNewHandbook = true;
-                  }
+                  source = 'api';
+              } else {
+                 console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB. Verificando local storage.`);
               }
           } catch (e) {
-              console.error("Erro ao buscar apostila da API:", e);
+              console.error("Erro ao buscar apostila da API, tentando local storage:", e);
           }
       }
       
-      if (!dataToLoad && !isNewHandbook) {
-        dataToLoad = localData;
+      // 2. Se não carregou da API, tentar carregar do local storage
+      if (!dataToLoad) {
+          const localData = await localforage.getItem<HandbookData>(STORE_KEY);
+          // Usar dados locais somente se corresponderem ao ID da URL, se houver um
+          if (localData && (!handbookIdFromUrl || localData.id === handbookIdFromUrl)) {
+              dataToLoad = localData;
+              source = 'local';
+          }
       }
       
-      if (isNewHandbook || !dataToLoad || !dataToLoad.projects || dataToLoad.projects.length === 0) {
-        // Create a deep copy to avoid mutating the imported constant
-        dataToLoad = JSON.parse(JSON.stringify(initialHandbookData));
-        if (handbookIdFromUrl && isNewHandbook) {
+      // 3. Se ainda não houver dados, criar uma nova apostila
+      if (!dataToLoad) {
+        dataToLoad = JSON.parse(JSON.stringify(initialHandbookData)); // Cópia profunda para segurança
+        if (handbookIdFromUrl) {
           dataToLoad.id = handbookIdFromUrl;
         }
+        source = 'new';
       }
 
       const migratedData = produce(dataToLoad, draft => {
@@ -146,7 +150,8 @@ const useProjectStore = create<State & Actions>()(
           activeProject: migratedData.projects[0] ? JSON.parse(JSON.stringify(migratedData.projects[0])) : null
       });
 
-      if (isNewHandbook) {
+      // Salvar imediatamente se for uma nova apostila para que a tabela seja criada
+      if (source === 'new') {
           get().saveData();
       }
     },
