@@ -126,7 +126,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 2cm;
+    margin: 0;
   }
 
   .no-print, .no-print * {
@@ -154,8 +154,8 @@
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 0 !important; 
     margin: 0 !important;
+    padding: 2cm !important;
   }
   
   .cover-section {
