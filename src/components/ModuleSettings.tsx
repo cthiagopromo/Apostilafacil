@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function ModuleSettings() {
-  const { activeProject, updateProjectTitle, updateProjectDescription } = useProjectStore();
+  const { getActiveProject, updateProjectTitle, updateProjectDescription } = useProjectStore();
+  const activeProject = getActiveProject();
 
   if (!activeProject) {
     return (

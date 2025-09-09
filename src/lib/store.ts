@@ -21,7 +21,7 @@ type State = {
   handbookUpdatedAt: string;
   handbookTheme: Theme;
   projects: Project[];
-  activeProject: Project | null;
+  activeProjectId: string | null;
   activeBlockId: string | null;
   isDirty: boolean;
   isInitialized: boolean;
@@ -29,7 +29,8 @@ type State = {
 
 type Actions = {
   initializeStore: (handbookIdFromUrl: string | null) => Promise<void>;
-  setActiveProject: (projectId: string) => void;
+  getActiveProject: () => Project | null;
+  setActiveProjectId: (projectId: string) => void;
   setActiveBlockId: (blockId: string | null) => void;
   updateHandbookTitle: (title: string) => void;
   updateHandbookDescription: (description: string) => void;
@@ -83,7 +84,7 @@ const useProjectStore = create<State & Actions>()(
     handbookUpdatedAt: new Date().toISOString(),
     handbookTheme: { colorPrimary: '221 83% 53%' },
     projects: [],
-    activeProject: null,
+    activeProjectId: null,
     activeBlockId: null,
     isDirty: false,
     isInitialized: false,
@@ -96,7 +97,6 @@ const useProjectStore = create<State & Actions>()(
       let dataToLoad: HandbookData | null = null;
       let source: 'api' | 'local' | 'new' = 'new';
       
-      // 1. Tentar carregar da API se um ID for fornecido na URL
       if (handbookIdFromUrl) {
           try {
               const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
@@ -111,19 +111,16 @@ const useProjectStore = create<State & Actions>()(
           }
       }
       
-      // 2. Se não carregou da API, tentar carregar do local storage
       if (!dataToLoad) {
           const localData = await localforage.getItem<HandbookData>(STORE_KEY);
-          // Usar dados locais somente se corresponderem ao ID da URL, se houver um
           if (localData && (!handbookIdFromUrl || localData.id === handbookIdFromUrl)) {
               dataToLoad = localData;
               source = 'local';
           }
       }
       
-      // 3. Se ainda não houver dados, criar uma nova apostila
       if (!dataToLoad) {
-        dataToLoad = JSON.parse(JSON.stringify(initialHandbookData)); // Cópia profunda para segurança
+        dataToLoad = JSON.parse(JSON.stringify(initialHandbookData));
         if (handbookIdFromUrl) {
           dataToLoad.id = handbookIdFromUrl;
         }
@@ -139,6 +136,8 @@ const useProjectStore = create<State & Actions>()(
           });
       });
 
+      const firstProjectId = migratedData.projects[0]?.id || null;
+
       set({ 
           handbookId: migratedData.id,
           projects: migratedData.projects,
@@ -147,23 +146,27 @@ const useProjectStore = create<State & Actions>()(
           handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
           handbookTheme: migratedData.theme,
           isInitialized: true,
-          activeProject: migratedData.projects[0] ? JSON.parse(JSON.stringify(migratedData.projects[0])) : null
+          activeProjectId: firstProjectId,
       });
 
-      // Salvar imediatamente se for uma nova apostila para que a tabela seja criada
       if (source === 'new') {
           get().saveData();
       }
     },
     
-    setActiveProject: (projectId) => {
+    getActiveProject: () => {
+        const state = get();
+        if (!state.activeProjectId) return null;
+        return state.projects.find(p => p.id === state.activeProjectId) || null;
+    },
+
+    setActiveProjectId: (projectId) => {
       get().saveData();
       set(state => {
-        const projectToActivate = state.projects.find((p) => p.id === projectId);
-        if (projectToActivate) {
-          state.activeProject = JSON.parse(JSON.stringify(projectToActivate));
-          state.activeBlockId = null;
-        }
+          if (state.projects.some(p => p.id === projectId)) {
+              state.activeProjectId = projectId;
+              state.activeBlockId = null;
+          }
       });
     },
     
@@ -208,18 +211,18 @@ const useProjectStore = create<State & Actions>()(
             updatedAt: new Date().toISOString(),
         };
 
-        const newHandbookData = {
+        set({
             handbookId: newHandbookId,
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
             handbookTheme: { colorPrimary: '221 83% 53%' },
             projects: [newProject],
-            activeProject: JSON.parse(JSON.stringify(newProject)),
+            activeProjectId: newProjectId,
             activeBlockId: null,
             isDirty: true,
-        };
-        set(newHandbookData);
+        });
+
         get().saveData();
         return { handbookId: newHandbookId, projectId: newProjectId };
     },
@@ -232,7 +235,7 @@ const useProjectStore = create<State & Actions>()(
             handbookTheme: data.theme,
             projects: data.projects,
             handbookUpdatedAt: new Date().toISOString(),
-            activeProject: data.projects[0] ? JSON.parse(JSON.stringify(data.projects[0])) : null,
+            activeProjectId: data.projects[0]?.id || null,
             activeBlockId: null,
             isDirty: true,
         });
@@ -266,30 +269,16 @@ const useProjectStore = create<State & Actions>()(
       let nextActiveProjectId: string | null = null;
       set(state => {
         const projectIndex = state.projects.findIndex(p => p.id === projectId);
-        if (projectIndex === -1) return;
-
-        if (state.projects.length <= 1) {
-            console.warn("Cannot delete the last module.");
-            return;
-        }
-
+        if (projectIndex === -1 || state.projects.length <= 1) return;
+        
         state.projects.splice(projectIndex, 1);
 
-        if (state.activeProject?.id === projectId) {
-          if (state.projects.length > 0) {
+        if (state.activeProjectId === projectId) {
             const newActiveIndex = Math.max(0, projectIndex - 1);
             nextActiveProjectId = state.projects[newActiveIndex].id;
-            state.activeProject = JSON.parse(JSON.stringify(state.projects[newActiveIndex]));
-          } else {
-            state.activeProject = null;
-            nextActiveProjectId = null;
-          }
-        } else if (state.projects.length > 0 && !state.activeProject) {
-            const nextActiveProject = state.projects[0];
-            state.activeProject = JSON.parse(JSON.stringify(nextActiveProject));
-            nextActiveProjectId = nextActiveProject.id;
-        } else if (state.activeProject) {
-          nextActiveProjectId = state.activeProject.id;
+            state.activeProjectId = nextActiveProjectId;
+        } else {
+            nextActiveProjectId = state.activeProjectId;
         }
         state.isDirty = true;
       });
@@ -302,42 +291,29 @@ const useProjectStore = create<State & Actions>()(
         return;
       }
       
-      let dataToSave: HandbookData | null = null;
-
-      set(state => {
-          if (state.activeProject) {
-              const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
-              if (projectIndex !== -1) {
-                  state.projects[projectIndex] = JSON.parse(JSON.stringify(state.activeProject));
-                  state.projects[projectIndex].updatedAt = new Date().toISOString();
-              }
-          }
-          state.handbookUpdatedAt = new Date().toISOString();
-          state.isDirty = false;
-          
-          dataToSave = {
-              id: state.handbookId,
-              title: state.handbookTitle,
-              description: state.handbookDescription,
-              projects: state.projects,
-              updatedAt: state.handbookUpdatedAt,
-              theme: state.handbookTheme
-          };
-      });
+      const state = get();
+      const dataToSave: HandbookData = {
+          id: state.handbookId,
+          title: state.handbookTitle,
+          description: state.handbookDescription,
+          projects: state.projects,
+          updatedAt: new Date().toISOString(),
+          theme: state.handbookTheme
+      };
       
-      if(dataToSave) {
-          try {
-            await performSave(dataToSave);
-          } catch (error) {
-            set({ isDirty: true });
-          }
+      set({ handbookUpdatedAt: dataToSave.updatedAt, isDirty: false });
+
+      try {
+        await performSave(dataToSave);
+      } catch (error) {
+        set({ isDirty: true });
       }
     },
 
     updateProjectTitle: (projectId, title) => {
       set(state => {
-        const project = state.activeProject;
-        if (project && project.id === projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
           project.title = title;
           state.isDirty = true;
         }
@@ -346,8 +322,8 @@ const useProjectStore = create<State & Actions>()(
 
     updateProjectDescription: (projectId, description) => {
       set(state => {
-        const project = state.activeProject;
-        if (project && project.id === projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
           project.description = description;
           state.isDirty = true;
         }
@@ -356,8 +332,8 @@ const useProjectStore = create<State & Actions>()(
 
     updateLayoutSetting: (projectId, setting, value) => {
         set(state => {
-            const project = state.activeProject;
-            if (project && project.id === projectId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
                 // @ts-ignore
                 project.layoutSettings[setting] = value;
                 state.isDirty = true;
@@ -411,8 +387,8 @@ const useProjectStore = create<State & Actions>()(
         };
 
         set((state) => {
-            const project = state.activeProject;
-            if (project && project.id === projectId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
                 if (!project.blocks) {
                     project.blocks = [];
                 }
@@ -425,8 +401,8 @@ const useProjectStore = create<State & Actions>()(
 
     deleteBlock: (projectId, blockId) => {
       set(state => {
-        const project = state.activeProject;
-        if (project && project.id === projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
           project.blocks = project.blocks.filter(b => b.id !== blockId);
           if (state.activeBlockId === blockId) {
               state.activeBlockId = null;
@@ -438,8 +414,8 @@ const useProjectStore = create<State & Actions>()(
 
     reorderBlocks: (projectId, startIndex, endIndex) => {
       set(state => {
-        const project = state.activeProject;
-        if (project && project.id === projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
           const [removed] = project.blocks.splice(startIndex, 1);
           project.blocks.splice(endIndex, 0, removed);
           state.isDirty = true;
@@ -449,8 +425,8 @@ const useProjectStore = create<State & Actions>()(
 
     duplicateBlock: (projectId, blockId) => {
         set(state => {
-            const project = state.activeProject;
-            if (project && project.id === projectId) {
+            const project = state.projects.find(p => p.id === projectId);
+            if (project) {
                 const blockToDuplicate = project.blocks.find(b => b.id === blockId);
                 if (!blockToDuplicate) return;
 
@@ -471,8 +447,9 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-        if (!state.activeProject) return;
-        const block = state.activeProject.blocks.find(b => b.id === blockId);
+        const activeProject = state.projects.find(p => p.id === state.activeProjectId);
+        if (!activeProject) return;
+        const block = activeProject.blocks.find(b => b.id === blockId);
         if(!block) return;
         block.content = {...block.content, ...newContent};
         state.isDirty = true;
@@ -481,8 +458,9 @@ const useProjectStore = create<State & Actions>()(
 
     addQuizOption: (blockId) => {
         set(state => {
-            if (!state.activeProject) return;
-            const block = state.activeProject.blocks.find(b => b.id === blockId);
+            const activeProject = state.projects.find(p => p.id === state.activeProjectId);
+            if (!activeProject) return;
+            const block = activeProject.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz') {
                 if (!block.content.options) {
                     block.content.options = [];
@@ -500,7 +478,9 @@ const useProjectStore = create<State & Actions>()(
 
     updateQuizOption: (blockId, optionId, updates) => {
         set(state => {
-            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            const activeProject = state.projects.find(p => p.id === state.activeProjectId);
+            if (!activeProject) return;
+            const block = activeProject.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz' && block.content.options) {
                 const option = block.content.options.find(o => o.id === optionId);
                 if (option) {
@@ -520,7 +500,9 @@ const useProjectStore = create<State & Actions>()(
 
     deleteQuizOption: (blockId, optionId) => {
         set(state => {
-            const block = state.activeProject?.blocks.find(b => b.id === blockId);
+            const activeProject = state.projects.find(p => p.id === state.activeProjectId);
+            if (!activeProject) return;
+            const block = activeProject.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz' && block.content.options) {
                 block.content.options = block.content.options.filter(o => o.id !== optionId);
                 state.isDirty = true;
@@ -530,8 +512,9 @@ const useProjectStore = create<State & Actions>()(
     
     resetQuiz: (blockId) => {
         set(state => {
-            if (!state.activeProject) return;
-            const block = state.activeProject.blocks.find(b => b.id === blockId);
+            const activeProject = state.projects.find(p => p.id === state.activeProjectId);
+            if (!activeProject) return;
+            const block = activeProject.blocks.find(b => b.id === blockId);
             if (block && block.type === 'quiz') {
                 block.content.userAnswerId = null;
             }

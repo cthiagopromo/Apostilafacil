@@ -28,7 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export default function LeftSidebar() {
-  const { projects, activeProject, addProject, setActiveProject, deleteProject, handbookId } = useProjectStore();
+  const { projects, activeProjectId, addProject, setActiveProjectId, deleteProject, handbookId } = useProjectStore();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -40,7 +40,7 @@ export default function LeftSidebar() {
   };
 
   const handleProjectSelect = (projectId: string) => {
-    setActiveProject(projectId);
+    setActiveProjectId(projectId);
     if (handbookId) {
         router.push(`/editor/${handbookId}/${projectId}`);
     }
@@ -91,7 +91,7 @@ export default function LeftSidebar() {
             {projects.map((project) => (
               <div key={project.id} className={cn(
                   "w-full h-auto justify-start items-start p-3 rounded-md flex",
-                  activeProject?.id === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
+                  activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
               )}>
                 <Button 
                     variant="ghost" 
@@ -101,7 +101,7 @@ export default function LeftSidebar() {
                     <File className='mr-3 mt-1 flex-shrink-0' />
                     <div className='flex flex-col items-start text-left'>
                         <span className='font-semibold'>{project.title}</span>
-                        <span className={cn('text-xs', activeProject?.id === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
+                        <span className={cn('text-xs', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
                     </div>
                 </Button>
                 <AlertDialog>

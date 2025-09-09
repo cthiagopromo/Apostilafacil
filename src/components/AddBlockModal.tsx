@@ -65,9 +65,10 @@ const blockOptions = [
 ];
 
 export function AddBlockModal({ isOpen, onOpenChange }: AddBlockModalProps) {
-  const { activeProject, addBlock } = useProjectStore();
+  const { getActiveProject, addBlock } = useProjectStore();
 
   const handleAddBlock = (type: BlockType) => {
+    const activeProject = getActiveProject();
     if (activeProject) {
       addBlock(activeProject.id, type);
       onOpenChange(false);

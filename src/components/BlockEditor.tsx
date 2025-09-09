@@ -355,7 +355,8 @@ interface BlockEditorProps {
 }
 
 const BlockEditor = ({ block, index }: BlockEditorProps) => {
-    const { activeProject, activeBlockId, setActiveBlockId, deleteBlock, duplicateBlock } = useProjectStore();
+    const { activeBlockId, setActiveBlockId, deleteBlock, duplicateBlock, getActiveProject } = useProjectStore();
+    const activeProject = getActiveProject();
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
 
     const style = {

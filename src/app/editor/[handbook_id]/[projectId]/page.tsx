@@ -11,7 +11,13 @@ import { LoadingModal } from '@/components/LoadingModal';
 export default function EditorPage() {
   const router = useRouter();
   const params = useParams();
-  const { projects, setActiveProject, activeProject, handbookId, isInitialized, initializeStore } = useProjectStore();
+  const { 
+    isInitialized, 
+    initializeStore, 
+    getActiveProject, 
+    setActiveProjectId 
+  } = useProjectStore();
+  
   const [projectData, setProjectData] = useState<Project | null | undefined>(undefined);
   
   const projectId = params.projectId as string;
@@ -19,28 +25,25 @@ export default function EditorPage() {
 
   useEffect(() => {
     if (!isInitialized) {
-      // Passa o ID da apostila da URL para a store inicializar
       initializeStore(handbookIdFromUrl);
-      return; // Aguarda a inicialização
+      return;
     }
     
-    // Após a inicialização, a store terá os dados corretos
-    const foundProject = projects.find(p => p.id === projectId);
+    const currentActiveProject = getActiveProject();
+
+    if (currentActiveProject?.id !== projectId) {
+      setActiveProjectId(projectId);
+    }
+    
+    const foundProject = getActiveProject();
     setProjectData(foundProject);
-    
-    if (foundProject) {
-      if (!activeProject || activeProject.id !== foundProject.id) {
-          setActiveProject(foundProject.id);
-      }
-    }
-  }, [projectId, projects, activeProject, setActiveProject, isInitialized, handbookIdFromUrl, initializeStore]);
+
+  }, [projectId, handbookIdFromUrl, isInitialized, initializeStore, getActiveProject, setActiveProjectId]);
   
-  // Mostrar carregando enquanto a store não estiver inicializada
   if (!isInitialized) {
     return <LoadingModal isOpen={true} text="Carregando apostila..." />;
   }
 
-  // Após inicializado, se o projeto ainda não foi encontrado
   if (projectData === undefined) {
       return <LoadingModal isOpen={true} text="Carregando módulo..." />;
   }

@@ -9,15 +9,14 @@ import MainContent from './MainContent';
 import RightSidebar from './RightSidebar';
 
 export function EditorLayout() {
-  const { activeProject, handbookTheme } = useProjectStore();
+  const { getActiveProject, handbookTheme } = useProjectStore();
+  const activeProject = getActiveProject();
 
   useEffect(() => {
     if (handbookTheme?.colorPrimary) {
       document.documentElement.style.setProperty('--primary', handbookTheme.colorPrimary);
     }
-    // Cleanup function to reset to default when component unmounts or project changes
     return () => {
-      // You might want to reset to a default color or remove the property
       document.documentElement.style.removeProperty('--primary');
     };
   }, [handbookTheme?.colorPrimary]);
@@ -43,5 +42,3 @@ export function EditorLayout() {
     </div>
   );
 }
-
-    

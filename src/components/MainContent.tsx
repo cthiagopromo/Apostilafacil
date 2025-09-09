@@ -14,8 +14,10 @@ import { cn } from '@/lib/utils';
 
 
 export default function MainContent() {
-  const { activeProject, reorderBlocks } = useProjectStore();
+  const { getActiveProject, reorderBlocks } = useProjectStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const activeProject = getActiveProject();
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
