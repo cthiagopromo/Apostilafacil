@@ -202,7 +202,10 @@
   .module-section {
     display: block !important;
     page-break-after: always;
-    padding: 1.5cm; /* Adiciona margem interna para impressão */
+    padding-top: 2cm;
+    padding-left: 1.5cm;
+    padding-right: 1.5cm;
+    padding-bottom: 1.5cm;
   }
 
   .module-section:last-of-type {
