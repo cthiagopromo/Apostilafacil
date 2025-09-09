@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { apostila_id, data } = await request.json();
-    const jsonData = JSON.stringify(data);
 
     // Etapa de Setup Automático: Garante que a tabela exista antes de salvar.
     // É seguro executar isso todas as vezes, pois "IF NOT EXISTS" previne a recriação.
@@ -18,9 +17,10 @@ export async function POST(request: Request) {
     `;
 
     // Lógica de Salvamento: Insere ou atualiza a apostila.
+    // O driver lida com a serialização do objeto JSON, não é necessário usar JSON.stringify.
     const result = await db`
       INSERT INTO apostilas (apostila_id, data, updated_at)
-      VALUES (${apostila_id}, ${jsonData}, NOW())
+      VALUES (${apostila_id}, ${data}, NOW())
       ON CONFLICT (apostila_id)
       DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();
     `;
