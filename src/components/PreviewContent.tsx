@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
-import type { HandbookData } from '@/lib/types';
+import type { HandbookData, Project } from '@/lib/types';
 import FloatingNav from '@/components/FloatingNav';
 import { cn } from '@/lib/utils';
 import { Toaster } from './ui/toaster';
@@ -56,6 +56,26 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             </div>
         );
     }
+
+    const currentProject = handbookData.projects[currentModuleIndex];
+    
+    const getContainerWidthClass = (project: Project) => {
+        switch (project?.layoutSettings?.containerWidth) {
+            case 'standard': return 'max-w-4xl';
+            case 'large': return 'max-w-6xl';
+            case 'full': return 'max-w-full px-4';
+            default: return 'max-w-4xl';
+        }
+    };
+
+    const getSectionSpacingClass = (project: Project) => {
+        switch (project?.layoutSettings?.sectionSpacing) {
+            case 'compact': return 'space-y-4';
+            case 'standard': return 'space-y-8';
+            case 'comfortable': return 'space-y-12';
+            default: return 'space-y-8';
+        }
+    }
     
     const handleModuleChange = (index: number) => {
         if (index >= 0 && index < handbookData.projects.length) {
@@ -74,7 +94,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
-                    <main id="printable-content" className="max-w-4xl mx-auto p-4 sm:p-8 md:p-12 relative">
+                    <main id="printable-content" className={cn("mx-auto p-4 sm:p-8 md:p-12 relative", getContainerWidthClass(currentProject))}>
                         <FloatingNav 
                             modules={handbookData.projects} 
                             currentIndex={currentModuleIndex} 
@@ -91,7 +111,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                                         <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
                                         <p className="text-muted-foreground">{project.description}</p>
                                     </header>
-                                    <div className="space-y-8">
+                                    <div className={cn(getSectionSpacingClass(project))}>
                                         {project.blocks.map((block) => (
                                             <div key={block.id} data-block-id={block.id}>
                                                     <BlockRenderer block={block} />
