@@ -163,6 +163,10 @@
     padding: 0 !important;
     margin: 0 !important;
     page-break-after: always;
+    display: flex !important; /* Ensure it's a flex container for centering */
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
   .cover-image {

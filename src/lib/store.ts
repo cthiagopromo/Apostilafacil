@@ -56,11 +56,9 @@ type Actions = {
 const performSave = async (dataToSave: HandbookData) => {
     if (!dataToSave || typeof window === 'undefined') return;
     try {
-        // Use a safe stringify by creating a clean copy, avoiding circular references or proxy issues.
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await localforage.setItem(STORE_KEY, cleanData);
 
-        // A chamada da API é 'best-effort'. Falhas não devem impedir o salvamento local.
         fetch('/api/saveApostila', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -96,63 +94,58 @@ const useProjectStore = create<State & Actions>()(
       }
 
       let dataToLoad: HandbookData | null = null;
+      let isNewHandbook = false;
 
-      try {
-        // 1. Prioritize loading from URL if ID is present
-        if (handbookIdFromUrl) {
-            try {
-                const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
-                if (response.ok) {
-                    dataToLoad = await response.json();
-                } else {
-                    console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB.`);
+      const localData = await localforage.getItem<HandbookData>(STORE_KEY);
+
+      if (handbookIdFromUrl && localData && handbookIdFromUrl === localData.id) {
+        dataToLoad = localData;
+      } else if (handbookIdFromUrl) {
+         try {
+            const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
+            if (response.ok) {
+                dataToLoad = await response.json();
+            } else {
+                console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB. Verificando se é uma nova apostila.`);
+                if (!localData || localData.id !== handbookIdFromUrl) {
+                    isNewHandbook = true; 
                 }
-            } catch (e) {
-                console.error("Erro ao buscar apostila da API:", e);
             }
+        } catch (e) {
+            console.error("Erro ao buscar apostila da API:", e);
         }
-        
-        // 2. Fallback to local storage if no URL or API fetch fails
-        if (!dataToLoad) {
-            dataToLoad = await localforage.getItem<HandbookData>(STORE_KEY);
-        }
-
-        // 3. If still nothing, use initial data
-        if (!dataToLoad || !dataToLoad.projects || dataToLoad.projects.length === 0) {
-            dataToLoad = initialHandbookData;
-        }
-
-        // Migration and setting state
-        const migratedData = produce(dataToLoad, draft => {
-            if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
-            draft.projects.forEach(p => {
-                if (!p.layoutSettings) {
-                    p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
-                }
-            });
-        });
-
-        set({ 
-            handbookId: migratedData.id,
-            projects: migratedData.projects,
-            handbookTitle: migratedData.title,
-            handbookDescription: migratedData.description,
-            handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
-            handbookTheme: migratedData.theme
-        });
-        
-      } catch (e) {
-        console.error("Falha ao inicializar a store", e);
-        set({ ...initialHandbookData });
-      } finally {
-          const projects = get().projects;
-          if (projects.length > 0) {
-            set(state => {
-              state.activeProject = JSON.parse(JSON.stringify(projects[0]));
-            });
-          }
-          set({ isInitialized: true });
       }
+      
+      if (!dataToLoad && !isNewHandbook) {
+        dataToLoad = localData;
+      }
+
+      if (isNewHandbook || !dataToLoad || !dataToLoad.projects || dataToLoad.projects.length === 0) {
+        dataToLoad = initialHandbookData;
+        if(handbookIdFromUrl && isNewHandbook) {
+            dataToLoad.id = handbookIdFromUrl;
+        }
+      }
+
+      const migratedData = produce(dataToLoad, draft => {
+          if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
+          draft.projects.forEach(p => {
+              if (!p.layoutSettings) {
+                  p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
+              }
+          });
+      });
+
+      set({ 
+          handbookId: migratedData.id,
+          projects: migratedData.projects,
+          handbookTitle: migratedData.title,
+          handbookDescription: migratedData.description,
+          handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
+          handbookTheme: migratedData.theme,
+          isInitialized: true,
+          activeProject: migratedData.projects[0] ? JSON.parse(JSON.stringify(migratedData.projects[0])) : null
+      });
     },
     
     setActiveProject: (projectId) => {
@@ -207,7 +200,7 @@ const useProjectStore = create<State & Actions>()(
             updatedAt: new Date().toISOString(),
         };
 
-        set({
+        const newHandbookData = {
             handbookId: newHandbookId,
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
@@ -217,7 +210,8 @@ const useProjectStore = create<State & Actions>()(
             activeProject: JSON.parse(JSON.stringify(newProject)),
             activeBlockId: null,
             isDirty: true,
-        });
+        };
+        set(newHandbookData);
         get().saveData();
         return { handbookId: newHandbookId, projectId: newProjectId };
     },
