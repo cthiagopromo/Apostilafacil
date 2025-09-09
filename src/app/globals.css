@@ -154,14 +154,14 @@
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 1.5cm !important;
-    margin-top: 1.5cm !important; /* Adiciona margem no topo para impressão */
+    padding: 0 !important; 
+    margin: 0 !important;
   }
-
+  
   .cover-section {
     width: 210mm;
     height: 297mm;
-    padding: 0 !important;
+    padding: 2cm !important;
     margin: 0 !important;
     page-break-after: always;
     display: flex !important;
@@ -202,6 +202,7 @@
   .module-section {
     display: block !important;
     page-break-after: always;
+    padding: 1.5cm; /* Adiciona margem interna para impressão */
   }
 
   .module-section:last-of-type {

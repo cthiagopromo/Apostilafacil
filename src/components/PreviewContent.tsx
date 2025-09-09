@@ -101,6 +101,30 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
         setView('content');
         handleModuleChange(0);
     }
+    
+    if (view === 'cover') {
+        return (
+             <div className="h-full flex flex-col bg-secondary/40">
+                <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
+                <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
+                    <main id="printable-content" className="h-full">
+                         <section className={cn("cover-section", { 'module-section': isPreparingPrint })}>
+                            <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
+                            <div className="cover-overlay"></div>
+                            <div className="cover-content">
+                                <h1 className="text-5xl font-bold mb-4">{handbookData.title}</h1>
+                                <p className="text-xl mb-8">{handbookData.description}</p>
+                                <Button size="lg" onClick={startHandbook} className="no-print">
+                                    <Play className="mr-2"/>
+                                    Iniciar Apostila
+                                </Button>
+                            </div>
+                        </section>
+                    </main>
+                </div>
+             </div>
+        )
+    }
 
     return (
         <>
@@ -109,31 +133,25 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
-                    <main id="printable-content" className={cn("mx-auto p-4 sm:p-8 md:p-12 relative", {'max-w-full !p-0' : view === 'cover' && isPreparingPrint})}>
-                         {view === 'content' && (
-                             <FloatingNav 
-                                modules={handbookData.projects} 
-                                currentIndex={currentModuleIndex} 
-                                onModuleSelect={handleModuleChange}
-                            />
-                        )}
+                    <main id="printable-content" className={cn("mx-auto p-4 sm:p-8 md:p-12 relative")}>
+                        <FloatingNav 
+                            modules={handbookData.projects} 
+                            currentIndex={currentModuleIndex} 
+                            onModuleSelect={handleModuleChange}
+                        />
                         
                         {coverImage && (
-                            <section className={cn("cover-section", { 'hidden': !isPreparingPrint && view !== 'cover', 'module-section': isPreparingPrint })}>
+                            <section className={cn("cover-section", { 'hidden': !isPreparingPrint, 'module-section': isPreparingPrint })}>
                                 <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
                                 <div className="cover-overlay"></div>
                                 <div className="cover-content">
                                     <h1 className="text-5xl font-bold mb-4">{handbookData.title}</h1>
                                     <p className="text-xl mb-8">{handbookData.description}</p>
-                                    <Button size="lg" onClick={startHandbook} className="no-print">
-                                        <Play className="mr-2"/>
-                                        Iniciar Apostila
-                                    </Button>
                                 </div>
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16", getContainerWidthClass(currentProject), {'hidden': view === 'cover' && !isPreparingPrint})}>
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 
