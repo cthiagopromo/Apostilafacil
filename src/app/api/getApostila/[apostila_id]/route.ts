@@ -12,36 +12,44 @@ export async function GET(
       return NextResponse.json({ error: 'ID da apostila é obrigatório' }, { status: 400 });
     }
 
-    // Primeiro, verifica se a tabela existe para evitar erros em um banco de dados novo.
-    // Esta é uma medida de segurança extra. A rota de saveApostila deve criá-la.
+    // Etapa de Segurança: Verifica se a tabela existe antes de fazer a consulta.
+    // Isso previne erros 500 em um banco de dados novo ou vazio.
     try {
-      await db`SELECT 1 FROM apostilas LIMIT 1;`;
-    } catch (tableError) {
-      // Se a tabela não existe, consideramos que a apostila não foi encontrada.
-      console.warn("Tabela 'apostilas' não encontrada, retornando 404.");
-      return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
+      // Usamos uma consulta ao information_schema que é padrão SQL para verificar a existência de tabelas.
+      const tableCheck = await db`
+        SELECT EXISTS (
+          SELECT FROM 
+              information_schema.tables 
+          WHERE 
+              table_name = 'apostilas'
+        );
+      `;
+      // Se a tabela não existir, a consulta acima retorna 'exists: false'.
+      if (!tableCheck[0].exists) {
+        console.warn("Tabela 'apostilas' não encontrada, retornando 404.");
+        return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
+      }
+    } catch (checkError) {
+        console.error("Erro ao verificar a existência da tabela 'apostilas':", checkError);
+        return NextResponse.json({ error: 'Erro interno no servidor ao acessar o banco de dados' }, { status: 500 });
     }
-
+    
+    // Se a tabela existe, prosseguimos com a busca da apostila.
     const result = await db`
       SELECT data FROM apostilas WHERE apostila_id = ${apostila_id};
     `;
     
-    if (result.length === 0) {
+    if (result.length === 0 || !result[0].data) {
       return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
     }
     
     const apostilaData = result[0].data;
 
-    if (!apostilaData) {
-      return NextResponse.json({ error: 'Dados da apostila estão vazios ou corrompidos' }, { status: 404 });
-    }
-
     return NextResponse.json(apostilaData, { status: 200 });
-  } catch (error) {
-    console.error("Erro ao buscar apostila:", error);
-    
-    const errorMessage = (error instanceof Error) ? error.message : 'Internal Server Error';
 
+  } catch (error) {
+    console.error("Erro fatal ao buscar apostila:", error);
+    const errorMessage = (error instanceof Error) ? error.message : 'Internal Server Error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
