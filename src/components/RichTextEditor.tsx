@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import TextAlign from '@tiptap/extension-text-align';
 import {
   Bold,
   Italic,
@@ -13,6 +14,10 @@ import {
   Heading3,
   Undo,
   Redo,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 
@@ -49,6 +54,36 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <Strikethrough className="h-4 w-4" />
       </Toggle>
+      <div className="w-px h-6 bg-border mx-1"></div>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'left' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+      >
+        <AlignLeft className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'center' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+      >
+        <AlignCenter className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'right' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+      >
+        <AlignRight className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive({ textAlign: 'justify' })}
+        onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
+      >
+        <AlignJustify className="h-4 w-4" />
+      </Toggle>
+      <div className="w-px h-6 bg-border mx-1"></div>
       <Toggle
         size="sm"
         pressed={editor.isActive('heading', { level: 1 })}
@@ -76,6 +111,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <Heading3 className="h-4 w-4" />
       </Toggle>
+      <div className="w-px h-6 bg-border mx-1"></div>
       <Toggle
         size="sm"
         pressed={editor.isActive('bulletList')}
@@ -90,7 +126,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <ListOrdered className="h-4 w-4" />
       </Toggle>
-      
+      <div className="w-px h-6 bg-border mx-1"></div>
       <Toggle
         size="sm"
         onPressedChange={() => editor.chain().focus().undo().run()}
@@ -112,11 +148,16 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
 const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
   const editor = useEditor({
-    extensions: [StarterKit.configure({
+    extensions: [
+      StarterKit.configure({
         heading: {
             levels: [1, 2, 3],
         }
-    })],
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
     content: value,
     editorProps: {
       attributes: {
