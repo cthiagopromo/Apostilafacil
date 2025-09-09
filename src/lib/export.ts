@@ -312,14 +312,13 @@ const getGlobalCss = (theme: Theme) => `
 
       .cover-section {
         width: 100%;
-        height: 80vh;
+        height: 100vh;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-align: center;
         position: relative;
-        border-radius: 0.75rem;
         overflow: hidden;
       }
       .cover-image {
@@ -366,7 +365,7 @@ const getGlobalCss = (theme: Theme) => `
             margin: 0 !important;
             padding: 0 !important;
           }
-          #handbook-root, #printable-content {
+          #handbook-root {
             box-shadow: none !important;
             border-radius: 0 !important;
             border: none !important;
@@ -440,8 +439,8 @@ export const handleExportZip = async ({
         
         const coverHtml = handbookTheme.cover ? `
             <section class="cover-section module-section">
-                <div class="cover-overlay"></div>
                 <img src="${handbookTheme.cover}" alt="Capa da Apostila" class="cover-image"/>
+                <div class="cover-overlay"></div>
                 <div class="cover-content">
                     <h1 class="text-5xl font-bold mb-4">${handbookTitle}</h1>
                     <p class="text-xl mb-8">${handbookDescription}</p>
