@@ -22,7 +22,7 @@ export default function RightSidebar() {
         </div>
       </div>
       <div className="p-4 flex-1">
-        <Accordion type="multiple" defaultValue={['item-apostila', 'item-modulo']} className="w-full">
+        <Accordion type="single" collapsible className="w-full">
            <AccordionItem value="item-apostila">
             <AccordionTrigger>
               <div className="flex items-center gap-2">
