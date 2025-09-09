@@ -16,12 +16,10 @@ export async function GET(
       SELECT data FROM apostilas WHERE apostila_id = ${apostila_id};
     `;
     
-    // A consulta com 'rows' vazios indica que não foi encontrado
     if (result.rowCount === 0) {
       return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
     }
     
-    // Acessamos a primeira linha e a coluna 'data'
     const apostilaData = result.rows[0].data;
 
     if (!apostilaData) {

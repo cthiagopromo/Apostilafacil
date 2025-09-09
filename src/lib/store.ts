@@ -95,35 +95,34 @@ const useProjectStore = create<State & Actions>()(
 
       let dataToLoad: HandbookData | null = null;
       let isNewHandbook = false;
-
+      
       const localData = await localforage.getItem<HandbookData>(STORE_KEY);
 
-      if (handbookIdFromUrl && localData && handbookIdFromUrl === localData.id) {
-        dataToLoad = localData;
-      } else if (handbookIdFromUrl) {
-         try {
-            const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
-            if (response.ok) {
-                dataToLoad = await response.json();
-            } else {
-                console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB. Verificando se é uma nova apostila.`);
-                if (!localData || localData.id !== handbookIdFromUrl) {
-                    isNewHandbook = true; 
-                }
-            }
-        } catch (e) {
-            console.error("Erro ao buscar apostila da API:", e);
-        }
+      if (handbookIdFromUrl) {
+          try {
+              const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
+              if (response.ok) {
+                  dataToLoad = await response.json();
+              } else if (response.status === 404) {
+                  console.warn(`Apostila com ID ${handbookIdFromUrl} não encontrada no DB. Verificando se é uma nova apostila.`);
+                  if (!localData || localData.id !== handbookIdFromUrl) {
+                      isNewHandbook = true;
+                  }
+              }
+          } catch (e) {
+              console.error("Erro ao buscar apostila da API:", e);
+          }
       }
       
       if (!dataToLoad && !isNewHandbook) {
         dataToLoad = localData;
       }
-
+      
       if (isNewHandbook || !dataToLoad || !dataToLoad.projects || dataToLoad.projects.length === 0) {
-        dataToLoad = initialHandbookData;
-        if(handbookIdFromUrl && isNewHandbook) {
-            dataToLoad.id = handbookIdFromUrl;
+        // Create a deep copy to avoid mutating the imported constant
+        dataToLoad = JSON.parse(JSON.stringify(initialHandbookData));
+        if (handbookIdFromUrl && isNewHandbook) {
+          dataToLoad.id = handbookIdFromUrl;
         }
       }
 
@@ -146,6 +145,10 @@ const useProjectStore = create<State & Actions>()(
           isInitialized: true,
           activeProject: migratedData.projects[0] ? JSON.parse(JSON.stringify(migratedData.projects[0])) : null
       });
+
+      if (isNewHandbook) {
+          get().saveData();
+      }
     },
     
     setActiveProject: (projectId) => {
