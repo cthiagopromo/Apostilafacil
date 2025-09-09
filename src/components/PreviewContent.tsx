@@ -21,6 +21,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
     const primaryColor = handbookData?.theme?.colorPrimary;
+    const coverImage = handbookData?.theme?.cover;
 
     useEffect(() => {
         if (isPreparingPrint) {
@@ -100,7 +101,13 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                             currentIndex={currentModuleIndex} 
                             onModuleSelect={handleModuleChange}
                         />
-
+                        
+                        {coverImage && (
+                            <section className="cover-section module-section">
+                                <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
+                            </section>
+                        )}
+                        
                         <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                             {handbookData.projects.map((project, index) => (
                                 <section 

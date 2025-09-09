@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Upload, X } from 'lucide-react';
+import { Button } from './ui/button';
+import { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const colorOptions = [
   { name: 'Azul', hsl: '221 83% 53%', className: 'bg-blue-600' },
@@ -25,9 +28,47 @@ export default function HandbookSettings() {
       updateHandbookDescription,
       updateHandbookTheme
   } = useProjectStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleColorSelect = (hsl: string) => {
     updateHandbookTheme({ colorPrimary: hsl });
+  }
+
+  const handleCoverUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+            variant: 'destructive',
+            title: 'Imagem muito grande',
+            description: 'Por favor, escolha uma imagem com menos de 2MB.',
+        });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+        const base64Url = loadEvent.target?.result as string;
+        updateHandbookTheme({ cover: base64Url });
+        toast({
+            title: 'Upload da capa concluído',
+            description: 'A imagem de capa foi incorporada com sucesso.',
+        });
+    };
+    reader.onerror = () => {
+         toast({
+            variant: 'destructive',
+            title: 'Erro no Upload',
+            description: 'Não foi possível ler o arquivo da imagem.',
+        });
+    }
+    reader.readAsDataURL(file);
+  };
+  
+  const removeCover = () => {
+    updateHandbookTheme({ cover: undefined });
   }
 
   const currentColor = handbookTheme?.colorPrimary || '221 83% 53%';
@@ -77,8 +118,31 @@ export default function HandbookSettings() {
           ))}
         </div>
       </div>
+      <div className="space-y-2">
+        <Label>Imagem de Capa</Label>
+        {handbookTheme.cover ? (
+            <div className='relative group'>
+                <img src={handbookTheme.cover} alt="Pré-visualização da capa" className='rounded-md border' />
+                <Button onClick={removeCover} variant="destructive" size="icon" className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <X />
+                </Button>
+            </div>
+        ) : (
+            <>
+              <Button variant="outline" className='w-full' onClick={() => fileInputRef.current?.click()}>
+                  <Upload className='mr-2' />
+                  Enviar Imagem (Max 2MB)
+              </Button>
+              <Input 
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  onChange={handleCoverUpload}
+              />
+            </>
+        )}
+      </div>
     </div>
   );
 }
-
-    

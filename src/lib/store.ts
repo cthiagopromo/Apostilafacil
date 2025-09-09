@@ -56,15 +56,20 @@ type Actions = {
 const performSave = async (dataToSave: HandbookData) => {
     if (!dataToSave || typeof window === 'undefined') return;
     try {
+        // Use a safe stringify by creating a clean copy, avoiding circular references or proxy issues.
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await localforage.setItem(STORE_KEY, cleanData);
-        await fetch('/api/saveApostila', {
+
+        // A chamada da API é 'best-effort'. Falhas não devem impedir o salvamento local.
+        fetch('/api/saveApostila', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 apostila_id: cleanData.id,
                 data: cleanData
             })
+        }).catch(apiError => {
+            console.warn('[Store] Falha ao salvar na API, mas os dados foram salvos localmente:', apiError);
         });
     } catch (error) {
         console.error('[Store] Falha crítica ao salvar os dados:', error);
@@ -294,6 +299,9 @@ const useProjectStore = create<State & Actions>()(
       if (!get().isDirty && get().isInitialized) {
         return;
       }
+      
+      let dataToSave: HandbookData | null = null;
+
       set(state => {
           if (state.activeProject) {
               const projectIndex = state.projects.findIndex(p => p.id === state.activeProject!.id);
@@ -304,22 +312,23 @@ const useProjectStore = create<State & Actions>()(
           }
           state.handbookUpdatedAt = new Date().toISOString();
           state.isDirty = false;
+          
+          dataToSave = {
+              id: state.handbookId,
+              title: state.handbookTitle,
+              description: state.handbookDescription,
+              projects: state.projects,
+              updatedAt: state.handbookUpdatedAt,
+              theme: state.handbookTheme
+          };
       });
-
-      const currentState = get();
-      const dataToSave: HandbookData = {
-          id: currentState.handbookId,
-          title: currentState.handbookTitle,
-          description: currentState.handbookDescription,
-          projects: currentState.projects,
-          updatedAt: currentState.handbookUpdatedAt,
-          theme: currentState.handbookTheme
-      };
       
-      try {
-        await performSave(dataToSave);
-      } catch (error) {
-        set({ isDirty: true });
+      if(dataToSave) {
+          try {
+            await performSave(dataToSave);
+          } catch (error) {
+            set({ isDirty: true });
+          }
       }
     },
 

@@ -1,4 +1,5 @@
 
+
 export type BlockType = 
   | 'text' 
   | 'image' 
@@ -49,6 +50,7 @@ export interface Block {
 
 export interface Theme {
   colorPrimary: string;
+  cover?: string; // URL da imagem de capa (base64)
 }
 
 export interface LayoutSettings {

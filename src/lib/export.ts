@@ -1,4 +1,5 @@
 
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
@@ -16,13 +17,17 @@ const getInteractiveScript = (theme: Theme): string => {
             }
 
             let currentModuleIndex = 0;
-            const modules = document.querySelectorAll('.module-section');
+            const modules = document.querySelectorAll('.module-section:not(.cover-section)');
             const navButtons = document.querySelectorAll('.module-nav-btn');
             const floatingNavButtons = document.querySelectorAll('.floating-nav-btn');
             const floatingNavMenu = document.getElementById('floating-nav-menu');
             const floatingNavToggle = document.getElementById('floating-nav-toggle');
+            const coverSection = document.querySelector('.cover-section');
 
             const showModule = (index) => {
+                 if (coverSection) {
+                    coverSection.style.display = 'none';
+                }
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
                     module.style.display = isVisible ? 'block' : 'none';
@@ -145,7 +150,12 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
             
-            showModule(0);
+            if (coverSection) {
+                coverSection.style.display = 'block';
+                modules.forEach(m => { m.style.display = 'none'; });
+            } else {
+                 showModule(0);
+            }
         });
     `;
 };
@@ -287,11 +297,22 @@ const getGlobalCss = (theme: Theme) => `
       }
       
       .video-print-placeholder-export { display: none; }
+      
+      .cover-section {
+        width: 100%;
+        height: 80vh; /* Viewport height for screen */
+      }
+      .cover-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 0.75rem;
+      }
 
       @media print {
           @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 0;
           }
           html, body {
             width: 100%;
@@ -306,13 +327,23 @@ const getGlobalCss = (theme: Theme) => `
             margin: 0 !important;
             padding: 0 !important;
           }
-          #handbook-root {
+          #handbook-root, #printable-content {
             box-shadow: none !important;
             border-radius: 0 !important;
             border: none !important;
-            padding: 0 !important;
+            padding: 1.5cm !important;
           }
           .no-print, .no-print * { display: none !important; }
+          
+          .cover-section {
+            display: block !important;
+            width: 210mm;
+            height: 297mm;
+            padding: 0 !important;
+            margin: 0 !important;
+            page-break-after: always;
+          }
+
           .module-section {
               display: block !important;
               page-break-inside: avoid;
@@ -367,6 +398,11 @@ export const handleExportZip = async ({
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
         const handbookData: HandbookData = { id: handbookId, title: handbookTitle, description: handbookDescription, updatedAt: handbookUpdatedAt, theme: handbookTheme, projects };
         
+        const coverHtml = handbookTheme.cover ? `
+            <section class="cover-section module-section">
+                <img src="${handbookTheme.cover}" alt="Capa da Apostila" class="cover-image"/>
+            </section>
+        ` : '';
         const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
         const floatingNavHtml = getFloatingNavHtml(handbookData.projects);
         
@@ -460,7 +496,8 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main class="max-w-4xl mx-auto main-content p-4 sm:p-8 md:p-12">
+                 <main id="printable-content" class="max-w-4xl mx-auto main-content p-4 sm:p-8 md:p-12">
+                    ${coverHtml}
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                         ${interactiveContentHtml}
                     </div>
