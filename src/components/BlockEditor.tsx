@@ -379,7 +379,7 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
     
     return (
         <div ref={setNodeRef} style={style} className="relative group" onClick={() => setActiveBlockId(block.id)}>
-            <div className={cn("transition-all mb-4", isActive ? 'border-primary ring-2 ring-primary/50 rounded-lg' : 'hover:border-primary/50 rounded-lg')}>
+            <div className={cn("transition-all", isActive ? 'border-primary ring-2 ring-primary/50 rounded-lg' : 'hover:border-primary/50 rounded-lg')}>
                  {isActive ? (
                     <BlockSettingsEditor block={block} onSave={handleSave} />
                  ) : (

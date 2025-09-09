@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { AddBlockModal } from './AddBlockModal';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { cn } from '@/lib/utils';
 
 
 export default function MainContent() {
@@ -25,6 +26,33 @@ export default function MainContent() {
     }
   }
 
+  const getContainerWidthClass = () => {
+    switch (activeProject?.layoutSettings?.containerWidth) {
+      case 'standard':
+        return 'max-w-4xl';
+      case 'large':
+        return 'max-w-6xl';
+      case 'full':
+        return 'max-w-full px-4';
+      default:
+        return 'max-w-4xl';
+    }
+  };
+
+  const getBlockSpacingClass = (index: number) => {
+    if (index === 0) return '';
+    switch (activeProject?.layoutSettings?.sectionSpacing) {
+        case 'compact':
+            return 'mt-4';
+        case 'standard':
+            return 'mt-8';
+        case 'comfortable':
+            return 'mt-12';
+        default:
+            return 'mt-8';
+    }
+  }
+
 
   return (
     <div className="flex flex-col h-full">
@@ -35,7 +63,7 @@ export default function MainContent() {
         )}
       </div>
       <ScrollArea className="flex-1 bg-secondary/40">
-        <div className="p-6 sm:p-8 lg:p-12 max-w-4xl mx-auto">
+        <div className={cn("mx-auto p-6 sm:p-8 lg:p-12", getContainerWidthClass())}>
           {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
             <DndContext
                 collisionDetection={closestCenter}
@@ -46,7 +74,9 @@ export default function MainContent() {
                     strategy={verticalListSortingStrategy}
                 >
                     {activeProject.blocks.map((block, index) => (
-                      <BlockEditor key={block.id} block={block} index={index}/>
+                      <div key={block.id} className={cn(index > 0 && getBlockSpacingClass(index))}>
+                        <BlockEditor block={block} index={index}/>
+                      </div>
                     ))}
                 </SortableContext>
             </DndContext>
