@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData, Project } from '@/lib/types';
@@ -19,9 +19,18 @@ interface PreviewContentProps {
 export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
+    const [view, setView] = useState<'cover' | 'content'>('content');
 
     const primaryColor = handbookData?.theme?.colorPrimary;
     const coverImage = handbookData?.theme?.cover;
+
+    useEffect(() => {
+        if (coverImage) {
+            setView('cover');
+        } else {
+            setView('content');
+        }
+    }, [coverImage]);
 
     useEffect(() => {
         if (isPreparingPrint) {
@@ -87,6 +96,11 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             }
         }
     };
+    
+    const startHandbook = () => {
+        setView('content');
+        handleModuleChange(0);
+    }
 
     return (
         <>
@@ -96,19 +110,30 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
                     <main id="printable-content" className={cn("mx-auto p-4 sm:p-8 md:p-12 relative", getContainerWidthClass(currentProject))}>
-                        <FloatingNav 
-                            modules={handbookData.projects} 
-                            currentIndex={currentModuleIndex} 
-                            onModuleSelect={handleModuleChange}
-                        />
+                         {view === 'content' && (
+                             <FloatingNav 
+                                modules={handbookData.projects} 
+                                currentIndex={currentModuleIndex} 
+                                onModuleSelect={handleModuleChange}
+                            />
+                        )}
                         
                         {coverImage && (
-                            <section className="cover-section module-section">
+                            <section className={cn("cover-section module-section", { 'hidden': !isPreparingPrint && view !== 'cover' })}>
+                                <div className="cover-overlay"></div>
                                 <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
+                                <div className="cover-content">
+                                    <h1 className="text-5xl font-bold mb-4">{handbookData.title}</h1>
+                                    <p className="text-xl mb-8">{handbookData.description}</p>
+                                    <Button size="lg" onClick={startHandbook} className="no-print">
+                                        <Play className="mr-2"/>
+                                        Iniciar Apostila
+                                    </Button>
+                                </div>
                             </section>
                         )}
                         
-                        <div id="handbook-root" className="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16", {'hidden': view === 'cover'})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 

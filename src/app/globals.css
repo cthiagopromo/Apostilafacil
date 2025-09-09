@@ -155,6 +155,7 @@
     border: none !important;
     border-radius: 0 !important;
     padding: 1.5cm !important;
+    margin-top: 0 !important;
   }
 
   .cover-section {
@@ -163,16 +164,39 @@
     padding: 0 !important;
     margin: 0 !important;
     page-break-after: always;
-    display: flex !important; /* Ensure it's a flex container for centering */
+    display: flex !important;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
     overflow: hidden;
+    position: relative;
   }
 
   .cover-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  .cover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 2;
+  }
+
+  .cover-content {
+    position: relative;
+    z-index: 3;
+    color: white;
   }
   
   .module-section {
@@ -202,13 +226,42 @@
     width: 100%;
     height: calc(100vh - 180px); /* Adjust based on header/footer height in preview */
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
 }
 
 .cover-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 0.75rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.cover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+.cover-content {
+  position: relative;
+  z-index: 3;
+  color: white;
+  padding: 2rem;
+}
+
+#handbook-root {
+  margin-top: 3rem;
 }

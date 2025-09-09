@@ -23,10 +23,15 @@ const getInteractiveScript = (theme: Theme): string => {
             const floatingNavMenu = document.getElementById('floating-nav-menu');
             const floatingNavToggle = document.getElementById('floating-nav-toggle');
             const coverSection = document.querySelector('.cover-section');
+            const handbookRoot = document.getElementById('handbook-root');
+            const startButton = document.getElementById('start-handbook-btn');
 
             const showModule = (index) => {
                  if (coverSection) {
                     coverSection.style.display = 'none';
+                }
+                if (handbookRoot) {
+                    handbookRoot.style.display = 'block';
                 }
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
@@ -55,6 +60,12 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (nextBtn) nextBtn.disabled = currentModuleIndex === modules.length - 1;
                 if (progressText) progressText.textContent = 'Módulo ' + (currentModuleIndex + 1) + ' de ' + modules.length;
             };
+
+            if (startButton) {
+                startButton.addEventListener('click', () => {
+                    showModule(0);
+                });
+            }
 
             navButtons.forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -151,8 +162,8 @@ const getInteractiveScript = (theme: Theme): string => {
             }
             
             if (coverSection) {
-                coverSection.style.display = 'block';
-                modules.forEach(m => { m.style.display = 'none'; });
+                coverSection.style.display = 'flex';
+                if(handbookRoot) handbookRoot.style.display = 'none';
             } else {
                  showModule(0);
             }
@@ -291,23 +302,51 @@ const getGlobalCss = (theme: Theme) => `
       body.high-contrast .radio-group-item { border-color: white !important; }
       body.high-contrast .lucide-check-circle { fill: yellow !important; }
 
-
-      .module-section {
+      .module-section:not(.cover-section) {
           display: none;
       }
       
       .video-print-placeholder-export { display: none; }
       
+      #handbook-root { margin-top: 3rem; }
+
       .cover-section {
         width: 100%;
-        height: 80vh; /* Viewport height for screen */
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        position: relative;
+        border-radius: 0.75rem;
+        overflow: hidden;
       }
       .cover-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 0.75rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
       }
+      .cover-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.4);
+        z-index: 2;
+      }
+      .cover-content {
+        position: relative;
+        z-index: 3;
+        color: white;
+        padding: 2rem;
+      }
+
 
       @media print {
           @page {
@@ -332,11 +371,12 @@ const getGlobalCss = (theme: Theme) => `
             border-radius: 0 !important;
             border: none !important;
             padding: 1.5cm !important;
+            margin-top: 0 !important;
           }
           .no-print, .no-print * { display: none !important; }
           
           .cover-section {
-            display: block !important;
+            display: flex !important;
             width: 210mm;
             height: 297mm;
             padding: 0 !important;
@@ -400,7 +440,16 @@ export const handleExportZip = async ({
         
         const coverHtml = handbookTheme.cover ? `
             <section class="cover-section module-section">
+                <div class="cover-overlay"></div>
                 <img src="${handbookTheme.cover}" alt="Capa da Apostila" class="cover-image"/>
+                <div class="cover-content">
+                    <h1 class="text-5xl font-bold mb-4">${handbookTitle}</h1>
+                    <p class="text-xl mb-8">${handbookDescription}</p>
+                    <button id="start-handbook-btn" class="no-print inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Iniciar Apostila
+                    </button>
+                </div>
             </section>
         ` : '';
         const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
