@@ -122,10 +122,16 @@ const useProjectStore = create<State & Actions>()(
       
       if (!dataToLoad) {
         dataToLoad = JSON.parse(JSON.stringify(initialHandbookData));
-        if (handbookIdFromUrl) {
+        if (dataToLoad && handbookIdFromUrl) {
           dataToLoad.id = handbookIdFromUrl;
         }
         source = 'new';
+      }
+
+      if (!dataToLoad) {
+        console.error("Fatal: dataToLoad is null after initialization logic.");
+        set({ isInitialized: true });
+        return;
       }
 
       const migratedData = produce(dataToLoad, draft => {
