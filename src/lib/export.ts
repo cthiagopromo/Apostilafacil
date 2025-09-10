@@ -74,7 +74,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -139,15 +139,13 @@ const getInteractiveScript = (theme: Theme): string => {
 
             const toolbar = document.querySelector('.accessibility-toolbar');
             if (toolbar) {
-                const printBtn = toolbar.querySelector('[data-action="print"]');
+                 const printBtn = toolbar.querySelector('[data-action="print"]');
                 const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
                 const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
                 
                 if (printBtn) {
-                    printBtn.addEventListener('click', () => {
-                        window.print();
-                    });
+                    printBtn.addEventListener('click', handlePrint);
                 }
 
                 if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
@@ -212,7 +210,7 @@ const renderBlockToHtml = (block: Block): string => {
                 videoEmbedUrl = `https://player.vimeo.com/video/${vimeoVideoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
                 videoLink = `https://vimeo.com/${vimeoVideoId}`;
             } else if (videoType === 'cloudflare' && cloudflareVideoId) {
-                videoEmbedUrl = `https://customer-mhnunnb897evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
+                videoEmbedUrl = `https://customer-mhnunnb8-97evy1sb.cloudflarestream.com/${cloudflareVideoId}/iframe?autoplay=${autoplay}&controls=${showControls}`;
                 videoLink = '#'; // Cloudflare does not have a standard public URL structure
             } else if (videoType === 'smartplay' && smartplayUrl) {
                 videoEmbedUrl = smartplayUrl;
@@ -308,7 +306,7 @@ const getGlobalCss = (theme: Theme) => `
       
       .video-print-placeholder-export { display: none; }
       
-      #handbook-root { margin-top: 3rem; }
+      #handbook-root { margin-top: 0; display: block; }
 
       .cover-section {
         width: 100%;
@@ -360,10 +358,15 @@ const getGlobalCss = (theme: Theme) => `
             font-size: 11pt;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            display: block !important;
           }
           body, main.main-content {
             margin: 0 !important;
             padding: 0 !important;
+          }
+           .main-content {
+             display: flex;
+             justify-content: center;
           }
           #handbook-root {
             box-shadow: none !important;
@@ -371,9 +374,16 @@ const getGlobalCss = (theme: Theme) => `
             border: none !important;
             padding: 1.5cm !important;
             margin-top: 0 !important;
+            width: 210mm;
+            max-width: 100%;
+            box-sizing: border-box;
           }
           .no-print, .no-print * { display: none !important; }
           
+          #printing-modal {
+            display: none !important;
+          }
+
           .cover-section {
             display: flex !important;
             width: 210mm;
@@ -387,6 +397,7 @@ const getGlobalCss = (theme: Theme) => `
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
+              margin-top: 2cm;
           }
            .module-section:last-of-type {
               page-break-after: auto;
@@ -531,6 +542,26 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
+                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
+                    <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
+                        <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
+                        <p style="margin-top:10px;">Preparando PDF...</p>
+                    </div>
+                </div>
+                <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
+                <script>
+                    function handlePrint() {
+                        const modal = document.getElementById("printing-modal");
+                        modal.style.display = "flex";
+                        setTimeout(() => {
+                            window.print();
+                        }, 600);
+                    }
+                    window.addEventListener('afterprint', () => {
+                        const modal = document.getElementById("printing-modal");
+                        modal.style.display = "none";
+                    });
+                </script>
                 <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
                     <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
                         <h1 class="text-xl font-bold">${handbookTitle}</h1>
