@@ -77,7 +77,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -221,6 +221,10 @@ const renderBlockToHtml = (block: Block): string => {
                 videoLink = smartplayUrl;
             }
             
+            const linkHtml = videoLink !== '#' 
+                ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer">${videoLink}</a></div>` 
+                : '';
+
             return `
                 <div class="video-container-export">
                     <div class="video-player-export">
@@ -232,7 +236,7 @@ const renderBlockToHtml = (block: Block): string => {
                             <div>
                                 <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
                                 <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
-                                ${videoLink !== '#' ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${videoLink}</a></div>` : ''}
+                                ${linkHtml}
                             </div>
                         </div>
                     </div>
@@ -308,6 +312,7 @@ const getGlobalCss = (theme: Theme) => `
           display: none;
       }
       
+      .video-player-export { display: block; }
       .video-print-placeholder-export { display: none; }
       
       #handbook-root { margin-top: 0; display: block; }
@@ -400,7 +405,7 @@ const getGlobalCss = (theme: Theme) => `
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
-              margin-top: 0;
+              margin-top: 2cm;
           }
            .module-section:last-of-type {
               page-break-after: auto;
@@ -412,8 +417,8 @@ const getGlobalCss = (theme: Theme) => `
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
           .prose { color: black; }
           a {
-            color: #000;
-            text-decoration: underline;
+            color: #000 !important;
+            text-decoration: underline !important;
           }
       }
 `;
