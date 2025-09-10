@@ -1,4 +1,3 @@
-
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -45,13 +44,13 @@ export default function MainContent() {
     if (index === 0) return '';
     switch (activeProject?.layoutSettings?.sectionSpacing) {
         case 'compact':
-            return 'mt-4';
+            return 'mt-8';
         case 'standard':
-            return 'mt-8';
+            return 'mt-16';
         case 'comfortable':
-            return 'mt-12';
+            return 'mt-32';
         default:
-            return 'mt-8';
+            return 'mt-16';
     }
   }
 

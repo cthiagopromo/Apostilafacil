@@ -54,9 +54,9 @@ export default function LayoutSettings() {
             <SelectValue placeholder="Selecione o espaçamento" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="compact">Compacto (1rem)</SelectItem>
-            <SelectItem value="standard">Padrão (2rem)</SelectItem>
-            <SelectItem value="comfortable">Confortável (4rem)</SelectItem>
+            <SelectItem value="compact">Compacto (2rem)</SelectItem>
+            <SelectItem value="standard">Padrão (4rem)</SelectItem>
+            <SelectItem value="comfortable">Confortável (8rem)</SelectItem>
           </SelectContent>
         </Select>
       </div>
