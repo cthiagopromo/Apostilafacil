@@ -367,10 +367,6 @@ const getGlobalCss = (theme: Theme) => `
             margin: 0 !important;
             padding: 0 !important;
           }
-           .main-content {
-             display: flex;
-             justify-content: center;
-          }
           #handbook-root {
             box-shadow: none !important;
             border-radius: 0 !important;
