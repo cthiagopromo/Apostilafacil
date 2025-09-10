@@ -372,7 +372,7 @@ const getGlobalCss = (theme: Theme) => `
             border-radius: 0 !important;
             border: none !important;
             padding: 1.5cm !important;
-            margin-top: 0 !important;
+            margin: 0 auto !important;
             width: 210mm;
             max-width: 100%;
             box-sizing: border-box;
@@ -396,6 +396,7 @@ const getGlobalCss = (theme: Theme) => `
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
+              margin-top: 2cm;
           }
            .module-section:last-of-type {
               page-break-after: auto;
@@ -406,6 +407,10 @@ const getGlobalCss = (theme: Theme) => `
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
           figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
           .prose { color: black; }
+          a {
+            color: #000;
+            text-decoration: none;
+          }
       }
 `;
 
