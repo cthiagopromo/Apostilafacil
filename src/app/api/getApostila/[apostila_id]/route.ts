@@ -25,7 +25,7 @@ export async function GET(
         );
       `;
       // Se a tabela não existir, a consulta acima retorna 'exists: false'.
-      if (!tableCheck[0].exists) {
+      if (!tableCheck.rows[0].exists) {
         console.warn("Tabela 'apostilas' não encontrada, retornando 404.");
         return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
       }
@@ -39,11 +39,11 @@ export async function GET(
       SELECT data FROM apostilas WHERE apostila_id = ${apostila_id};
     `;
     
-    if (result.length === 0 || !result[0].data) {
+    if (result.rows.length === 0 || !result.rows[0].data) {
       return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
     }
     
-    const apostilaData = result[0].data;
+    const apostilaData = result.rows[0].data;
 
     return NextResponse.json(apostilaData, { status: 200 });
 
