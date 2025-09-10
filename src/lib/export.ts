@@ -348,6 +348,9 @@ const getGlobalCss = (theme: Theme) => `
       @media print {
           @page {
             size: A4;
+            margin: 2cm 0 0 0;
+          }
+           @page:first {
             margin: 0;
           }
           html, body {
@@ -397,7 +400,6 @@ const getGlobalCss = (theme: Theme) => `
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
-              margin-top: 2cm;
           }
            .module-section:last-of-type {
               page-break-after: auto;
