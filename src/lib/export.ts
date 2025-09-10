@@ -6,12 +6,15 @@ import type { HandbookData, Block, Project, Theme } from '@/lib/types';
 import DOMPurify from 'dompurify';
 
 const getInteractiveScript = (theme: Theme): string => {
-    return `
+    // This script is stringified and injected into the exported HTML.
+    // It must be self-contained and not rely on any external modules.
+    const scriptContent = () => {
         document.addEventListener('DOMContentLoaded', () => {
             const dataElement = document.getElementById('handbook-data');
             if (!dataElement) return;
 
-            const theme = ${JSON.stringify(theme)};
+            const handbookData = JSON.parse(dataElement.textContent || '{}');
+            const theme = handbookData.theme || {};
             if (theme && theme.colorPrimary) {
                 document.documentElement.style.setProperty('--primary', theme.colorPrimary);
             }
@@ -26,16 +29,16 @@ const getInteractiveScript = (theme: Theme): string => {
             const handbookRoot = document.getElementById('handbook-root');
             const startButton = document.getElementById('start-handbook-btn');
 
-            const showModule = (index) => {
+            const showModule = (index: number) => {
                  if (coverSection) {
-                    coverSection.style.display = 'none';
+                    (coverSection as HTMLElement).style.display = 'none';
                 }
                 if (handbookRoot) {
-                    handbookRoot.style.display = 'block';
+                    (handbookRoot as HTMLElement).style.display = 'block';
                 }
                 modules.forEach((module, i) => {
                     const isVisible = i === index;
-                    module.style.display = isVisible ? 'block' : 'none';
+                    (module as HTMLElement).style.display = isVisible ? 'block' : 'none';
                 });
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
@@ -47,13 +50,13 @@ const getInteractiveScript = (theme: Theme): string => {
                     }
                 });
                 currentModuleIndex = index;
-                window.scrollTo(0, 0); // Scroll to top on module change
+                window.scrollTo(0, 0);
                 updateNavButtons();
             };
 
             const updateNavButtons = () => {
-                const prevBtn = document.querySelector('[data-direction="prev"]');
-                const nextBtn = document.querySelector('[data-direction="next"]');
+                const prevBtn = document.querySelector('[data-direction="prev"]') as HTMLButtonElement | null;
+                const nextBtn = document.querySelector('[data-direction="next"]') as HTMLButtonElement | null;
                 const progressText = document.querySelector('.module-progress-text');
 
                 if (prevBtn) prevBtn.disabled = currentModuleIndex === 0;
@@ -69,12 +72,12 @@ const getInteractiveScript = (theme: Theme): string => {
 
             navButtons.forEach(button => {
                 button.addEventListener('click', (e) => {
-                    const direction = e.currentTarget.dataset.direction;
+                    const direction = (e.currentTarget as HTMLElement).dataset.direction;
                     let newIndex = currentModuleIndex;
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -94,19 +97,18 @@ const getInteractiveScript = (theme: Theme): string => {
             }
 
             document.querySelectorAll('.quiz-card').forEach(card => {
-                const retryBtn = card.querySelector('.retry-btn');
-                const radioButtons = card.querySelectorAll('input[type="radio"]');
+                const retryBtn = card.querySelector('.retry-btn') as HTMLButtonElement | null;
+                const radioButtons = card.querySelectorAll('input[type="radio"]') as NodeListOf<HTMLInputElement>;
                 const options = card.querySelectorAll('.quiz-option');
-                const handleAnswer = (e) => {
-                    const selectedOptionEl = e.currentTarget.closest('.quiz-option');
+                const handleAnswer = (e: Event) => {
+                    const selectedOptionEl = (e.currentTarget as HTMLElement).closest('.quiz-option');
                     if (!selectedOptionEl) return;
                     radioButtons.forEach(rb => { rb.disabled = true; });
-                    const isSelectedCorrect = selectedOptionEl.dataset.correct === 'true';
                     
                     options.forEach(opt => {
-                        const checkIcon = opt.querySelector('.lucide-check-circle');
-                        const xIcon = opt.querySelector('.lucide-x-circle');
-                        const isCorrect = opt.dataset.correct === 'true';
+                        const checkIcon = opt.querySelector('.lucide-check-circle') as HTMLElement | null;
+                        const xIcon = opt.querySelector('.lucide-x-circle') as HTMLElement | null;
+                        const isCorrect = (opt as HTMLElement).dataset.correct === 'true';
 
                         if(isCorrect) {
                             opt.classList.add('bg-primary/10', 'border-primary/50');
@@ -127,8 +129,8 @@ const getInteractiveScript = (theme: Theme): string => {
                         radioButtons.forEach(rb => { rb.disabled = false; rb.checked = false; });
                         options.forEach(opt => {
                            opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-destructive/10', 'border-destructive/50');
-                           const checkIcon = opt.querySelector('.lucide-check-circle');
-                           const xIcon = opt.querySelector('.lucide-x-circle');
+                           const checkIcon = opt.querySelector('.lucide-check-circle') as HTMLElement | null;
+                           const xIcon = opt.querySelector('.lucide-x-circle') as HTMLElement | null;
                            if(checkIcon) checkIcon.style.display = 'none';
                            if(xIcon) xIcon.style.display = 'none';
                         });
@@ -145,11 +147,11 @@ const getInteractiveScript = (theme: Theme): string => {
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
                 
                 if (printBtn) {
-                    printBtn.addEventListener('click', handlePrint);
+                    printBtn.addEventListener('click', () => (window as any).handlePrint());
                 }
 
                 if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
-                const handleFontSize = (increase) => {
+                const handleFontSize = (increase: boolean) => {
                     const html = document.documentElement;
                     const currentSize = parseFloat(window.getComputedStyle(html).fontSize);
                     const newSize = increase ? currentSize + 1 : currentSize - 1;
@@ -159,15 +161,17 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
             
-            if (coverSection) {
-                coverSection.style.display = 'flex';
-                if(handbookRoot) handbookRoot.style.display = 'none';
+            if (coverSection && handbookRoot) {
+                (coverSection as HTMLElement).style.display = 'flex';
+                (handbookRoot as HTMLElement).style.display = 'none';
             } else {
                  showModule(0);
             }
         });
-    `;
+    };
+    return `(${scriptContent.toString()})()`;
 };
+
 
 const renderBlockToHtml = (block: Block): string => {
     
@@ -396,7 +400,7 @@ const getGlobalCss = (theme: Theme) => `
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
-              margin-top: 2cm;
+              margin-top: 0;
           }
            .module-section:last-of-type {
               page-break-after: auto;
@@ -409,7 +413,7 @@ const getGlobalCss = (theme: Theme) => `
           .prose { color: black; }
           a {
             color: #000;
-            text-decoration: none;
+            text-decoration: underline;
           }
       }
 `;
