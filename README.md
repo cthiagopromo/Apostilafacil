@@ -1,52 +1,58 @@
-# A Arquitetura do Seu Projeto
+# ApostilaFácil
 
-**Objetivo**: Descrever a metodologia e as fases de construção do projeto, desde a ideia inicial até a implementação final.
+**Crie, edite e exporte suas apostilas interativas com facilidade.**
 
-**Localização**: Este conceito se aplica à raiz do projeto, definindo a organização dos diretórios `/specs` e `/src`.
-
-**Especificações**:
-
-O seu projeto foi desenvolvido seguindo um ciclo de vida que chamamos de **Spec-Driven Development**. Isso garante que cada funcionalidade seja bem planejada, documentada e testada. O processo é dividido em fases claras:
+ApostilaFácil é uma aplicação web projetada para educadores, criadores de conteúdo e qualquer pessoa que deseje construir materiais de estudo interativos e que funcionem 100% offline. A plataforma oferece uma interface intuitiva de arrastar e soltar, um editor de conteúdo rico e temas customizáveis, resolvendo o problema de criar conteúdo educacional engajador que não dependa de uma conexão constante com a internet.
 
 ---
 
-### **FASE 1: A Especificação (O "Quê")**
+## ✨ Features Principais
 
-Tudo começa com uma ideia clara. Antes de escrever uma única linha de código, definimos o comportamento da funcionalidade do ponto de vista do usuário.
-
-* **Como foi feito**: Usamos um template de especificação para detalhar os requisitos.
-* **O que isso define**:
-    * **História do Usuário**: Descreve a jornada principal do usuário em linguagem simples.
-    * **Cenários de Aceitação**: Define as condições de sucesso de uma funcionalidade (Dado X, Quando Y, Então Z).
-    * **Requisitos Funcionais**: Cria uma lista de exigências que o sistema **DEVE** cumprir, de forma testável e sem ambiguidades.
-* **Resultado**: Um arquivo de especificação (`spec.md`) que serve como a "verdade única" sobre o que a funcionalidade deve fazer, junto com um branch dedicado no controle de versão para isolar o desenvolvimento.
+-   **Organização de Módulos**: Interface de arrastar e soltar para organizar módulos e sequenciar o conteúdo de forma lógica e intuitiva.
+-   **Conteúdo Rico e Interativo**: Adicione textos formatados, imagens, vídeos, citações, botões com links e até mesmo quizzes interativos para engajar os leitores.
+-   **Exportação Offline**: Exporte a apostila completa como um arquivo `.zip` auto-contido, que inclui um `index.html` e todos os recursos necessários para funcionar perfeitamente em qualquer navegador sem acesso à internet.
+-   **Customização Visual**: Altere a cor principal e a imagem de capa da apostila para alinhar o material à sua identidade visual.
+-   **Pré-visualização em Tempo Real**: Visualize como a apostila final se parecerá para o usuário final a qualquer momento, incluindo a interatividade e o design responsivo.
 
 ---
 
-### **FASE 2: O Plano de Implementação (O "Como")**
+## 🛠️ Arsenal de Tecnologias (Tech Stack)
 
-Com a especificação aprovada, traçamos o plano técnico. É aqui que as decisões de arquitetura e tecnologia são tomadas.
-
-* **Como foi feito**: Com base na especificação, criamos um plano de implementação detalhado.
-* **O que isso define**:
-    * **Contexto Técnico**: Escolha da linguagem, bibliotecas principais (como o nosso Arsenal UI: Kibo, Animate, etc.) e a arquitetura de pastas.
-    * **Modelo de Dados e Contratos**: Desenhamos as entidades de dados e os contratos de API (se aplicável), que definem como as partes do sistema se comunicam.
-    * **Estrutura do Projeto**: Decidimos a organização dos diretórios, como `src/`, `tests/`, `backend/`, `frontend/`, etc., com base no tipo de projeto.
-* **Resultado**: Uma série de documentos de design (`plan.md`, `data-model.md`, `contracts/`) que servem como o "blueprint" para os desenvolvedores.
+-   **Interface (Frontend)**: Next.js, React, TypeScript, TailwindCSS, ShadCN UI
+-   **Lógica (Backend)**: Next.js (API Routes), Vercel Postgres
+-   **Banco de Dados**: PostgreSQL (via Vercel Postgres)
+-   **Ambiente de Desenvolvimento**: Node.js v18+
 
 ---
 
-### **FASE 3: A Divisão de Tarefas (A Execução)**
+## 🚀 Guia de Instalação e Uso
 
-Nenhum grande projeto é construído de uma só vez. Nós o quebramos em pequenas partes executáveis.
+### Pré-requisitos
 
-* **Como foi feito**: Analisamos os documentos da Fase 2 e geramos uma lista de tarefas sequenciais e paralelas.
-* **O que isso define**:
-    * **Ordem de Construção**: As tarefas são ordenadas por dependência: primeiro a configuração, depois os testes, depois os modelos de dados, os serviços e, por fim, a interface.
-    * **Testes Primeiro (TDD)**: Uma regra CRÍTICA do nosso processo é criar os testes *antes* da implementação. Os testes devem falhar primeiro para depois serem corrigidos pela implementação do código.
-    * **Paralelismo**: Tarefas que não dependem umas das outras são marcadas com `[P]` para que possam ser trabalhadas em paralelo, acelerando o desenvolvimento.
-* **Resultado**: Um arquivo `tasks.md` que funciona como um checklist detalhado para a construção da funcionalidade. Cada tarefa é específica o suficiente para ser executada sem contexto adicional.
+Para rodar este projeto localmente, você precisará ter o seguinte software instalado:
+-   Node.js (versão 18 ou superior)
+-   Git
 
----
+### Passo a Passo
 
-Entender esse processo é a chave para dar manutenção e evoluir o projeto. Ele garante que, mesmo que o código pareça complexo, existe uma lógica e uma documentação que guiaram cada decisão.
+1.  **Clone o repositório:**
+    ```bash
+    git clone <URL_DO_REPOSITORIO>
+    cd <NOME_DO_DIRETORIO>
+    ```
+
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
+
+3.  **Configure as variáveis de ambiente:**
+    -   Renomeie o arquivo `.env.example` para `.env`.
+    -   Preencha a variável `POSTGRES_URL` com a string de conexão do seu banco de dados.
+
+4.  **Rode o projeto em modo de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
+
+Após executar o último comando, o projeto estará disponível em `http://localhost:3000` (ou outra porta, se a 3000 estiver em uso).
