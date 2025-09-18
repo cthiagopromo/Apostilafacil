@@ -13,7 +13,7 @@ export async function GET(
     }
 
     try {
-      const tableCheck = await db`
+      const tableCheckResult = await db`
         SELECT EXISTS (
           SELECT FROM 
               information_schema.tables 
@@ -21,7 +21,9 @@ export async function GET(
               table_name = 'apostilas'
         );
       `;
-      if (!tableCheck.rows[0].exists) {
+      
+      const tableExists = tableCheckResult.rows[0].exists;
+      if (!tableExists) {
         console.warn("Tabela 'apostilas' não encontrada, retornando 404.");
         return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
       }
