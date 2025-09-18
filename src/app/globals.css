@@ -89,19 +89,19 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: font-size 0.2s, background-color 0.3s, color 0.3s;
     font-family: var(--font-body);
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
     font-family: var(--font-heading);
   }
 }
 
 .tiptap {
-  @apply rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-body;
+  @apply rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  font-family: var(--font-body);
   min-height: 150px;
 }
 .tiptap > p:first-child {
@@ -112,11 +112,12 @@
 }
 
 .tiptap h1, .tiptap h2, .tiptap h3 {
-  @apply font-bold font-heading;
+  @apply font-bold;
+  font-family: var(--font-heading);
 }
 
 .prose h1, .prose h2, .prose h3 {
-  @apply font-heading;
+  font-family: var(--font-heading);
 }
 
 .tiptap ul, .tiptap ol {

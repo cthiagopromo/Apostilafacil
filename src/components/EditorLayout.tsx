@@ -13,17 +13,12 @@ export function EditorLayout() {
   const activeProject = getActiveProject();
 
   useEffect(() => {
+    // This effect now only handles theme color, as fonts are handled by the store directly.
     const root = document.documentElement;
     if (handbookTheme?.colorPrimary) {
       root.style.setProperty('--primary', handbookTheme.colorPrimary);
     }
-     if (handbookTheme?.fontHeading) {
-      root.style.setProperty('--font-heading', handbookTheme.fontHeading);
-    }
-    if (handbookTheme?.fontBody) {
-      root.style.setProperty('--font-body', handbookTheme.fontBody);
-    }
-  }, [handbookTheme]);
+  }, [handbookTheme?.colorPrimary]);
 
   if (!activeProject) {
     return (

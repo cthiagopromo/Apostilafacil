@@ -77,6 +77,20 @@ const performSave = async (dataToSave: HandbookData) => {
     }
 };
 
+const applyThemeToDom = (theme: Theme) => {
+  if (typeof window === 'undefined') return;
+  const root = document.documentElement;
+  if (theme.colorPrimary) {
+    root.style.setProperty('--primary', theme.colorPrimary);
+  }
+  if (theme.fontHeading) {
+    root.style.setProperty('--font-heading', theme.fontHeading);
+  }
+  if (theme.fontBody) {
+    root.style.setProperty('--font-body', theme.fontBody);
+  }
+}
+
 const useProjectStore = create<State & Actions>()(
   immer((set, get) => ({
     handbookId: '',
@@ -85,8 +99,8 @@ const useProjectStore = create<State & Actions>()(
     handbookUpdatedAt: new Date().toISOString(),
     handbookTheme: { 
         colorPrimary: '221 83% 53%', 
-        fontHeading: 'var(--font-roboto-slab)', 
-        fontBody: 'var(--font-inter)' 
+        fontHeading: '"Roboto Slab", serif', 
+        fontBody: '"Inter", sans-serif' 
     },
     projects: [],
     activeProjectId: null,
@@ -140,15 +154,16 @@ const useProjectStore = create<State & Actions>()(
 
       const migratedData = produce(dataToLoad, draft => {
           if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
-          if (!draft.theme.fontHeading) draft.theme.fontHeading = 'var(--font-roboto-slab)';
-          if (!draft.theme.fontBody) draft.theme.fontBody = 'var(--font-inter)';
+          if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
+          if (!draft.theme.fontBody) draft.theme.fontBody = '"Inter", sans-serif';
           draft.projects.forEach(p => {
               if (!p.layoutSettings) {
                   p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
               }
           });
       });
-
+      
+      applyThemeToDom(migratedData.theme);
       const firstProjectId = migratedData.projects[0]?.id || null;
 
       set({ 
@@ -199,11 +214,13 @@ const useProjectStore = create<State & Actions>()(
         });
     },
 
-    updateHandbookTheme: (theme) => {
+    updateHandbookTheme: (themeUpdate) => {
         set(state => {
-            state.handbookTheme = { ...state.handbookTheme, ...theme };
+            state.handbookTheme = { ...state.handbookTheme, ...themeUpdate };
             state.isDirty = true;
-        })
+        });
+        // Apply changes to the DOM immediately
+        applyThemeToDom(get().handbookTheme);
     },
 
     createNewHandbook: () => {
@@ -224,22 +241,24 @@ const useProjectStore = create<State & Actions>()(
             updatedAt: new Date().toISOString(),
         };
 
+        const newTheme: Theme = { 
+            colorPrimary: '221 83% 53%', 
+            fontHeading: '"Roboto Slab", serif', 
+            fontBody: '"Inter", sans-serif' 
+        };
+
         set({
             handbookId: newHandbookId,
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
-            handbookTheme: { 
-                colorPrimary: '221 83% 53%', 
-                fontHeading: 'var(--font-roboto-slab)', 
-                fontBody: 'var(--font-inter)' 
-            },
+            handbookTheme: newTheme,
             projects: [newProject],
             activeProjectId: newProjectId,
             activeBlockId: null,
             isDirty: true,
         });
-
+        applyThemeToDom(newTheme);
         get().saveData();
         return { handbookId: newHandbookId, projectId: newProjectId };
     },
@@ -256,6 +275,7 @@ const useProjectStore = create<State & Actions>()(
             activeBlockId: null,
             isDirty: true,
         });
+        applyThemeToDom(data.theme);
         await get().saveData();
     },
 

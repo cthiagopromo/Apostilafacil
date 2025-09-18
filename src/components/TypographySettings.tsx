@@ -11,15 +11,15 @@ import {
 } from '@/components/ui/select';
 
 const headingFonts = [
-  { name: 'Roboto Slab', value: 'var(--font-roboto-slab)' },
-  { name: 'Inter', value: 'var(--font-inter)' },
-  { name: 'Lato', value: 'var(--font-lato)' },
+  { name: 'Roboto Slab', value: '"Roboto Slab", serif' },
+  { name: 'Inter', value: '"Inter", sans-serif' },
+  { name: 'Lato', value: '"Lato", sans-serif' },
 ];
 
 const bodyFonts = [
-  { name: 'Inter', value: 'var(--font-inter)' },
-  { name: 'Lato', value: 'var(--font-lato)' },
-  { name: 'Roboto Slab', value: 'var(--font-roboto-slab)' },
+  { name: 'Inter', value: '"Inter", sans-serif' },
+  { name: 'Lato', value: '"Lato", sans-serif' },
+  { name: 'Roboto Slab', value: '"Roboto Slab", serif' },
 ];
 
 export default function TypographySettings() {
