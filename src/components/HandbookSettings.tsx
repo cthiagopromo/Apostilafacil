@@ -2,9 +2,7 @@
 'use client';
 
 import useProjectStore from '@/lib/store';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Check, Upload, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -21,11 +19,7 @@ const colorOptions = [
 
 export default function HandbookSettings() {
   const { 
-      handbookTitle, 
-      handbookDescription, 
       handbookTheme,
-      updateHandbookTitle, 
-      updateHandbookDescription,
       updateHandbookTheme
   } = useProjectStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,27 +70,6 @@ export default function HandbookSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="handbook-title">Título da Apostila</Label>
-          <Input
-            id="handbook-title"
-            value={handbookTitle}
-            onChange={(e) => updateHandbookTitle(e.target.value)}
-            placeholder="Ex: Curso Completo de Biologia"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="handbook-description">Descrição da Apostila</Label>
-          <Textarea
-            id="handbook-description"
-            value={handbookDescription}
-            onChange={(e) => updateHandbookDescription(e.target.value)}
-            placeholder="Uma breve descrição sobre toda a apostila."
-            rows={4}
-          />
-        </div>
-      </div>
        <div className="space-y-2">
         <Label>Cor Principal</Label>
         <div className="flex items-center gap-3 pt-1">

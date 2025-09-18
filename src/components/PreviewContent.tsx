@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData, Project } from '@/lib/types';
@@ -19,18 +19,9 @@ interface PreviewContentProps {
 export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
-    const [view, setView] = useState<'cover' | 'content'>('content');
 
     const primaryColor = handbookData?.theme?.colorPrimary;
     const coverImage = handbookData?.theme?.cover;
-
-    useEffect(() => {
-        if (coverImage) {
-            setView('cover');
-        } else {
-            setView('content');
-        }
-    }, [coverImage]);
 
     useEffect(() => {
         if (isPreparingPrint) {
@@ -97,35 +88,6 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
         }
     };
     
-    const startHandbook = () => {
-        setView('content');
-        handleModuleChange(0);
-    }
-    
-    if (view === 'cover') {
-        return (
-             <div className="h-full flex flex-col bg-secondary/40">
-                <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
-                <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
-                    <main id="printable-content" className="h-full">
-                         <section className={cn("cover-section", { 'module-section': isPreparingPrint })}>
-                            <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
-                            <div className="cover-overlay"></div>
-                            <div className="cover-content">
-                                <h1 className="text-5xl font-bold mb-4">{handbookData.title}</h1>
-                                <p className="text-xl mb-8">{handbookData.description}</p>
-                                <Button size="lg" onClick={startHandbook} className="no-print">
-                                    <Play className="mr-2"/>
-                                    Iniciar Apostila
-                                </Button>
-                            </div>
-                        </section>
-                    </main>
-                </div>
-             </div>
-        )
-    }
-
     return (
         <>
             <Toaster />
@@ -141,17 +103,12 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                         />
                         
                         {coverImage && (
-                            <section className={cn("cover-section", { 'hidden': !isPreparingPrint, 'module-section': isPreparingPrint })}>
+                             <section className={cn("cover-section", { 'module-section': isPreparingPrint })}>
                                 <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
-                                <div className="cover-overlay"></div>
-                                <div className="cover-content">
-                                    <h1 className="text-5xl font-bold mb-4">{handbookData.title}</h1>
-                                    <p className="text-xl mb-8">{handbookData.description}</p>
-                                </div>
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint})}>
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!coverImage})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 
