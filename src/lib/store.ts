@@ -83,7 +83,11 @@ const useProjectStore = create<State & Actions>()(
     handbookTitle: '',
     handbookDescription: '',
     handbookUpdatedAt: new Date().toISOString(),
-    handbookTheme: { colorPrimary: '221 83% 53%', fontHeading: 'Roboto', fontBody: 'Inter' },
+    handbookTheme: { 
+        colorPrimary: '221 83% 53%', 
+        fontHeading: 'var(--font-roboto-slab)', 
+        fontBody: 'var(--font-inter)' 
+    },
     projects: [],
     activeProjectId: null,
     activeBlockId: null,
@@ -136,8 +140,8 @@ const useProjectStore = create<State & Actions>()(
 
       const migratedData = produce(dataToLoad, draft => {
           if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
-          if (!draft.theme.fontHeading) draft.theme.fontHeading = 'Roboto';
-          if (!draft.theme.fontBody) draft.theme.fontBody = 'Inter';
+          if (!draft.theme.fontHeading) draft.theme.fontHeading = 'var(--font-roboto-slab)';
+          if (!draft.theme.fontBody) draft.theme.fontBody = 'var(--font-inter)';
           draft.projects.forEach(p => {
               if (!p.layoutSettings) {
                   p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
@@ -225,7 +229,11 @@ const useProjectStore = create<State & Actions>()(
             handbookTitle: 'Nova Apostila',
             handbookDescription: 'Comece a criar sua nova apostila.',
             handbookUpdatedAt: new Date().toISOString(),
-            handbookTheme: { colorPrimary: '221 83% 53%', fontHeading: 'Roboto', fontBody: 'Inter' },
+            handbookTheme: { 
+                colorPrimary: '221 83% 53%', 
+                fontHeading: 'var(--font-roboto-slab)', 
+                fontBody: 'var(--font-inter)' 
+            },
             projects: [newProject],
             activeProjectId: newProjectId,
             activeBlockId: null,
