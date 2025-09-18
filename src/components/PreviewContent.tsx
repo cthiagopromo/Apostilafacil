@@ -20,9 +20,6 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
-    const primaryColor = handbookData?.theme?.colorPrimary;
-    const coverImage = handbookData?.theme?.cover;
-
     useEffect(() => {
         if (isPreparingPrint) {
             const handlePrint = async () => {
@@ -35,19 +32,19 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
     }, [isPreparingPrint]);
 
     useEffect(() => {
-        if (primaryColor) {
-            const root = document.querySelector(':root') as HTMLElement;
-            if (root) {
-                 root.style.setProperty('--primary', primaryColor);
+        if (handbookData?.theme) {
+            const root = document.documentElement;
+            if (handbookData.theme.colorPrimary) {
+                root.style.setProperty('--primary', handbookData.theme.colorPrimary);
+            }
+            if (handbookData.theme.fontHeading) {
+                root.style.setProperty('--font-heading', handbookData.theme.fontHeading);
+            }
+            if (handbookData.theme.fontBody) {
+                root.style.setProperty('--font-body', handbookData.theme.fontBody);
             }
         }
-        return () => {
-             const root = document.querySelector(':root') as HTMLElement;
-            if (root) {
-                root.style.removeProperty('--primary');
-            }
-        }
-    }, [primaryColor]);
+    }, [handbookData?.theme]);
 
 
     if (!handbookData || !handbookData.projects || handbookData.projects.length === 0) {
@@ -102,13 +99,19 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                             onModuleSelect={handleModuleChange}
                         />
                         
-                        {coverImage && (
+                        {handbookData.theme.cover && (
                              <section className={cn("cover-section", { 'module-section': isPreparingPrint })}>
-                                <img src={coverImage} alt="Capa da Apostila" className="cover-image"/>
+                                <img src={handbookData.theme.cover} alt="Capa da Apostila" className="cover-image"/>
+                                 <div className="cover-content">
+                                    <button id="start-handbook-btn" className="no-print inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                        Iniciar Apostila
+                                    </button>
+                                </div>
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!coverImage})}>
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 
@@ -148,6 +151,11 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                                 </section>
                             ))}
                         </div>
+                         {handbookData.theme.backCover && (
+                            <section className="back-cover-section module-section">
+                                <img src={handbookData.theme.backCover} alt="Contracapa da Apostila" className="back-cover-image"/>
+                            </section>
+                        )}
                     </main>
                 </div>
             </div>

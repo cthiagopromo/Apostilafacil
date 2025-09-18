@@ -23,11 +23,6 @@ export function EditorLayout() {
     if (handbookTheme?.fontBody) {
       root.style.setProperty('--font-body', handbookTheme.fontBody);
     }
-    return () => {
-      root.style.removeProperty('--primary');
-      root.style.removeProperty('--font-heading');
-      root.style.removeProperty('--font-body');
-    };
   }, [handbookTheme]);
 
   if (!activeProject) {
