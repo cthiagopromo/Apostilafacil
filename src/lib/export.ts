@@ -77,7 +77,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -463,10 +463,7 @@ export const handleExportZip = async ({
         const coverHtml = handbookTheme.cover ? `
             <section class="cover-section module-section">
                 <img src="${handbookTheme.cover}" alt="Capa da Apostila" class="cover-image"/>
-                <div class="cover-overlay"></div>
                 <div class="cover-content">
-                    <h1 class="text-5xl font-bold mb-4">${handbookTitle}</h1>
-                    <p class="text-xl mb-8">${handbookDescription}</p>
                     <button id="start-handbook-btn" class="no-print inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         Iniciar Apostila
