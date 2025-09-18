@@ -20,7 +20,7 @@ const getInteractiveScript = (theme: Theme): string => {
             }
 
             let currentModuleIndex = 0;
-            const modules = document.querySelectorAll('.module-section:not(.cover-section)');
+            const modules = document.querySelectorAll('.module-section:not(.cover-section):not(.back-cover-section)');
             const navButtons = document.querySelectorAll('.module-nav-btn');
             const floatingNavButtons = document.querySelectorAll('.floating-nav-btn');
             const floatingNavMenu = document.getElementById('floating-nav-menu');
@@ -77,7 +77,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -352,14 +352,14 @@ const getGlobalCss = (theme: Theme) => `
         color: white;
         padding: 2rem;
       }
+      .back-cover-section {
+        display: none;
+      }
 
 
       @media print {
           @page {
             size: A4;
-            margin: 2cm 0 0 0;
-          }
-           @page:first {
             margin: 0;
           }
           html, body {
@@ -407,9 +407,25 @@ const getGlobalCss = (theme: Theme) => `
               page-break-after: always;
               margin-top: 2cm;
           }
-           .module-section:last-of-type {
+          .module-section:last-of-type {
               page-break-after: auto;
           }
+
+          .back-cover-section {
+            display: block !important;
+            width: 210mm;
+            height: 297mm;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            page-break-before: always;
+          }
+          .back-cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
 
@@ -471,6 +487,13 @@ export const handleExportZip = async ({
                 </div>
             </section>
         ` : '';
+
+        const backCoverHtml = handbookTheme.backCover ? `
+            <section class="back-cover-section module-section">
+                <img src="${handbookTheme.backCover}" alt="Contracapa da Apostila" class="back-cover-image"/>
+            </section>
+        ` : '';
+
         const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
         const floatingNavHtml = getFloatingNavHtml(handbookData.projects);
         
@@ -589,6 +612,7 @@ export const handleExportZip = async ({
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
                         ${interactiveContentHtml}
                     </div>
+                    ${backCoverHtml}
                 </main>
                 ${floatingNavHtml}
                 <script>${getInteractiveScript(handbookTheme)}</script>
