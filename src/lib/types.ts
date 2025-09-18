@@ -54,6 +54,10 @@ export interface Theme {
   backCover?: string; // URL da imagem da contracapa (base64)
   fontHeading: string;
   fontBody: string;
+  fontSizeHeading?: number;
+  fontSizeBody?: number;
+  lineHeight?: number;
+  letterSpacing?: number;
 }
 
 export interface LayoutSettings {

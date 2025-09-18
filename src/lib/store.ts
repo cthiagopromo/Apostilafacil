@@ -80,15 +80,9 @@ const performSave = async (dataToSave: HandbookData) => {
 const applyThemeToDom = (theme: Theme) => {
   if (typeof window === 'undefined') return;
   const root = document.documentElement;
-  if (theme.colorPrimary) {
-    root.style.setProperty('--primary', theme.colorPrimary);
-  }
-  if (theme.fontHeading) {
-    root.style.setProperty('--font-heading', theme.fontHeading);
-  }
-  if (theme.fontBody) {
-    root.style.setProperty('--font-body', theme.fontBody);
-  }
+  root.style.setProperty('--primary', theme.colorPrimary || '221 83% 53%');
+  root.style.setProperty('--font-heading', theme.fontHeading || '"Roboto Slab", serif');
+  root.style.setProperty('--font-body', theme.fontBody || '"Inter", sans-serif');
 }
 
 const useProjectStore = create<State & Actions>()(
@@ -100,7 +94,11 @@ const useProjectStore = create<State & Actions>()(
     handbookTheme: { 
         colorPrimary: '221 83% 53%', 
         fontHeading: '"Roboto Slab", serif', 
-        fontBody: '"Inter", sans-serif' 
+        fontBody: '"Inter", sans-serif',
+        fontSizeHeading: 32,
+        fontSizeBody: 16,
+        lineHeight: 1.5,
+        letterSpacing: 0,
     },
     projects: [],
     activeProjectId: null,
@@ -153,7 +151,7 @@ const useProjectStore = create<State & Actions>()(
       }
 
       const migratedData = produce(dataToLoad, draft => {
-          if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%' };
+          if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
           if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
           if (!draft.theme.fontBody) draft.theme.fontBody = '"Inter", sans-serif';
           draft.projects.forEach(p => {
@@ -163,21 +161,22 @@ const useProjectStore = create<State & Actions>()(
           });
       });
       
-      applyThemeToDom(migratedData.theme);
-      const firstProjectId = migratedData.projects[0]?.id || null;
-
+      const themeToApply = { ...get().handbookTheme, ...migratedData.theme };
+      
       set({ 
           handbookId: migratedData.id,
           projects: migratedData.projects,
           handbookTitle: migratedData.title,
           handbookDescription: migratedData.description,
           handbookUpdatedAt: migratedData.updatedAt || new Date().toISOString(),
-          handbookTheme: migratedData.theme,
+          handbookTheme: themeToApply,
           isInitialized: true,
-          activeProjectId: firstProjectId,
+          activeProjectId: migratedData.projects[0]?.id || null,
       });
 
-      if (source === 'new') {
+      applyThemeToDom(themeToApply);
+
+      if (source === 'new' || source === 'local') {
           get().saveData();
       }
     },
@@ -219,7 +218,6 @@ const useProjectStore = create<State & Actions>()(
             state.handbookTheme = { ...state.handbookTheme, ...themeUpdate };
             state.isDirty = true;
         });
-        // Apply changes to the DOM immediately
         applyThemeToDom(get().handbookTheme);
     },
 
@@ -244,7 +242,11 @@ const useProjectStore = create<State & Actions>()(
         const newTheme: Theme = { 
             colorPrimary: '221 83% 53%', 
             fontHeading: '"Roboto Slab", serif', 
-            fontBody: '"Inter", sans-serif' 
+            fontBody: '"Inter", sans-serif',
+            fontSizeHeading: 32,
+            fontSizeBody: 16,
+            lineHeight: 1.5,
+            letterSpacing: 0,
         };
 
         set({
@@ -264,18 +266,19 @@ const useProjectStore = create<State & Actions>()(
     },
 
     loadHandbookData: async (data) => {
+        const themeToApply = { ...get().handbookTheme, ...data.theme };
         set({
             handbookId: data.id,
             handbookTitle: data.title,
             handbookDescription: data.description,
-            handbookTheme: data.theme,
+            handbookTheme: themeToApply,
             projects: data.projects,
             handbookUpdatedAt: new Date().toISOString(),
             activeProjectId: data.projects[0]?.id || null,
             activeBlockId: null,
             isDirty: true,
         });
-        applyThemeToDom(data.theme);
+        applyThemeToDom(themeToApply);
         await get().saveData();
     },
 
