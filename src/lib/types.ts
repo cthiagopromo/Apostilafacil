@@ -51,6 +51,7 @@ export interface Block {
 export interface Theme {
   colorPrimary: string;
   cover?: string; // URL da imagem de capa (base64)
+  backCover?: string; // URL da imagem da contracapa (base64)
 }
 
 export interface LayoutSettings {
