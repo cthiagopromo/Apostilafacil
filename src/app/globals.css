@@ -34,6 +34,9 @@
     --ring: 221 83% 53%;
  
     --radius: 0.75rem;
+
+    --font-heading: "Roboto Slab", serif;
+    --font-body: "Inter", sans-serif;
   }
  
   .dark {
@@ -86,14 +89,17 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: font-size 0.2s, background-color 0.3s, color 0.3s;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
   }
 }
 
 .tiptap {
-  @apply rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  @apply rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-body;
   min-height: 150px;
 }
 .tiptap > p:first-child {
@@ -104,7 +110,11 @@
 }
 
 .tiptap h1, .tiptap h2, .tiptap h3 {
-  @apply font-bold;
+  @apply font-bold font-heading;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  @apply font-heading;
 }
 
 .tiptap ul, .tiptap ol {

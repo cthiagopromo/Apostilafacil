@@ -12,6 +12,7 @@ import ModuleSettings from './ModuleSettings';
 import LayoutSettings from './LayoutSettings';
 import HandbookSettings from './HandbookSettings';
 import { ScrollArea } from './ui/scroll-area';
+import TypographySettings from './TypographySettings';
 
 export default function RightSidebar() {
   return (
@@ -24,7 +25,7 @@ export default function RightSidebar() {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-4">
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-apostila">
             <AccordionItem value="item-apostila">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
@@ -55,7 +56,7 @@ export default function RightSidebar() {
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                Em breve...
+                <TypographySettings />
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-4">

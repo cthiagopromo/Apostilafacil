@@ -13,13 +13,22 @@ export function EditorLayout() {
   const activeProject = getActiveProject();
 
   useEffect(() => {
+    const root = document.documentElement;
     if (handbookTheme?.colorPrimary) {
-      document.documentElement.style.setProperty('--primary', handbookTheme.colorPrimary);
+      root.style.setProperty('--primary', handbookTheme.colorPrimary);
+    }
+     if (handbookTheme?.fontHeading) {
+      root.style.setProperty('--font-heading', handbookTheme.fontHeading);
+    }
+    if (handbookTheme?.fontBody) {
+      root.style.setProperty('--font-body', handbookTheme.fontBody);
     }
     return () => {
-      document.documentElement.style.removeProperty('--primary');
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--font-heading');
+      root.style.removeProperty('--font-body');
     };
-  }, [handbookTheme?.colorPrimary]);
+  }, [handbookTheme]);
 
   if (!activeProject) {
     return (
