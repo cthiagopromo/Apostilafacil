@@ -8,6 +8,7 @@ import { Check, Upload, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from './ui/input';
 
 const colorOptions = [
   { name: 'Azul', hsl: '221 83% 53%', className: 'bg-blue-600' },
@@ -22,47 +23,59 @@ export default function HandbookSettings() {
       handbookTheme,
       updateHandbookTheme
   } = useProjectStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const backCoverFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleColorSelect = (hsl: string) => {
     updateHandbookTheme({ colorPrimary: hsl });
   }
 
-  const handleCoverUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = (file: File, type: 'cover' | 'backCover') => {
+      if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({
-            variant: 'destructive',
-            title: 'Imagem muito grande',
-            description: 'Por favor, escolha uma imagem com menos de 2MB.',
-        });
-        return;
-    }
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+          toast({
+              variant: 'destructive',
+              title: 'Imagem muito grande',
+              description: 'Por favor, escolha uma imagem com menos de 2MB.',
+          });
+          return;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-        const base64Url = loadEvent.target?.result as string;
-        updateHandbookTheme({ cover: base64Url });
-        toast({
-            title: 'Upload da capa concluído',
-            description: 'A imagem de capa foi incorporada com sucesso.',
-        });
-    };
-    reader.onerror = () => {
-         toast({
-            variant: 'destructive',
-            title: 'Erro no Upload',
-            description: 'Não foi possível ler o arquivo da imagem.',
-        });
-    }
-    reader.readAsDataURL(file);
-  };
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+          const base64Url = loadEvent.target?.result as string;
+          if (type === 'cover') {
+            updateHandbookTheme({ cover: base64Url });
+            toast({
+                title: 'Upload da capa concluído',
+                description: 'A imagem de capa foi incorporada com sucesso.',
+            });
+          } else {
+            updateHandbookTheme({ backCover: base64Url });
+            toast({
+                title: 'Upload da contracapa concluído',
+                description: 'A imagem de contracapa foi incorporada com sucesso.',
+            });
+          }
+      };
+      reader.onerror = () => {
+           toast({
+              variant: 'destructive',
+              title: 'Erro no Upload',
+              description: 'Não foi possível ler o arquivo da imagem.',
+          });
+      }
+      reader.readAsDataURL(file);
+  }
   
   const removeCover = () => {
     updateHandbookTheme({ cover: undefined });
+  }
+
+  const removeBackCover = () => {
+    updateHandbookTheme({ backCover: undefined });
   }
 
   const currentColor = handbookTheme?.colorPrimary || '221 83% 53%';
@@ -102,16 +115,41 @@ export default function HandbookSettings() {
             </div>
         ) : (
             <>
-              <Button variant="outline" className='w-full' onClick={() => fileInputRef.current?.click()}>
+              <Button variant="outline" className='w-full' onClick={() => coverFileInputRef.current?.click()}>
                   <Upload className='mr-2' />
                   Enviar Imagem (Max 2MB)
               </Button>
               <Input 
                   type="file"
-                  ref={fileInputRef}
+                  ref={coverFileInputRef}
                   className="hidden"
                   accept="image/png, image/jpeg, image/gif, image/webp"
-                  onChange={handleCoverUpload}
+                  onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], 'cover')}
+              />
+            </>
+        )}
+      </div>
+       <div className="space-y-2">
+        <Label>Imagem de Contracapa</Label>
+        {handbookTheme.backCover ? (
+            <div className='relative group'>
+                <img src={handbookTheme.backCover} alt="Pré-visualização da contracapa" className='rounded-md border' />
+                <Button onClick={removeBackCover} variant="destructive" size="icon" className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <X />
+                </Button>
+            </div>
+        ) : (
+            <>
+              <Button variant="outline" className='w-full' onClick={() => backCoverFileInputRef.current?.click()}>
+                  <Upload className='mr-2' />
+                  Enviar Imagem (Max 2MB)
+              </Button>
+              <Input 
+                  type="file"
+                  ref={backCoverFileInputRef}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], 'backCover')}
               />
             </>
         )}
