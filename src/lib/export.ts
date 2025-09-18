@@ -172,6 +172,21 @@ const getInteractiveScript = (theme: Theme): string => {
     return `(${scriptContent.toString()})()`;
 };
 
+const fontMap: Record<string, { name: string; family: string }> = {
+    'var(--font-roboto-slab)': { name: 'Roboto Slab', family: '"Roboto Slab", serif' },
+    'var(--font-inter)': { name: 'Inter', family: '"Inter", sans-serif' },
+    'var(--font-lato)': { name: 'Lato', family: '"Lato", sans-serif' },
+};
+
+const getGoogleFontsUrl = (theme: Theme): string => {
+    const headingFont = fontMap[theme.fontHeading || '']?.name || 'Roboto Slab';
+    const bodyFont = fontMap[theme.fontBody || '']?.name || 'Inter';
+
+    const fonts = new Set([headingFont, bodyFont]);
+    const fontFamilies = Array.from(fonts).map(font => `family=${font.replace(/\s/g, '+')}`).join('&');
+
+    return `https://fonts.googleapis.com/css2?${fontFamilies}&display=swap`;
+};
 
 const renderBlockToHtml = (block: Block): string => {
     
@@ -296,7 +311,11 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 };
 
 const getGlobalCss = (theme: Theme) => `
-      :root { --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; }
+      :root { 
+        --background: 240 5% 96%; --foreground: 222.2 84% 4.9%; --card: 0 0% 100%; --card-foreground: 222.2 84% 4.9%; --popover: 0 0% 100%; --popover-foreground: 0 0% 3.9%; --primary: ${theme.colorPrimary}; --primary-foreground: 0 0% 98%; --secondary: 210 40% 98%; --secondary-foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215 20.2% 65.1%; --accent: 210 40% 96.1%; --accent-foreground: 222.2 47.4% 11.2%; --destructive: 0 84.2% 60.2%; --destructive-foreground: 0 0% 98%; --border: 214 31.8% 91.4%; --input: 214 31.8% 91.4%; --ring: ${theme.colorPrimary}; --radius: 0.75rem; 
+        --font-heading: ${fontMap[theme.fontHeading || '']?.family || '"Roboto Slab", serif'};
+        --font-body: ${fontMap[theme.fontBody || '']?.family || '"Inter", sans-serif'};
+      }
       .dark { --background: 222.2 84% 4.9%; --foreground: 210 40% 98%; --card: 222.2 84% 4.9%; --card-foreground: 210 40% 98%; --popover: 222.2 84% 4.9%; --popover-foreground: 210 40% 98%; --primary: 217 91% 65%; --primary-foreground: 222.2 47.4% 11.2%; --secondary: 217.2 32.6% 17.5%; --secondary-foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --accent: 217.2 32.6% 17.5%; --accent-foreground: 210 40% 98%; --destructive: 0 62.8% 30.6%; --destructive-foreground: 210 40% 98%; --border: 217.2 32.6% 17.5%; --input: 217.2 32.6% 17.5%; --ring: 217.2 32.6% 17.5%; }
       
       body.high-contrast { background-color: black !important; color: white !important; }
@@ -307,6 +326,9 @@ const getGlobalCss = (theme: Theme) => `
       body.high-contrast a, body.high-contrast .text-primary, body.high-contrast .lucide-check-circle { color: yellow !important; }
       body.high-contrast .radio-group-item { border-color: white !important; }
       body.high-contrast .lucide-check-circle { fill: yellow !important; }
+
+      body { font-family: var(--font-body); }
+      h1, h2, h3, h4, h5, h6, .prose h1, .prose h2, .prose h3 { font-family: var(--font-heading); }
 
       .module-section:not(.cover-section) {
           display: none;
@@ -504,12 +526,19 @@ export const handleExportZip = async ({
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>${handbookTitle}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="${getGoogleFontsUrl(handbookTheme)}" rel="stylesheet">
                 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
                 <style>${getGlobalCss(handbookTheme)}</style>
                 <script>
                     tailwind.config = {
                       theme: { 
                         extend: { 
+                          fontFamily: {
+                            heading: ['var(--font-heading)'],
+                            body: ['var(--font-body)'],
+                          },
                           colors: { 
                               border: 'hsl(var(--border))', 
                               input: 'hsl(var(--input))', 
