@@ -12,10 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'ID da apostila é obrigatório' }, { status: 400 });
     }
 
-    // Etapa de Segurança: Verifica se a tabela existe antes de fazer a consulta.
-    // Isso previne erros 500 em um banco de dados novo ou vazio.
     try {
-      // Usamos uma consulta ao information_schema que é padrão SQL para verificar a existência de tabelas.
       const tableCheck = await db`
         SELECT EXISTS (
           SELECT FROM 
@@ -24,7 +21,6 @@ export async function GET(
               table_name = 'apostilas'
         );
       `;
-      // Se a tabela não existir, a consulta acima retorna 'exists: false'.
       if (!tableCheck.rows[0].exists) {
         console.warn("Tabela 'apostilas' não encontrada, retornando 404.");
         return NextResponse.json({ error: 'Apostila não encontrada' }, { status: 404 });
@@ -34,9 +30,8 @@ export async function GET(
         return NextResponse.json({ error: 'Erro interno no servidor ao acessar o banco de dados' }, { status: 500 });
     }
     
-    // Se a tabela existe, prosseguimos com a busca da apostila.
     const result = await db`
-      SELECT data FROM apostilas WHERE apostila_id = ${apostila_id};
+      SELECT data, font_heading, font_body FROM apostilas WHERE apostila_id = ${apostila_id};
     `;
     
     if (result.rows.length === 0 || !result.rows[0].data) {
@@ -44,6 +39,17 @@ export async function GET(
     }
     
     const apostilaData = result.rows[0].data;
+    const fontHeading = result.rows[0].font_heading;
+    const fontBody = result.rows[0].font_body;
+
+    // Garante que a estrutura de 'theme' exista antes de adicionar as fontes
+    if (typeof apostilaData === 'object' && apostilaData !== null) {
+      if (!('theme' in apostilaData)) {
+        (apostilaData as any).theme = {};
+      }
+      (apostilaData as any).theme.fontHeading = fontHeading;
+      (apostilaData as any).theme.fontBody = fontBody;
+    }
 
     return NextResponse.json(apostilaData, { status: 200 });
 
