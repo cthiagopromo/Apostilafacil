@@ -147,7 +147,16 @@ const getInteractiveScript = (theme: Theme): string => {
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
                 
                 if (printBtn) {
-                    printBtn.addEventListener('click', () => (window as any).handlePrint());
+                    printBtn.addEventListener('click', () => {
+                        const modal = document.getElementById('printing-modal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                        }
+
+                        setTimeout(() => {
+                            window.print();
+                        }, 3000); 
+                    });
                 }
 
                 if (contrastBtn) contrastBtn.addEventListener('click', () => document.body.classList.toggle('high-contrast'));
@@ -161,6 +170,13 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
             
+            window.addEventListener('afterprint', () => {
+                const modal = document.getElementById('printing-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
             if (coverSection && handbookRoot) {
                 (coverSection as HTMLElement).style.display = 'flex';
                 (handbookRoot as HTMLElement).style.display = 'none';
@@ -429,6 +445,10 @@ const getGlobalCss = (theme: Theme) => `
               page-break-after: always;
               margin-top: 2cm;
           }
+          .module-section:not(.cover-section):not(.back-cover-section) {
+              padding-top: 2cm;
+              box-sizing: border-box;
+          }
           .module-section:last-of-type {
               page-break-after: auto;
           }
@@ -603,26 +623,13 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
+                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:9999;">
                     <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
                         <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
                         <p style="margin-top:10px;">Preparando PDF...</p>
                     </div>
                 </div>
                 <style> @keyframes spin { to { transform: rotate(360deg); } } </style>
-                <script>
-                    function handlePrint() {
-                        const modal = document.getElementById("printing-modal");
-                        modal.style.display = "flex";
-                        setTimeout(() => {
-                            window.print();
-                        }, 600);
-                    }
-                    window.addEventListener('afterprint', () => {
-                        const modal = document.getElementById("printing-modal");
-                        modal.style.display = "none";
-                    });
-                </script>
                 <header class="py-4 px-6 bg-primary text-primary-foreground no-print">
                     <div class="max-w-4xl mx-auto flex flex-row justify-between items-center">
                         <h1 class="text-xl font-bold">${handbookTitle}</h1>
@@ -660,3 +667,4 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
