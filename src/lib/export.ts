@@ -444,18 +444,12 @@ const getGlobalCss = (theme: Theme) => `
             box-sizing: border-box; 
           }
 
-          .module-section {
-              display: block !important;
-              page-break-inside: avoid;
-              page-break-after: always;
-          }
-
           .module-section:not(.cover-section) {
             page-break-before: always;
           }
           
           .module-section:not(.cover-section):not(.back-cover-section) > *:first-child {
-            padding-top: 20px !important;
+            padding-top: 100px !important;
           }
 
           .cover-section > *:first-child,
@@ -591,7 +585,7 @@ export const handleExportZip = async ({
                               secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, 
                               destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, 
                               muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, 
-                              accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, 
+                              accent: { DEFAULT: 'hsl(var(--accent-foreground))', foreground: 'hsl(var(--accent-foreground))' }, 
                               popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
                               card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
                           },
@@ -645,7 +639,7 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:9999; display:none;">
+                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
                     <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
                         <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
                         <p style="margin-top:10px;">Preparando PDF...</p>
