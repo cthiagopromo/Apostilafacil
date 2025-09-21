@@ -1,5 +1,6 @@
 
 
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
@@ -190,8 +191,11 @@ const getInteractiveScript = (theme: Theme): string => {
 
 const fontMap: Record<string, { name: string; family: string }> = {
     'var(--font-roboto-slab)': { name: 'Roboto Slab', family: '"Roboto Slab", serif' },
+    '"Roboto Slab", serif': { name: 'Roboto Slab', family: '"Roboto Slab", serif' },
     'var(--font-inter)': { name: 'Inter', family: '"Inter", sans-serif' },
+    '"Inter", sans-serif': { name: 'Inter', family: '"Inter", sans-serif' },
     'var(--font-lato)': { name: 'Lato', family: '"Lato", sans-serif' },
+     '"Lato", sans-serif': { name: 'Lato', family: '"Lato", sans-serif' },
 };
 
 const getGoogleFontsUrl = (theme: Theme): string => {
@@ -199,7 +203,7 @@ const getGoogleFontsUrl = (theme: Theme): string => {
     const bodyFont = fontMap[theme.fontBody || '']?.name || 'Inter';
 
     const fonts = new Set([headingFont, bodyFont]);
-    const fontFamilies = Array.from(fonts).map(font => `family=${font.replace(/\s/g, '+')}`).join('&');
+    const fontFamilies = Array.from(fonts).map(font => `family=${font.replace(/\s/g, '+')}:wght@400;700`).join('&');
 
     return `https://fonts.googleapis.com/css2?${fontFamilies}&display=swap`;
 };
@@ -418,7 +422,7 @@ const getGlobalCss = (theme: Theme) => `
             box-shadow: none !important;
             border-radius: 0 !important;
             border: none !important;
-            padding: 1.5cm !important;
+            padding: 0 !important;
             margin: 0 auto !important;
             width: 210mm;
             max-width: 100%;
@@ -438,16 +442,16 @@ const getGlobalCss = (theme: Theme) => `
             margin: 0 !important;
             page-break-after: always;
           }
+          
+          .module-section:not(.cover-section):not(.back-cover-section) {
+            padding: 3cm 2.5cm;
+            box-sizing: border-box;
+          }
 
           .module-section {
               display: block !important;
               page-break-inside: avoid;
               page-break-after: always;
-              margin-top: 2cm;
-          }
-          .module-section:not(.cover-section):not(.back-cover-section) {
-              padding-top: 2cm;
-              box-sizing: border-box;
           }
           .module-section:last-of-type {
               page-break-after: auto;
@@ -472,7 +476,9 @@ const getGlobalCss = (theme: Theme) => `
           .video-print-placeholder-export { display: block !important; }
 
           h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
-          figure, .quiz-card, blockquote, .prose { page-break-inside: avoid; }
+          .quiz-card, figure, blockquote {
+            page-break-inside: avoid;
+          }
           .prose { color: black; }
           a {
             color: #000 !important;
