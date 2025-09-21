@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -124,6 +125,11 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
     }
   };
 
+  const handleEditClick = (handbookId: string, projectId: string) => {
+    setIsLoading(true);
+    onNavigate(handbookId, projectId);
+  };
+
   const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);
   const firstProjectId = projects.length > 0 ? projects[0].id : null;
 
@@ -212,7 +218,7 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
                       variant="outline" 
                       size="sm" 
                       disabled={!firstProjectId || isLoading}
-                      onClick={() => firstProjectId && onNavigate(handbookId, firstProjectId)}
+                      onClick={() => firstProjectId && handleEditClick(handbookId, firstProjectId)}
                     >
                       Editar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
