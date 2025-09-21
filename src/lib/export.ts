@@ -2,6 +2,7 @@
 
 
 
+
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
@@ -309,6 +310,7 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}">
+            <div class="top-spacer"></div>
             <header class="text-center mb-12">
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
@@ -399,8 +401,17 @@ const getGlobalCss = (theme: Theme) => `
         display: none;
       }
 
+      .top-spacer {
+        display: none;
+      }
 
       @media print {
+          .top-spacer {
+            display: block !important;
+            height: 2cm;
+            background: white;
+            page-break-inside: avoid;
+          }
           @page {
             size: A4;
             margin: 0;
@@ -445,7 +456,7 @@ const getGlobalCss = (theme: Theme) => `
           }
           
           .module-section:not(.cover-section):not(.back-cover-section) {
-            padding: 3cm 2.5cm;
+            padding: 0 2.5cm 3cm 2.5cm;
             box-sizing: border-box; 
           }
 
@@ -685,5 +696,6 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
 
 
