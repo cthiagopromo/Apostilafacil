@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { HandbookData, Block, Project, Theme } from '@/lib/types';
@@ -156,7 +151,6 @@ const getInteractiveScript = (theme: Theme): string => {
                         if (modal) {
                             modal.style.display = 'flex';
                         }
-
                         setTimeout(() => {
                             window.print();
                         }, 3000); 
@@ -311,7 +305,6 @@ const renderBlockToHtml = (block: Block): string => {
 const renderProjectsToHtml = (projects: Project[]): string => {
     return projects.map((project, index) => `
         <section class="module-section" data-module-id="${project.id}">
-            <div class="top-spacer"></div>
             <header class="text-center mb-12">
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
@@ -402,17 +395,7 @@ const getGlobalCss = (theme: Theme) => `
         display: none;
       }
 
-      .top-spacer {
-        display: none;
-      }
-
       @media print {
-          .top-spacer {
-            display: block !important;
-            height: 2cm;
-            background: white;
-            page-break-inside: avoid;
-          }
           @page {
             size: A4;
             margin: 0;
@@ -469,6 +452,15 @@ const getGlobalCss = (theme: Theme) => `
 
           .module-section:not(.cover-section) {
             page-break-before: always;
+          }
+          
+          .module-section:not(.cover-section):not(.back-cover-section) > *:first-child {
+            padding-top: 20px !important;
+          }
+
+          .cover-section > *:first-child,
+          .back-cover-section > *:first-child {
+              padding-top: 0 !important;
           }
 
           .quiz-card,
@@ -653,7 +645,7 @@ export const handleExportZip = async ({
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
             </head>
             <body class="bg-secondary/40 text-foreground font-sans antialiased">
-                 <div id="printing-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999; display:none;">
+                 <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; z-index:9999; display:none;">
                     <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
                         <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
                         <p style="margin-top:10px;">Preparando PDF...</p>
@@ -698,8 +690,4 @@ export const handleExportZip = async ({
     }
 };
 
-
-
-
-
-  
+    
