@@ -29,7 +29,7 @@ export default function Home() {
             <FileText className="h-12 w-12 text-primary" />
           </div>
           <h1 className="text-5xl font-bold text-primary">Apostila Fácil</h1>
-          <p className="text-xl text-muted-foreground mt-2">Crie, edite e exporte suas apostilas interativas com facilidade.</p>
+          <p className="text-xl text-gray-500 mt-2">Crie, edite e exporte suas apostilas interativas com facilidade.</p>
         </header>
         <main>
           <ProjectList onNavigate={handleNavigateToEditor} />
