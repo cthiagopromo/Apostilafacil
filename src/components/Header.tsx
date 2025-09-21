@@ -6,10 +6,11 @@ import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
 import { handleExportZip } from '@/lib/export';
+import { LoadingModal } from './LoadingModal';
 
 
 export default function Header() {
@@ -17,6 +18,8 @@ export default function Header() {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const router = useRouter();
   const { toast } = useToast();
 
   const onExportClick = async () => {
@@ -57,15 +60,24 @@ export default function Header() {
     setIsPreviewModalOpen(true);
   }
 
+  const handleNavigateHome = () => {
+    setIsNavigating(true);
+    router.push('/');
+  }
+
   return (
     <>
       <PreviewModal 
         isOpen={isPreviewModalOpen} 
         onOpenChange={setIsPreviewModalOpen}
       />
+      <LoadingModal isOpen={isNavigating} text="Carregando..." />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
-            
+            <Button variant="outline" onClick={handleNavigateHome}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Início
+            </Button>
             <div className="w-px h-8 bg-border"></div>
               <div className='flex items-center gap-3'>
                 <h1 className="text-lg font-semibold truncate max-w-xs md:max-w-md">
@@ -99,5 +111,3 @@ export default function Header() {
     </>
   );
 }
-
-    
