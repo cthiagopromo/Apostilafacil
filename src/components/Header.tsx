@@ -65,12 +65,7 @@ export default function Header() {
       />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
-            <Button variant="outline" asChild>
-              <Link href="/">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Início
-              </Link>
-            </Button>
+            
             <div className="w-px h-8 bg-border"></div>
               <div className='flex items-center gap-3'>
                 <h1 className="text-lg font-semibold truncate max-w-xs md:max-w-md">
