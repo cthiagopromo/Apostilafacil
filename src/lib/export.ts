@@ -42,10 +42,10 @@ const getInteractiveScript = (theme: Theme): string => {
                 floatingNavButtons.forEach((btn, i) => {
                     if (i === index) {
                         btn.classList.add('bg-primary', 'text-primary-foreground');
-                        btn.classList.remove('hover:bg-accent');
+                        btn.classList.remove('hover:bg-primary/10');
                     } else {
                         btn.classList.remove('bg-primary', 'text-primary-foreground');
-                        btn.classList.add('hover:bg-accent');
+                        btn.classList.add('hover:bg-primary/10');
                     }
                 });
                 currentModuleIndex = index;
@@ -514,7 +514,7 @@ const getFloatingNavHtml = (projects: Project[]) => `
     <div id="floating-nav-container" class="fixed bottom-5 right-5 z-50 no-print">
         <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 space-y-1 w-64">
              <p class="font-semibold text-sm px-2 py-1">Módulos</p>
-            ${projects.map((p, i) => `<button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-accent rounded-md">${i+1}. ${p.title}</button>`).join('')}
+            ${projects.map((p, i) => `<button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-primary/10 rounded-md">${i+1}. ${p.title}</button>`).join('')}
         </div>
         <button id="floating-nav-toggle" class="bg-primary text-primary-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
