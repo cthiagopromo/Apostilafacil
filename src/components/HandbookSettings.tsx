@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from './ui/input';
 
 const colorOptions = [
-  { name: 'Azul', hsl: '223 78% 48%', className: 'bg-blue-700' },
+  { name: 'Azul', hsl: '225 70% 41%', className: 'bg-blue-800' },
   { name: 'Laranja', hsl: '32 100% 47%', className: 'bg-orange-500' },
   { name: 'Roxo', hsl: '262 84% 53%', className: 'bg-purple-600' },
   { name: 'Rosa', hsl: '322 84% 53%', className: 'bg-pink-600' },
