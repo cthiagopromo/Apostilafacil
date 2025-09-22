@@ -99,11 +99,11 @@ const QuizBlock = ({ block }: { block: Block }) => {
 
     return (
         <Card className="quiz-card bg-muted/30">
-            <CardHeader className="quiz-card-header">
+            <CardHeader className="quiz-card-header p-4">
                 <CardTitle className="quiz-card-title">{question}</CardTitle>
                 <CardDescription className="quiz-card-desc">Selecione a resposta correta.</CardDescription>
             </CardHeader>
-            <CardContent className="quiz-card-content">
+            <CardContent className="quiz-card-content p-4 pt-0">
                 <RadioGroup value={userAnswerId || undefined} onValueChange={handleValueChange} disabled={isAnswered}>
                     {options?.map((option) => {
                         const isSelected = userAnswerId === option.id;
@@ -127,7 +127,7 @@ const QuizBlock = ({ block }: { block: Block }) => {
                     })}
                 </RadioGroup>
             </CardContent>
-            <CardFooter className="quiz-card-footer">
+            <CardFooter className="quiz-card-footer p-4 pt-0">
                 <Button variant="outline" className="retry-btn" onClick={() => resetQuiz(block.id)} style={{ display: isAnswered ? 'inline-flex' : 'none' }}>Tentar Novamente</Button>
             </CardFooter>
         </Card>
@@ -152,7 +152,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
             const width = block.content.width ?? 100;
             return (
                 <div className='flex justify-center'>
-                    <figure className='flex flex-col items-center gap-2' style={{ width: `${width}%` }}>
+                    <figure className='flex flex-col items-center gap-1' style={{ width: `${width}%` }}>
                         <img 
                           src={url || 'https://placehold.co/600x400.png'} 
                           alt={block.content.alt || 'Placeholder image'} 
@@ -167,7 +167,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         case 'quote':
             return (
                  <div className="relative">
-                    <blockquote className="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                    <blockquote className="p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
                          <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon" />
                         {block.content.text}
                     </blockquote>
@@ -212,3 +212,4 @@ const BlockRenderer = ({ block }: { block: Block }) => {
 }
 
 export default BlockRenderer;
+

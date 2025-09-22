@@ -214,7 +214,7 @@ const renderBlockToHtml = (block: Block): string => {
             const { url, alt, caption, width } = block.content;
             return `
                 <div class="flex justify-center">
-                    <figure class="flex flex-col items-center gap-2" style="width: ${width || 100}%">
+                    <figure class="flex flex-col items-center gap-1" style="width: ${width || 100}%">
                         <img src="${url || 'https://placehold.co/600x400.png'}" alt="${alt || ''}" class="rounded-md shadow-md max-w-full h-auto" />
                         ${caption ? `<figcaption class="text-sm text-center text-muted-foreground italic mt-2">${caption}</figcaption>` : ''}
                     </figure>
@@ -222,7 +222,7 @@ const renderBlockToHtml = (block: Block): string => {
         case 'quote':
              return `
                 <div class="relative">
-                    <blockquote class="p-6 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                    <blockquote class="p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2S6 3.75 6 5v6H4c-1 1 0 5 3 5z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2s-2 1.25-2 3v6h-2c-1 1 0 5 3 5z"></path></svg>
                         ${block.content.text || ''}
                     </blockquote>
@@ -290,12 +290,12 @@ const renderBlockToHtml = (block: Block): string => {
                 </div>`).join('') || '';
             return `
                 <div class="quiz-card rounded-lg border bg-card text-card-foreground shadow-sm bg-muted/30">
-                    <div class="p-6">
+                    <div class="p-4">
                         <h3 class="text-xl font-semibold">${block.content.question || ''}</h3>
                         <p class="text-sm text-muted-foreground">Selecione a resposta correta.</p>
                     </div>
-                    <div class="p-6 pt-0"><div class="grid gap-2">${optionsHtml}</div></div>
-                    <div class="p-6 pt-0"><button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" style="display:none;">Tentar Novamente</button></div>
+                    <div class="p-4 pt-0"><div class="grid gap-2">${optionsHtml}</div></div>
+                    <div class="p-4 pt-0"><button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" style="display:none;">Tentar Novamente</button></div>
                 </div>`;
         default:
             return `<!-- Bloco do tipo ${block.type} não suportado para exportação -->`;
@@ -309,7 +309,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
-            <div class="space-y-8">
+            <div class="space-y-4">
                 ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
