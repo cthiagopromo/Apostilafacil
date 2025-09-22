@@ -92,7 +92,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
-                    <main id="printable-content" className={cn("mx-auto p-4 sm:p-8 md:p-12 relative")}>
+                    <main id="printable-content" className={cn("p-4 sm:p-8 md:p-12 relative")}>
                         <FloatingNav 
                             modules={handbookData.projects} 
                             currentIndex={currentModuleIndex} 
@@ -111,11 +111,11 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg mx-auto", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 
-                                    className={cn('module-section text-center', { 'hidden': !isPreparingPrint && index !== currentModuleIndex })}
+                                    className={cn('module-section', { 'hidden': !isPreparingPrint && index !== currentModuleIndex })}
                                 >
                                     <header className='text-center mb-12'>
                                         <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
