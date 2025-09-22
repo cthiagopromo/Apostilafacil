@@ -37,7 +37,9 @@ export default function ModuleSettings() {
           onChange={(e) => updateProjectDescription(activeProject.id, e.target.value)}
           placeholder="Uma breve descrição sobre o módulo."
           rows={4}
+          maxLength={260}
         />
+        <p className="text-xs text-muted-foreground text-right">{activeProject.description.length}/260</p>
       </div>
     </div>
   );
