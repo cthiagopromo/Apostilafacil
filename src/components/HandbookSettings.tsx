@@ -9,6 +9,7 @@ import { Button } from './ui/button';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 
 const colorOptions = [
   { name: 'Azul', hsl: '225 70% 41%', className: 'bg-blue-800' },
@@ -20,7 +21,11 @@ const colorOptions = [
 
 export default function HandbookSettings() {
   const { 
+      handbookTitle,
+      handbookDescription,
       handbookTheme,
+      updateHandbookTitle,
+      updateHandbookDescription,
       updateHandbookTheme
   } = useProjectStore();
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +88,25 @@ export default function HandbookSettings() {
 
   return (
     <div className="space-y-6">
+       <div className="space-y-2">
+        <Label htmlFor="handbook-title">Título da Apostila</Label>
+        <Input
+          id="handbook-title"
+          value={handbookTitle}
+          onChange={(e) => updateHandbookTitle(e.target.value)}
+          placeholder="Ex: Guia Completo de..."
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="handbook-description">Descrição da Apostila</Label>
+        <Textarea
+          id="handbook-description"
+          value={handbookDescription}
+          onChange={(e) => updateHandbookDescription(e.target.value)}
+          placeholder="Uma breve descrição sobre a apostila."
+          rows={3}
+        />
+      </div>
        <div className="space-y-2">
         <Label>Cor Principal</Label>
         <div className="flex items-center gap-3 pt-1">
