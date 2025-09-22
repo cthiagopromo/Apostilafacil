@@ -111,7 +111,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
+                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg flex flex-col items-center", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
                             {handbookData.projects.map((project, index) => (
                                 <section 
                                     key={project.id} 
