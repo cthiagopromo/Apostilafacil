@@ -140,7 +140,7 @@ const getInteractiveScript = (theme: Theme): string => {
 
             const toolbar = document.querySelector('.accessibility-toolbar');
             if (toolbar) {
-                 const printBtn = toolbar.querySelector('[data-action="print"]');
+                const printBtn = toolbar.querySelector('[data-action="print"]');
                 const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
                 const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
@@ -151,9 +151,20 @@ const getInteractiveScript = (theme: Theme): string => {
                         if (modal) {
                             modal.style.display = 'flex';
                         }
+                        
+                        // Show all modules for printing
+                        modules.forEach(module => {
+                            (module as HTMLElement).style.display = 'block';
+                        });
+
                         setTimeout(() => {
                             window.print();
-                        }, 3000); 
+                             if (modal) {
+                                modal.style.display = 'none';
+                            }
+                            // Restore view after printing
+                            showModule(currentModuleIndex);
+                        }, 1000); 
                     });
                 }
 
@@ -173,6 +184,8 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (modal) {
                     modal.style.display = 'none';
                 }
+                // Ensure view is restored even if print is cancelled
+                showModule(currentModuleIndex);
             });
 
             if (coverSection && handbookRoot) {
