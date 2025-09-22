@@ -11,6 +11,8 @@ export const initialHandbookData: HandbookData = {
   updatedAt: new Date().toISOString(),
   theme: {
     colorPrimary: '221 83% 53%',
+    fontHeading: '"Roboto Slab", serif',
+    fontBody: '"Inter", sans-serif',
   },
   projects: [
     {
