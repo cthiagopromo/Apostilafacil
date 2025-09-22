@@ -92,7 +92,7 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
             <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
-                    <main id="printable-content" className={cn("p-4 sm:p-8 md:p-12 relative")}>
+                    <div id="printable-content" className="flex flex-col">
                         <FloatingNav 
                             modules={handbookData.projects} 
                             currentIndex={currentModuleIndex} 
@@ -111,52 +111,54 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
                             </section>
                         )}
                         
-                        <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg mx-auto", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
-                            {handbookData.projects.map((project, index) => (
-                                <section 
-                                    key={project.id} 
-                                    className={cn('module-section', { 'hidden': !isPreparingPrint && index !== currentModuleIndex })}
-                                >
-                                    <header className='text-center mb-12'>
-                                        <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
-                                        <p className="text-muted-foreground">{project.description}</p>
-                                    </header>
-                                    <div className={cn(getSectionSpacingClass(project))}>
-                                        {project.blocks.map((block) => (
-                                            <div key={block.id} data-block-id={block.id}>
-                                                    <BlockRenderer block={block} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <footer className="mt-16 flex justify-between items-center no-print">
-                                        <Button 
-                                            onClick={() => handleModuleChange(currentModuleIndex - 1)}
-                                            disabled={currentModuleIndex === 0}
-                                            variant="outline"
-                                        >
-                                            <ArrowLeft className="mr-2 h-4 w-4" />
-                                            Módulo Anterior
-                                        </Button>
-                                        <span className="text-sm text-muted-foreground">
-                                            Módulo {currentModuleIndex + 1} de {handbookData.projects.length}
-                                        </span>
-                                        <Button 
-                                            onClick={() => handleModuleChange(currentModuleIndex + 1)}
-                                            disabled={currentModuleIndex === handbookData.projects.length - 1}
-                                        >
-                                            Próximo Módulo
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </footer>
-                                </section>
-                            ))}
-                        </div>
+                        <main className={cn("p-4 sm:p-8 md:p-12 relative flex-grow")}>
+                            <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg mx-auto", getContainerWidthClass(currentProject), {'p-8 sm:p-12 md:p-16': !isPreparingPrint}, {'mt-8': !!handbookData.theme.cover})}>
+                                {handbookData.projects.map((project, index) => (
+                                    <section 
+                                        key={project.id} 
+                                        className={cn('module-section', { 'hidden': !isPreparingPrint && index !== currentModuleIndex })}
+                                    >
+                                        <header className='text-center mb-12'>
+                                            <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
+                                            <p className="text-muted-foreground">{project.description}</p>
+                                        </header>
+                                        <div className={cn(getSectionSpacingClass(project))}>
+                                            {project.blocks.map((block) => (
+                                                <div key={block.id} data-block-id={block.id}>
+                                                        <BlockRenderer block={block} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <footer className="mt-16 flex justify-between items-center no-print">
+                                            <Button 
+                                                onClick={() => handleModuleChange(currentModuleIndex - 1)}
+                                                disabled={currentModuleIndex === 0}
+                                                variant="outline"
+                                            >
+                                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                                Módulo Anterior
+                                            </Button>
+                                            <span className="text-sm text-muted-foreground">
+                                                Módulo {currentModuleIndex + 1} de {handbookData.projects.length}
+                                            </span>
+                                            <Button 
+                                                onClick={() => handleModuleChange(currentModuleIndex + 1)}
+                                                disabled={currentModuleIndex === handbookData.projects.length - 1}
+                                            >
+                                                Próximo Módulo
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </footer>
+                                    </section>
+                                ))}
+                            </div>
+                        </main>
                          {handbookData.theme.backCover && (
-                            <section className="back-cover-section module-section">
-                                <img src={handbookData.theme.backCover} alt="Contracapa da Apostila" className="back-cover-image"/>
+                            <section className="back-cover-section module-section flex-shrink-0 h-[400px] relative rounded-md overflow-hidden mt-12">
+                                <img src={handbookData.theme.backCover} alt="Contracapa da Apostila" className="w-full h-full object-cover"/>
                             </section>
                         )}
-                    </main>
+                    </div>
                 </div>
             </div>
         </>
