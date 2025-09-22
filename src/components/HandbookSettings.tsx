@@ -105,7 +105,9 @@ export default function HandbookSettings() {
           onChange={(e) => updateHandbookDescription(e.target.value)}
           placeholder="Uma breve descrição sobre a apostila."
           rows={3}
+          maxLength={260}
         />
+        <p className="text-xs text-muted-foreground text-right">{handbookDescription.length}/260</p>
       </div>
        <div className="space-y-2">
         <Label>Cor Principal</Label>
