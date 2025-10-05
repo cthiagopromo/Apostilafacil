@@ -1,8 +1,10 @@
+
 'use client';
 
+import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, File, MoreHorizontal, Trash2, GripVertical } from 'lucide-react';
+import { PlusCircle, Search, File, MoreHorizontal, Trash2, GripVertical, ListOrdered } from 'lucide-react';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { useRouter } from 'next/navigation';
@@ -30,6 +32,7 @@ import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '@/lib/types';
+import { ReorderModulesModal } from './ReorderModulesModal';
 
 
 function SortableModuleItem({ project }: { project: Project }) {
@@ -126,6 +129,7 @@ function SortableModuleItem({ project }: { project: Project }) {
 export default function LeftSidebar() {
   const { projects, addProject, handbookId, reorderProjects } = useProjectStore();
   const router = useRouter();
+  const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   
   const handleNewProject = () => {
     const newProject = addProject();
@@ -144,42 +148,51 @@ export default function LeftSidebar() {
   }
 
   return (
-    <aside className="w-72 bg-card border-r flex flex-col">
-      <div className="p-4 border-b">
-        <div className="flex justify-between items-center mb-4">
-            <div className='flex items-center gap-2'>
-                <h2 className="text-lg font-semibold">Módulos</h2>
-                <Badge variant="secondary">{projects.length}</Badge>
-            </div>
+    <>
+      <ReorderModulesModal isOpen={isReorderModalOpen} onOpenChange={setIsReorderModalOpen} />
+      <aside className="w-72 bg-card border-r flex flex-col">
+        <div className="p-4 border-b">
+          <div className="flex justify-between items-center mb-4">
+              <div className='flex items-center gap-2'>
+                  <h2 className="text-lg font-semibold">Módulos</h2>
+                  <Badge variant="secondary">{projects.length}</Badge>
+              </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={handleNewProject} className='w-full'>
+              <PlusCircle className="mr-2" />
+              Novo
+            </Button>
+            <Button onClick={() => setIsReorderModalOpen(true)} variant="outline">
+              <ListOrdered className="mr-2" />
+              Reordenar
+            </Button>
+          </div>
         </div>
-        <Button onClick={handleNewProject} className='w-full'>
-           <PlusCircle className="mr-2" />
-           Novo Módulo
-        </Button>
-      </div>
-      <div className="p-4 border-b">
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Filtrar módulos..." className="pl-9" />
+        <div className="p-4 border-b">
+          <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Filtrar módulos..." className="pl-9" />
+          </div>
         </div>
-      </div>
-      <ScrollArea className="flex-1">
-        <DndContext
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-        >
-            <SortableContext
-                items={projects.map(p => p.id)}
-                strategy={verticalListSortingStrategy}
-            >
-                <div className='p-2 space-y-1'>
-                    {projects.map((project) => (
-                      <SortableModuleItem key={project.id} project={project} />
-                    ))}
-                </div>
-            </SortableContext>
-        </DndContext>
-      </ScrollArea>
-    </aside>
+        <ScrollArea className="flex-1">
+          <DndContext
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+          >
+              <SortableContext
+                  items={projects.map(p => p.id)}
+                  strategy={verticalListSortingStrategy}
+              >
+                  <div className='p-2 space-y-1'>
+                      {projects.map((project) => (
+                        <SortableModuleItem key={project.id} project={project} />
+                      ))}
+                  </div>
+              </SortableContext>
+          </DndContext>
+        </ScrollArea>
+      </aside>
+    </>
   );
 }
