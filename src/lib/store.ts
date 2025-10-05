@@ -40,6 +40,7 @@ type Actions = {
   loadHandbookData: (data: HandbookData) => Promise<void>;
   addProject: () => Project;
   deleteProject: (projectId: string) => string | null;
+  reorderProjects: (startIndex: number, endIndex: number) => void;
   saveData: () => Promise<void>;
   updateProjectTitle: (projectId: string, title: string) => void;
   updateProjectDescription: (projectId: string, description: string) => void;
@@ -95,6 +96,8 @@ const useProjectStore = create<State & Actions>()(
         colorPrimary: '221 83% 53%', 
         fontHeading: '"Roboto Slab", serif', 
         fontBody: '"Inter", sans-serif',
+        cover: undefined,
+        backCover: undefined,
         fontSizeHeading: 32,
         fontSizeBody: 16,
         lineHeight: 1.5,
@@ -324,6 +327,14 @@ const useProjectStore = create<State & Actions>()(
       });
       get().saveData();
       return nextActiveProjectId;
+    },
+    
+    reorderProjects: (startIndex, endIndex) => {
+      set(state => {
+        const [removed] = state.projects.splice(startIndex, 1);
+        state.projects.splice(endIndex, 0, removed);
+        state.isDirty = true;
+      });
     },
 
     saveData: async () => {
