@@ -278,7 +278,7 @@ const renderBlockToHtml = (block: Block): string => {
             return `
                 <div class="video-container-export">
                     <div class="video-player-export">
-                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
+                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe style="width: 100%; aspect-ratio: 16 / 9; border: 0px;" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
                     </div>
                     <div class="video-print-placeholder-export">
                         <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -631,7 +631,7 @@ export const handleExportZip = async ({
                                 '--tw-prose-pre-bg': 'hsl(var(--muted))',
                                 '--tw-prose-th-borders': 'hsl(var(--border))',
                                 '--tw-prose-td-borders': 'hsl(var(--border))',
-                                '--tw-prose-invert-body': 'hsl(var(--foreground))',
+                                '--tw-prose-invert-body': 'hsl(var(--background))',
                                 '--tw-prose-invert-headings': 'hsl(var(--primary))',
                                 '--tw-prose-invert-lead': 'hsl(var(--background))',
                                 '--tw-prose-invert-links': 'hsl(var(--primary))',
