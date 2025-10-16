@@ -212,8 +212,3 @@ const BlockRenderer = ({ block }: { block: Block }) => {
 }
 
 export default BlockRenderer;
-
-
-
-
-
