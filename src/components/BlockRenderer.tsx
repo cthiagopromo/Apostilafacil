@@ -75,9 +75,10 @@ const SmartplayEmbed = ({ url, title }: { url: string, title?: string }) => {
     }
 
     return (
-        <div className="relative" style={{ paddingTop: '56.25%' /* 16:9 Aspect Ratio */ }}>
+        <div style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 Aspect Ratio */ }}>
             <iframe
-                className="absolute top-0 left-0 w-full h-full rounded-md"
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                className="rounded-md"
                 src={url}
                 title={title || "Smartplay video player"}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -214,5 +215,6 @@ const BlockRenderer = ({ block }: { block: Block }) => {
 }
 
 export default BlockRenderer;
+
 
 
