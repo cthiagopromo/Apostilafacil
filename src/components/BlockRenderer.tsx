@@ -21,7 +21,7 @@ const YoutubeEmbed = ({ url, title, autoplay, showControls }: { url: string, tit
         }
         if (!videoId) return <p className="text-destructive">URL do YouTube inválida.</p>;
 
-        const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+        const src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}&rel=0`;
 
         return (
             <iframe
@@ -75,13 +75,15 @@ const SmartplayEmbed = ({ url, title }: { url: string, title?: string }) => {
     }
 
     return (
-        <iframe
-            className="w-full aspect-video rounded-md"
-            src={url}
-            title={title || "Smartplay video player"}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-        ></iframe>
+        <div className="relative" style={{ paddingTop: '56.25%' /* 16:9 Aspect Ratio */ }}>
+            <iframe
+                className="absolute top-0 left-0 w-full h-full rounded-md"
+                src={url}
+                title={title || "Smartplay video player"}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+            ></iframe>
+        </div>
     );
 };
 
@@ -212,4 +214,5 @@ const BlockRenderer = ({ block }: { block: Block }) => {
 }
 
 export default BlockRenderer;
+
 

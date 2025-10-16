@@ -153,7 +153,7 @@ const getInteractiveScript = (theme: Theme): string => {
                         }
                         
                         // Show all modules for printing
-                        modules.forEach(module => {
+                        document.querySelectorAll('.module-section').forEach(module => {
                             (module as HTMLElement).style.display = 'block';
                         });
 
@@ -185,7 +185,9 @@ const getInteractiveScript = (theme: Theme): string => {
                     modal.style.display = 'none';
                 }
                 // Ensure view is restored even if print is cancelled
-                showModule(currentModuleIndex);
+                document.querySelectorAll('.module-section').forEach((module, i) => {
+                     (module as HTMLElement).style.display = i === currentModuleIndex ? 'block' : 'none';
+                });
             });
 
             if (coverSection && handbookRoot) {
@@ -244,6 +246,7 @@ const renderBlockToHtml = (block: Block): string => {
             const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, smartplayUrl, videoTitle, autoplay, showControls } = block.content;
             let videoEmbedUrl = '';
             let videoLink = '#';
+            let finalVideoLinkHtml = '';
 
             if (videoType === 'youtube' && videoUrl) {
                 try {
@@ -251,7 +254,7 @@ const renderBlockToHtml = (block: Block): string => {
                     let videoId = urlObj.searchParams.get('v');
                     if (urlObj.hostname === 'youtu.be') videoId = urlObj.pathname.substring(1);
                     if (videoId) {
-                        videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
+                        videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}&rel=0`;
                         videoLink = videoUrl;
                     }
                 } catch(e) {}
@@ -265,15 +268,19 @@ const renderBlockToHtml = (block: Block): string => {
                 videoEmbedUrl = smartplayUrl;
                 videoLink = smartplayUrl;
             }
-            
-            const linkHtml = videoLink !== '#' 
-                ? `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer">${videoLink}</a></div>` 
-                : '';
+
+            if (videoLink !== '#') {
+                let displayUrl = videoLink;
+                if(videoType === 'smartplay' && displayUrl.length > 50) {
+                    displayUrl = displayUrl.substring(0, 50) + '...';
+                }
+                finalVideoLinkHtml = `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer">${displayUrl}</a></div>`;
+            }
 
             return `
                 <div class="video-container-export">
-                    <div class="video-player-export">
-                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
+                    <div class="video-player-export" style="position: relative; padding-top: 56.25%; /* 16:9 Aspect Ratio */">
+                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" class="rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
                     </div>
                     <div class="video-print-placeholder-export">
                         <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -281,7 +288,7 @@ const renderBlockToHtml = (block: Block): string => {
                             <div>
                                 <div class="font-semibold">Este conteúdo é um vídeo interativo.</div>
                                 <div class="text-sm text-muted-foreground">${videoTitle || 'Vídeo'}</div>
-                                ${linkHtml}
+                                ${finalVideoLinkHtml}
                             </div>
                         </div>
                     </div>
@@ -322,8 +329,8 @@ const renderProjectsToHtml = (projects: Project[]): string => {
                 <h2 class="text-3xl font-bold mb-2 pb-2">${project.title}</h2>
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
-            <div class="space-y-4">
-                ${project.blocks.map(block => `<div data-block-id="${block.id}">${renderBlockToHtml(block)}</div>`).join('')}
+            <div>
+                ${project.blocks.map((block, blockIndex) => `<div data-block-id="${block.id}" style="${blockIndex > 0 ? 'margin-top: 32px;' : ''}">${renderBlockToHtml(block)}</div>`).join('')}
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
