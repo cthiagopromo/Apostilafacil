@@ -75,16 +75,13 @@ const SmartplayEmbed = ({ url, title }: { url: string, title?: string }) => {
     }
 
     return (
-        <div style={{ position: 'relative', paddingTop: '56.25%' /* 16:9 Aspect Ratio */ }}>
-            <iframe
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                className="rounded-md"
-                src={url}
-                title={title || "Smartplay video player"}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-            ></iframe>
-        </div>
+        <iframe
+            className="w-full aspect-video rounded-md"
+            src={url}
+            title={title || "Smartplay video player"}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+        ></iframe>
     );
 };
 
@@ -215,6 +212,7 @@ const BlockRenderer = ({ block }: { block: Block }) => {
 }
 
 export default BlockRenderer;
+
 
 
 

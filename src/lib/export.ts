@@ -76,7 +76,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex - 1);
+                        newIndex = Math.max(0, currentModuleIndex + 1);
                     }
                     showModule(newIndex);
                 });
@@ -185,9 +185,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     modal.style.display = 'none';
                 }
                 // Ensure view is restored even if print is cancelled
-                document.querySelectorAll('.module-section').forEach((module, i) => {
-                     (module as HTMLElement).style.display = i === currentModuleIndex ? 'block' : 'none';
-                });
+                showModule(currentModuleIndex);
             });
 
             if (coverSection && handbookRoot) {
@@ -279,8 +277,8 @@ const renderBlockToHtml = (block: Block): string => {
 
             return `
                 <div class="video-container-export">
-                    <div class="video-player-export" style="position: relative; padding-top: 56.25%; /* 16:9 Aspect Ratio */">
-                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" class="rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
+                    <div class="video-player-export">
+                        ${!videoEmbedUrl ? `<p class="text-destructive">Vídeo inválido ou não configurado.</p>` : `<iframe class="w-full aspect-video rounded-md" src="${videoEmbedUrl}" title="${videoTitle || 'Vídeo'}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen></iframe>`}
                     </div>
                     <div class="video-print-placeholder-export">
                         <div class="p-4 bg-muted/50 rounded-lg border border-dashed flex items-center gap-4">
@@ -330,7 +328,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
                 <p class="text-muted-foreground">${project.description}</p>
             </header>
             <div>
-                ${project.blocks.map((block, blockIndex) => `<div data-block-id="${block.id}" style="${blockIndex > 0 ? 'margin-top: 32px;' : ''}">${renderBlockToHtml(block)}</div>`).join('')}
+                ${project.blocks.map((block) => `<div data-block-id="${block.id}"><div style="height: 32px;"></div>${renderBlockToHtml(block)}</div>`).join('')}
             </div>
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button data-direction="prev" class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
