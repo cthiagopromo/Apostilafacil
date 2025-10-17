@@ -76,7 +76,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (direction === 'next') {
                         newIndex = Math.min(modules.length - 1, currentModuleIndex + 1);
                     } else if (direction === 'prev') {
-                        newIndex = Math.max(0, currentModuleIndex + 1);
+                        newIndex = Math.max(0, currentModuleIndex - 1);
                     }
                     showModule(newIndex);
                 });
@@ -701,5 +701,7 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
+
+    
 
     
