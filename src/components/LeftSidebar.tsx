@@ -77,21 +77,24 @@ function SortableModuleItem({ project }: { project: Project }) {
             ref={setNodeRef} 
             style={style} 
             className={cn(
-                "w-full h-auto items-center p-2 rounded-md flex group",
+                "w-full h-auto p-2 rounded-md flex items-center justify-between group",
                 activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
             )}
             onClick={() => handleProjectSelect(project.id)}
         >
-            <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground group-hover:text-foreground flex-shrink-0">
-                <GripVertical className="h-5 w-5" />
-            </button>
-            <div className='flex items-center justify-start flex-grow min-w-0 ml-1'>
-                 <File className='mr-3 mt-1 flex-shrink-0' />
-                 <div className='flex flex-col items-start text-left flex-grow min-w-0'>
-                    <span className='font-semibold w-full truncate'>{project.title}</span>
-                    <span className={cn('text-xs w-full truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
+            <div className='flex items-center min-w-0'>
+                <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground group-hover:text-foreground flex-shrink-0">
+                    <GripVertical className="h-5 w-5" />
+                </button>
+                <div className='flex items-center min-w-0 ml-1'>
+                     <File className='mr-3 mt-1 flex-shrink-0' />
+                     <div className='flex flex-col items-start text-left min-w-0'>
+                        <span className='font-semibold w-full truncate'>{project.title}</span>
+                        <span className={cn('text-xs w-full truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
+                    </div>
                 </div>
             </div>
+
             <AlertDialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
