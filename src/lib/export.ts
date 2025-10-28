@@ -314,7 +314,7 @@ const renderBlockToHtml = (block: Block): string => {
                         <p class="text-sm text-muted-foreground">Selecione a resposta correta.</p>
                     </div>
                     <div class="p-4 pt-0"><div class="grid gap-2">${optionsHtml}</div></div>
-                    <div class="p-4 pt-0"><button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" style="display:none;">Tentar Novamente</button></div>
+                    <div class="p-4 pt-0"><button class="retry-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2" style="display:none;">Tentar Novamente</button></div>
                 </div>`;
         default:
             return `<!-- Bloco do tipo ${block.type} não suportado para exportação -->`;
@@ -334,7 +334,10 @@ const renderProjectsToHtml = (projects: Project[]): string => {
             <footer class="mt-16 flex justify-between items-center no-print">
                 <button 
                   data-direction="prev" 
-                  class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2"
+                  class="module-nav-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background h-10 px-4 py-2"
+                  style="--tw-ring-offset-shadow: 0 0 #0000; --tw-ring-shadow: 0 0 #0000; --tw-shadow: 0 0 #0000; --tw-shadow-colored: 0 0 #0000; transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;"
+                  onmouseover="this.style.backgroundColor='rgba(241, 245, 249, 1)'" 
+                  onmouseout="this.style.backgroundColor='transparent'"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     Módulo Anterior
@@ -705,7 +708,3 @@ export const handleExportZip = async ({
         setIsExporting(false);
     }
 };
-
-    
-
-    

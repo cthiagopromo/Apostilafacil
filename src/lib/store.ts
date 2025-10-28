@@ -410,9 +410,7 @@ const useProjectStore = create<State & Actions>()(
                     smartplayUrl: '',
                     videoTitle: 'Título do Vídeo',
                     autoplay: false,
-                    showControls: true,
-                    useCustomThumbnail: false,
-                    customThumbnailUrl: ''
+                    showControls: true
                 };
                 break;
             case 'button':
@@ -611,5 +609,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
-
-    

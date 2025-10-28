@@ -33,8 +33,6 @@ export interface BlockContent {
   videoTitle?: string;
   autoplay?: boolean;
   showControls?: boolean;
-  useCustomThumbnail?: boolean;
-  customThumbnailUrl?: string;
   // Button
   buttonText?: string;
   buttonUrl?: string;
