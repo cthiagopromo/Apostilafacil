@@ -68,30 +68,30 @@ function SortableModuleItem({ project }: { project: Project }) {
         if (nextProjectId && handbookId) {
           router.push(`/editor/${handbookId}/${nextProjectId}`);
         } else if (!nextProjectId) {
-          // This case happens if the last module was deleted, which we prevent, but as a fallback:
           router.push('/');
         }
     }
 
     return (
-        <div ref={setNodeRef} style={style} className={cn(
-            "w-full h-auto justify-start items-center p-2 rounded-md flex group",
-            activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
-        )}>
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            className={cn(
+                "w-full h-auto items-center p-2 rounded-md flex group",
+                activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
+            )}
+            onClick={() => handleProjectSelect(project.id)}
+        >
             <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground group-hover:text-foreground flex-shrink-0">
                 <GripVertical className="h-5 w-5" />
             </button>
-            <Button 
-                variant="ghost" 
-                className="flex-grow h-auto p-0 pl-1 justify-start items-start hover:bg-transparent min-w-0"
-                onClick={() => handleProjectSelect(project.id)}
-            >
-                <File className='mr-3 mt-1 flex-shrink-0' />
-                <div className='flex flex-col items-start text-left flex-grow min-w-0'>
+            <div className='flex items-center justify-start flex-grow min-w-0 ml-1'>
+                 <File className='mr-3 mt-1 flex-shrink-0' />
+                 <div className='flex flex-col items-start text-left flex-grow min-w-0'>
                     <span className='font-semibold w-full truncate'>{project.title}</span>
                     <span className={cn('text-xs w-full truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
                 </div>
-            </Button>
+            </div>
             <AlertDialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
