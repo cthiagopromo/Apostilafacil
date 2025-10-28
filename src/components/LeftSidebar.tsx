@@ -71,60 +71,68 @@ function SortableModuleItem({ project }: { project: Project }) {
           router.push('/');
         }
     }
-
+    
     return (
-        <div 
-            ref={setNodeRef} 
-            style={style} 
+        <div
+            ref={setNodeRef}
+            style={style}
             className={cn(
-                "w-full h-auto p-2 rounded-md flex items-center justify-between group cursor-pointer",
+                "w-full rounded-md grid grid-cols-[auto_1fr_auto] items-center gap-2 group",
                 activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
             )}
-            onClick={() => handleProjectSelect(project.id)}
         >
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-                <button {...attributes} {...listeners} className="cursor-grab p-1 text-muted-foreground group-hover:text-foreground flex-shrink-0">
-                    <GripVertical className="h-5 w-5" />
-                </button>
-                <div className='flex items-center min-w-0'>
-                    <File className='mr-3 mt-1 flex-shrink-0' />
-                    <div className='flex flex-col items-start text-left min-w-0'>
-                        <span className='font-semibold w-full truncate'>{project.title}</span>
-                        <span className={cn('text-xs w-full truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>/{project.title.toLowerCase().replace(/\s/g, '-')}</span>
-                    </div>
+            {/* Drag Handle */}
+            <button {...attributes} {...listeners} className="cursor-grab p-2 text-muted-foreground group-hover:text-foreground">
+                <GripVertical className="h-5 w-5" />
+            </button>
+
+            {/* Content Area */}
+            <div 
+                className="flex items-center gap-2 min-w-0 cursor-pointer h-full py-2"
+                onClick={() => handleProjectSelect(project.id)}
+            >
+                <File className='h-4 w-4 flex-shrink-0' />
+                <div className='flex flex-col min-w-0'>
+                    <span className='font-semibold truncate text-sm'>{project.title}</span>
+                    <span className={cn('text-xs truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>
+                        /{project.title.toLowerCase().replace(/\s/g, '-')}
+                    </span>
                 </div>
             </div>
 
-            <AlertDialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                    <MoreHorizontal className='h-5 w-5' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                   <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Módulo
-                      </DropdownMenuItem>
-                   </AlertDialogTrigger>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {/* Actions Menu */}
+            <div className="pr-2">
+              <AlertDialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                      <MoreHorizontal className='h-4 w-4' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogTrigger asChild>
+                        <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir Módulo
+                        </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isto irá deletar o módulo e todo o seu conteúdo permanentemente.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={(e) => handleDeleteProject(e, project.id)}>Deletar</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isto irá deletar o módulo e todo o seu conteúdo permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={(e) => handleDeleteProject(e, project.id)}>Deletar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
         </div>
     )
 }
