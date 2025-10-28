@@ -67,7 +67,8 @@ function SortableModuleItem({ project }: { project: Project }) {
         const nextProjectId = deleteProject(projectId);
         if (nextProjectId && handbookId) {
           router.push(`/editor/${handbookId}/${nextProjectId}`);
-        } else {
+        } else if (!nextProjectId) {
+          // This case happens if the last module was deleted, which we prevent, but as a fallback:
           router.push('/');
         }
     }
@@ -94,7 +95,7 @@ function SortableModuleItem({ project }: { project: Project }) {
             <AlertDialog>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
                     <MoreHorizontal className='h-5 w-5' />
                   </Button>
                 </DropdownMenuTrigger>
@@ -196,3 +197,5 @@ export default function LeftSidebar() {
     </>
   );
 }
+
+    

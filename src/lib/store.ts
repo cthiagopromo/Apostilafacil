@@ -318,7 +318,7 @@ const useProjectStore = create<State & Actions>()(
 
         if (state.activeProjectId === projectId) {
             const newActiveIndex = Math.max(0, projectIndex - 1);
-            nextActiveProjectId = state.projects[newActiveIndex].id;
+            nextActiveProjectId = state.projects[newActiveIndex]?.id || null;
             state.activeProjectId = nextActiveProjectId;
         } else {
             nextActiveProjectId = state.activeProjectId;
@@ -411,6 +411,8 @@ const useProjectStore = create<State & Actions>()(
                     videoTitle: 'Título do Vídeo',
                     autoplay: false,
                     showControls: true,
+                    useCustomThumbnail: false,
+                    customThumbnailUrl: ''
                 };
                 break;
             case 'button':
@@ -498,12 +500,14 @@ const useProjectStore = create<State & Actions>()(
 
     updateBlockContent: (blockId, newContent) => {
       set((state) => {
-        const activeProject = state.projects.find(p => p.id === state.activeProjectId);
-        if (!activeProject) return;
-        const block = activeProject.blocks.find(b => b.id === blockId);
-        if(!block) return;
-        block.content = {...block.content, ...newContent};
-        state.isDirty = true;
+        for (const project of state.projects) {
+          const block = project.blocks.find(b => b.id === blockId);
+          if (block) {
+            block.content = {...block.content, ...newContent};
+            state.isDirty = true;
+            break; 
+          }
+        }
       });
     },
 
@@ -607,3 +611,5 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
+
+    
