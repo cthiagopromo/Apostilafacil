@@ -49,6 +49,7 @@ type Actions = {
   deleteBlock: (projectId: string, blockId: string) => void;
   reorderBlocks: (projectId: string, startIndex: number, endIndex: number) => void;
   duplicateBlock: (projectId: string, blockId: string) => void;
+  moveBlockToProject: (sourceProjectId: string, targetProjectId: string, blockId: string) => void;
   updateBlockContent: (blockId: string, newContent: Partial<BlockContent>) => void;
   addQuizOption: (blockId: string) => void;
   updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
@@ -493,6 +494,22 @@ const useProjectStore = create<State & Actions>()(
                 project.blocks.splice(index + 1, 0, newBlock);
                 state.isDirty = true;
             }
+        });
+    },
+
+    moveBlockToProject: (sourceProjectId, targetProjectId, blockId) => {
+        set(state => {
+            const sourceProject = state.projects.find(p => p.id === sourceProjectId);
+            const targetProject = state.projects.find(p => p.id === targetProjectId);
+            if (!sourceProject || !targetProject) return;
+
+            const blockIndex = sourceProject.blocks.findIndex(b => b.id === blockId);
+            if (blockIndex === -1) return;
+
+            const [blockToMove] = sourceProject.blocks.splice(blockIndex, 1);
+            targetProject.blocks.push(blockToMove);
+
+            state.isDirty = true;
         });
     },
 

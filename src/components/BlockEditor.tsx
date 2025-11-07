@@ -5,7 +5,7 @@ import type { Block, QuizOption, VideoType } from '@/lib/types';
 import useProjectStore from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { GripVertical, Trash2, ArrowUp, ArrowDown, Copy, PlusCircle, Save, Upload } from 'lucide-react';
+import { GripVertical, Trash2, ArrowRightLeft, Copy, PlusCircle, Save, Upload } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 import {
     AlertDialog,
@@ -18,6 +18,16 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import BlockRenderer from './BlockRenderer';
 import { Label } from '@/components/ui/label';
 import { Input } from './ui/input';
@@ -355,7 +365,15 @@ interface BlockEditorProps {
 }
 
 const BlockEditor = ({ block, index }: BlockEditorProps) => {
-    const { activeBlockId, setActiveBlockId, deleteBlock, duplicateBlock, getActiveProject } = useProjectStore();
+    const { 
+        projects, 
+        activeBlockId, 
+        setActiveBlockId, 
+        deleteBlock, 
+        duplicateBlock, 
+        getActiveProject,
+        moveBlockToProject
+    } = useProjectStore();
     const activeProject = getActiveProject();
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
 
@@ -370,6 +388,13 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
         e.stopPropagation();
         if (activeProject) {
             action(activeProject.id, block.id);
+        }
+    }
+
+    const handleMoveBlock = (e: React.MouseEvent, targetProjectId: string) => {
+        e.stopPropagation();
+        if (activeProject) {
+            moveBlockToProject(activeProject.id, targetProjectId, block.id);
         }
     }
 
@@ -392,14 +417,38 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
                  )}
             </div>
             
-            <div className="absolute top-2 right-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="flex items-center bg-card p-1 rounded-md border shadow-sm">
                     <Button variant="ghost" size="icon" className="h-8 w-8 cursor-grab" {...attributes} {...listeners}>
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleAction(duplicateBlock)}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={handleAction(duplicateBlock)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicar Bloco
+                            </DropdownMenuItem>
+                            <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                    Mover para...
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent>
+                                    {projects.filter(p => p.id !== activeProject?.id).map(p => (
+                                        <DropdownMenuItem key={p.id} onClick={(e) => handleMoveBlock(e, p.id)}>
+                                            {p.title}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={(e) => e.stopPropagation()}>
@@ -426,5 +475,3 @@ const BlockEditor = ({ block, index }: BlockEditorProps) => {
 }
 
 export default BlockEditor;
-
-    
