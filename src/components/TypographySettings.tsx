@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -11,15 +12,15 @@ import {
 } from '@/components/ui/select';
 
 const headingFonts = [
-  { name: 'Roboto Slab', value: '"Roboto Slab", serif' },
-  { name: 'Inter', value: '"Inter", sans-serif' },
-  { name: 'Lato', value: '"Lato", sans-serif' },
+  { name: 'Rethink Sans', value: '"Rethink Sans", sans-serif' },
+  { name: 'Georgia', value: '"Georgia", serif' },
+  { name: 'Menlo', value: '"Menlo", monospace' },
 ];
 
 const bodyFonts = [
-  { name: 'Inter', value: '"Inter", sans-serif' },
-  { name: 'Lato', value: '"Lato", sans-serif' },
-  { name: 'Roboto Slab', value: '"Roboto Slab", serif' },
+  { name: 'Rethink Sans', value: '"Rethink Sans", sans-serif' },
+  { name: 'Georgia', value: '"Georgia", serif' },
+  { name: 'Menlo', value: '"Menlo", monospace' },
 ];
 
 export default function TypographySettings() {
@@ -75,3 +76,5 @@ export default function TypographySettings() {
     </div>
   );
 }
+
+    

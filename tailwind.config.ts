@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 const config = {
@@ -19,8 +20,8 @@ const config = {
     },
     extend: {
       fontFamily: {
+        sans: ['var(--font-body)'],
         heading: ['var(--font-heading)'],
-        body: ['var(--font-body)'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -56,6 +57,20 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: {
+            DEFAULT: 'hsl(var(--sidebar-primary))',
+            foreground: 'hsl(var(--sidebar-primary-foreground))',
+          },
+          accent: {
+            DEFAULT: 'hsl(var(--sidebar-accent))',
+            foreground: 'hsl(var(--sidebar-accent-foreground))',
+          },
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
+        },
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',
@@ -75,7 +90,7 @@ const config = {
             '--tw-prose-body': theme('colors.foreground'),
             '--tw-prose-headings': theme('colors.foreground'),
             '--tw-prose-lead': theme('colors.foreground'),
-            '--tw-prose-links': theme('colors.primary'),
+            '--tw-prose-links': theme('colors.primary.DEFAULT'),
             '--tw-prose-bold': theme('colors.foreground'),
             '--tw-prose-counters': theme('colors.muted.foreground'),
             '--tw-prose-bullets': theme('colors.muted.foreground'),
@@ -85,13 +100,13 @@ const config = {
             '--tw-prose-captions': theme('colors.muted.foreground'),
             '--tw-prose-code': theme('colors.foreground'),
             '--tw-prose-pre-code': theme('colors.foreground'),
-            '--tw-prose-pre-bg': theme('colors.muted'),
+            '--tw-prose-pre-bg': theme('colors.muted.DEFAULT'),
             '--tw-prose-th-borders': theme('colors.border'),
             '--tw-prose-td-borders': theme('colors.border'),
             '--tw-prose-invert-body': theme('colors.background'),
-            '--tw-prose-invert-headings': theme('colors.primary'),
+            '--tw-prose-invert-headings': theme('colors.primary.DEFAULT'),
             '--tw-prose-invert-lead': theme('colors.background'),
-            '--tw-prose-invert-links': theme('colors.primary'),
+            '--tw-prose-invert-links': theme('colors.primary.DEFAULT'),
             '--tw-prose-invert-bold': theme('colors.background'),
             '--tw-prose-invert-counters': theme('colors.muted.foreground'),
             '--tw-prose-invert-bullets': theme('colors.muted.foreground'),
@@ -127,3 +142,5 @@ const config = {
 } satisfies Config;
 
 export default config;
+
+    

@@ -5,60 +5,79 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%; /* #F4F5F7 - um cinza um pouco mais frio */
-    --foreground: 222.2 84% 4.9%;
+    --background: 255 100% 100%; /* #ffffff */
+    --foreground: 209 78% 8%; /* #0f1419 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 255 100% 100%; /* #ffffff */
+    --card-foreground: 209 78% 8%; /* #0f1419 */
  
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover: 255 100% 100%; /* #ffffff */
+    --popover-foreground: 209 78% 8%; /* #0f1419 */
  
-    --primary: 221 83% 53%; /* #2563EB */
-    --primary-foreground: 0 0% 98%;
+    --primary: 231 82% 30%; /* #0c228f */
+    --primary-foreground: 255 100% 100%; /* #ffffff */
  
-    --secondary: 210 40% 98%; /* Light gray for backgrounds inside cards etc. */
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 209 78% 8%; /* #0f1419 */
+    --secondary-foreground: 255 100% 100%; /* #ffffff */
    
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 5% 96%; /* #F4F4F5 */
+    --muted-foreground: 209 78% 8%; /* #0f1419 */
  
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 13% 95%; /* #F1F3F5 */
+    --accent-foreground: 203 90% 12%; /* #032135 */
  
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 356 89% 54%; /* #f4212e */
+    --destructive-foreground: 255 100% 100%; /* #ffffff */
 
-    --border: 214 31.8% 91.4%;
-    --input: 214 31.8% 91.4%;
-    --ring: 221 83% 53%;
- 
-    --radius: 0.75rem;
+    --border: 208 44% 91%; /* #e1eaef */
+    --input: 206 50% 97%; /* #f7f9fa */
+    --ring: 206 89% 53%; /* #1da1f2 */
 
-    --font-heading: "Roboto Slab", serif;
-    --font-body: "Inter", sans-serif;
+    --sidebar: 210 60% 98%; /* #F8FAFC */
+    --sidebar-foreground: 209 78% 8%; /* #0f1419 */
+    --sidebar-primary: 206 89% 53%; /* #1e9df1 */
+    --sidebar-primary-foreground: 255 100% 100%; /* #ffffff */
+    --sidebar-accent: 213 54% 93%; /* #e3ecf6 */
+    --sidebar-accent-foreground: 206 89% 53%; /* #1e9df1 */
+    --sidebar-border: 210 23% 91%; /* #e1e8ed */
+    --sidebar-ring: 206 89% 53%; /* #1da1f2 */
+
+ 
+    --radius: 0.775rem;
+
+    --font-heading: "Rethink Sans", sans-serif;
+    --font-body: "Rethink Sans", sans-serif;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 65%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 32.6% 17.5%;
+    --background: 220 10% 8%; /* #121316 */
+    --foreground: 210 10% 92%; /* #e7e9ea */
+    --card: 220 5% 10%; /* #17181c */
+    --card-foreground: 240 0% 85%; /* #d9d9d9 */
+    --popover: 0 0% 0%; /* #000000 */
+    --popover-foreground: 210 10% 92%; /* #e7e9ea */
+    --primary: 227 84% 37%; /* #124cca */
+    --primary-foreground: 255 100% 100%; /* #ffffff */
+    --secondary: 38 100% 47%; /* #ef9600 */
+    --secondary-foreground: 209 78% 8%; /* #0f1419 */
+    --muted: 0 0% 9%; /* #181818 */
+    --muted-foreground: 210 3% 46%; /* #72767a */
+    --accent: 204 80% 7%; /* #041420 */
+    --accent-foreground: 204 31% 75%; /* #bdccd6 */
+    --destructive: 356 89% 54%; /* #f4212e */
+    --destructive-foreground: 255 100% 100%; /* #ffffff */
+    --border: 210 5% 15%; /* #242628 */
+    --input: 207 33% 18%; /* #22303c */
+    --ring: 206 100% 50%; /* #009dff */
+
+    --sidebar: 220 5% 10%; /* #17181c */
+    --sidebar-foreground: 240 0% 85%; /* #d9d9d9 */
+    --sidebar-primary: 206 89% 53%; /* #1da1f2 */
+    --sidebar-primary-foreground: 255 100% 100%; /* #ffffff */
+    --sidebar-accent: 207 77% 8%; /* #061622 */
+    --sidebar-accent-foreground: 205 91% 53%; /* #1c9cf0 */
+    --sidebar-border: 208 19% 26%; /* #38444d */
+    --sidebar-ring: 206 89% 53%; /* #1da1f2 */
   }
 
   body.high-contrast {
@@ -254,3 +273,5 @@
   justify-content: center;
   text-align: center;
 }
+
+    

@@ -12,10 +12,10 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
 const colorOptions = [
-  { name: 'Azul', hsl: '225 70% 41%', className: 'bg-blue-800' },
-  { name: 'Laranja', hsl: '32 100% 47%', className: 'bg-orange-500' },
-  { name: 'Roxo', hsl: '262 84% 53%', className: 'bg-purple-600' },
-  { name: 'Rosa', hsl: '322 84% 53%', className: 'bg-pink-600' },
+  { name: 'Azul INCI', hsl: '231 82% 30%'},
+  { name: 'Laranja', hsl: '32 100% 47%'},
+  { name: 'Roxo', hsl: '262 84% 53%'},
+  { name: 'Rosa', hsl: '322 84% 53%'},
 ];
 
 
@@ -83,7 +83,7 @@ export default function HandbookSettings() {
     updateHandbookTheme({ backCover: undefined });
   }
 
-  const currentColor = handbookTheme?.colorPrimary || '221 83% 53%';
+  const currentColor = handbookTheme?.colorPrimary || '231 82% 30%';
 
 
   return (
@@ -119,12 +119,12 @@ export default function HandbookSettings() {
               onClick={() => handleColorSelect(color.hsl)}
               className={cn(
                 "w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
-                color.className,
-                currentColor === color.hsl ? 'border-primary ring-2 ring-offset-2 ring-ring' : 'border-transparent'
+                `bg-[hsl(${color.hsl})]`,
+                currentColor === color.hsl ? 'border-ring ring-2 ring-offset-2 ring-ring' : 'border-transparent'
               )}
             >
               {currentColor === color.hsl && (
-                <Check className="w-5 h-5 text-white" />
+                <Check className="w-5 h-5 text-primary-foreground" />
               )}
             </button>
           ))}
@@ -183,3 +183,5 @@ export default function HandbookSettings() {
     </div>
   );
 }
+
+    

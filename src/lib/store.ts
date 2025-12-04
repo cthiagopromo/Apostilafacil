@@ -83,8 +83,8 @@ const applyThemeToDom = (theme: Theme) => {
   if (typeof window === 'undefined') return;
   const root = document.documentElement;
   root.style.setProperty('--primary', theme.colorPrimary || '221 83% 53%');
-  root.style.setProperty('--font-heading', theme.fontHeading || '"Roboto Slab", serif');
-  root.style.setProperty('--font-body', theme.fontBody || '"Inter", sans-serif');
+  root.style.setProperty('--font-heading', theme.fontHeading || '"Rethink Sans", sans-serif');
+  root.style.setProperty('--font-body', theme.fontBody || '"Rethink Sans", sans-serif');
 }
 
 const useProjectStore = create<State & Actions>()(
@@ -94,15 +94,11 @@ const useProjectStore = create<State & Actions>()(
     handbookDescription: '',
     handbookUpdatedAt: new Date().toISOString(),
     handbookTheme: { 
-        colorPrimary: '221 83% 53%', 
-        fontHeading: '"Roboto Slab", serif', 
-        fontBody: '"Inter", sans-serif',
+        colorPrimary: '231 82% 30%', 
+        fontHeading: '"Rethink Sans", sans-serif', 
+        fontBody: '"Rethink Sans", sans-serif',
         cover: undefined,
         backCover: undefined,
-        fontSizeHeading: 32,
-        fontSizeBody: 16,
-        lineHeight: 1.5,
-        letterSpacing: 0,
     },
     projects: [],
     activeProjectId: null,
@@ -155,9 +151,9 @@ const useProjectStore = create<State & Actions>()(
       }
 
       const migratedData = produce(dataToLoad, draft => {
-          if (!draft.theme) draft.theme = { colorPrimary: '221 83% 53%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
-          if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
-          if (!draft.theme.fontBody) draft.theme.fontBody = '"Inter", sans-serif';
+          if (!draft.theme) draft.theme = { colorPrimary: '231 82% 30%', fontHeading: '"Rethink Sans", sans-serif', fontBody: '"Rethink Sans", sans-serif' };
+          if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Rethink Sans", sans-serif';
+          if (!draft.theme.fontBody) draft.theme.fontBody = '"Rethink Sans", sans-serif';
           draft.projects.forEach(p => {
               if (!p.layoutSettings) {
                   p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
@@ -244,13 +240,9 @@ const useProjectStore = create<State & Actions>()(
         };
 
         const newTheme: Theme = { 
-            colorPrimary: '221 83% 53%', 
-            fontHeading: '"Roboto Slab", serif', 
-            fontBody: '"Inter", sans-serif',
-            fontSizeHeading: 32,
-            fontSizeBody: 16,
-            lineHeight: 1.5,
-            letterSpacing: 0,
+            colorPrimary: '231 82% 30%', 
+            fontHeading: '"Rethink Sans", sans-serif', 
+            fontBody: '"Rethink Sans", sans-serif',
         };
 
         set({
@@ -626,3 +618,5 @@ if (typeof window !== 'undefined') {
 }
 
 export default useProjectStore;
+
+    
