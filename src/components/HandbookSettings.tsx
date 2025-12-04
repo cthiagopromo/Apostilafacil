@@ -12,7 +12,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
 const colorOptions = [
-  { name: 'Azul INCI', hsl: '231 82% 30%'},
+  { name: 'Azul INCI', hsl: '225 82% 38%'},
   { name: 'Laranja', hsl: '32 100% 47%'},
   { name: 'Roxo', hsl: '262 84% 53%'},
   { name: 'Rosa', hsl: '322 84% 53%'},
@@ -83,7 +83,7 @@ export default function HandbookSettings() {
     updateHandbookTheme({ backCover: undefined });
   }
 
-  const currentColor = handbookTheme?.colorPrimary || '231 82% 30%';
+  const currentColor = handbookTheme?.colorPrimary || '225 82% 38%';
 
 
   return (

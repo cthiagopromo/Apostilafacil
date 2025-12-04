@@ -20,11 +20,11 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        sans: ['Inter', 'ui-sans-serif', 'sans-serif', 'system-ui'],
         serif: ['Georgia', 'serif'],
         mono: ['Menlo', 'monospace'],
-        heading: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
-        body: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        heading: ['Inter', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        body: ['Inter', 'ui-sans-serif', 'sans-serif', 'system-ui'],
       },
       colors: {
         border: 'hsl(var(--border))',
