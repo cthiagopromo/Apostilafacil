@@ -28,6 +28,26 @@ const getInteractiveScript = (theme: Theme): string => {
             const coverSection = document.querySelector('.cover-section');
             const handbookRoot = document.getElementById('handbook-root');
             const startButton = document.getElementById('start-handbook-btn');
+            const moduleSearchInput = document.getElementById('module-search-input');
+            const moduleListScrollArea = document.getElementById('module-list-scroll-area');
+            
+            if (moduleListScrollArea) {
+                moduleListScrollArea.style.maxHeight = '200px';
+                moduleListScrollArea.style.overflowY = 'auto';
+            }
+
+            if (moduleSearchInput) {
+                moduleSearchInput.addEventListener('input', (e) => {
+                    const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+                    floatingNavButtons.forEach(btn => {
+                        const moduleTitle = (btn.textContent || '').toLowerCase();
+                        const parentDiv = btn.parentElement;
+                        if (parentDiv) {
+                           parentDiv.style.display = moduleTitle.includes(searchTerm) ? 'block' : 'none';
+                        }
+                    });
+                });
+            }
 
             const showModule = (index: number) => {
                  if (coverSection) {
@@ -524,9 +544,18 @@ const getGlobalCss = (theme: Theme) => `
 
 const getFloatingNavHtml = (projects: Project[]) => `
     <div id="floating-nav-container" class="fixed bottom-5 right-5 z-50 no-print">
-        <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 space-y-1 w-64">
+        <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 w-64">
              <p class="font-semibold text-sm px-2 py-1">Módulos</p>
-            ${projects.map((p, i) => `<button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-primary/10 rounded-md">${i+1}. ${p.title}</button>`).join('')}
+             <div class="px-1 pb-1">
+                <input id="module-search-input" type="text" placeholder="Pesquisar módulo..." class="w-full text-sm p-1.5 border rounded-md bg-transparent"/>
+             </div>
+             <div id="module-list-scroll-area" class="space-y-1">
+                ${projects.map((p, i) => `
+                    <div class="module-item-container">
+                        <button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-primary/10 rounded-md">${i+1}. ${p.title}</button>
+                    </div>
+                `).join('')}
+            </div>
         </div>
         <button id="floating-nav-toggle" class="bg-primary text-primary-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
