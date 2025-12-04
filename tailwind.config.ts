@@ -20,8 +20,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-body)', 'Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
-        heading: ['var(--font-heading)', 'Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        sans: ['var(--font-body)'],
+        heading: ['var(--font-heading)'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -101,8 +101,6 @@ const config = {
             '--tw-prose-code': theme('colors.foreground'),
             '--tw-prose-pre-code': theme('colors.foreground'),
             '--tw-prose-pre-bg': theme('colors.muted.DEFAULT'),
-            '--tw-prose-th-borders': theme('colors.border'),
-            '--tw-prose-td-borders': theme('colors.border'),
             '--tw-prose-invert-body': theme('colors.background'),
             '--tw-prose-invert-headings': theme('colors.primary.DEFAULT'),
             '--tw-prose-invert-lead': theme('colors.background'),
@@ -142,5 +140,3 @@ const config = {
 } satisfies Config;
 
 export default config;
-
-    
