@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -121,6 +122,7 @@ export default function HandbookSettings() {
                 `bg-[hsl(${color.hsl})]`,
                 currentColor === color.hsl ? 'border-ring ring-2 ring-offset-2 ring-ring' : 'border-transparent'
               )}
+              style={{ backgroundColor: `hsl(${color.hsl})` }}
             >
               {currentColor === color.hsl && (
                 <Check className="w-5 h-5 text-primary-foreground" />
