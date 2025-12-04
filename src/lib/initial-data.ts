@@ -10,9 +10,9 @@ export const initialHandbookData: HandbookData = {
   description: 'Um curso completo para testar a funcionalidade de exportação.',
   updatedAt: new Date().toISOString(),
   theme: {
-    colorPrimary: '226 84% 30%',
-    fontHeading: 'Inter, ui-sans-serif, sans-serif, system-ui',
-    fontBody: 'Inter, ui-sans-serif, sans-serif, system-ui',
+    colorPrimary: '231 82% 30%',
+    fontHeading: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui',
+    fontBody: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui',
   },
   projects: [
     {

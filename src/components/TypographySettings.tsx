@@ -12,13 +12,13 @@ import {
 } from '@/components/ui/select';
 
 const headingFonts = [
-  { name: 'Inter', value: 'Inter, ui-sans-serif, sans-serif, system-ui' },
+  { name: 'Rethink Sans', value: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui' },
   { name: 'Georgia', value: 'Georgia, serif' },
   { name: 'Menlo', value: 'Menlo, monospace' },
 ];
 
 const bodyFonts = [
-  { name: 'Inter', value: 'Inter, ui-sans-serif, sans-serif, system-ui' },
+  { name: 'Rethink Sans', value: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui' },
   { name: 'Georgia', value: 'Georgia, serif' },
   { name: 'Menlo', value: 'Menlo, monospace' },
 ];

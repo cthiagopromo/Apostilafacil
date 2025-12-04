@@ -82,9 +82,9 @@ const performSave = async (dataToSave: HandbookData) => {
 const applyThemeToDom = (theme: Theme) => {
   if (typeof window === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--primary', theme.colorPrimary || '226 84% 30%');
-  root.style.setProperty('--font-heading', theme.fontHeading || 'Inter, ui-sans-serif, sans-serif, system-ui');
-  root.style.setProperty('--font-body', theme.fontBody || 'Inter, ui-sans-serif, sans-serif, system-ui');
+  root.style.setProperty('--primary', theme.colorPrimary || '231 82% 30%');
+  root.style.setProperty('--font-heading', theme.fontHeading || 'Rethink Sans, ui-sans-serif, sans-serif, system-ui');
+  root.style.setProperty('--font-body', theme.fontBody || 'Rethink Sans, ui-sans-serif, sans-serif, system-ui');
 }
 
 const useProjectStore = create<State & Actions>()(
@@ -94,9 +94,9 @@ const useProjectStore = create<State & Actions>()(
     handbookDescription: '',
     handbookUpdatedAt: new Date().toISOString(),
     handbookTheme: { 
-        colorPrimary: '226 84% 30%', 
-        fontHeading: 'Inter, ui-sans-serif, sans-serif, system-ui', 
-        fontBody: 'Inter, ui-sans-serif, sans-serif, system-ui',
+        colorPrimary: '231 82% 30%', 
+        fontHeading: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui', 
+        fontBody: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui',
         cover: undefined,
         backCover: undefined,
     },
@@ -151,9 +151,9 @@ const useProjectStore = create<State & Actions>()(
       }
 
       const migratedData = produce(dataToLoad, draft => {
-          if (!draft.theme) draft.theme = { colorPrimary: '226 84% 30%', fontHeading: 'Inter, ui-sans-serif, sans-serif, system-ui', fontBody: 'Inter, ui-sans-serif, sans-serif, system-ui' };
-          if (!draft.theme.fontHeading) draft.theme.fontHeading = 'Inter, ui-sans-serif, sans-serif, system-ui';
-          if (!draft.theme.fontBody) draft.theme.fontBody = 'Inter, ui-sans-serif, sans-serif, system-ui';
+          if (!draft.theme) draft.theme = { colorPrimary: '231 82% 30%', fontHeading: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui', fontBody: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui' };
+          if (!draft.theme.fontHeading) draft.theme.fontHeading = 'Rethink Sans, ui-sans-serif, sans-serif, system-ui';
+          if (!draft.theme.fontBody) draft.theme.fontBody = 'Rethink Sans, ui-sans-serif, sans-serif, system-ui';
           draft.projects.forEach(p => {
               if (!p.layoutSettings) {
                   p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
@@ -240,9 +240,9 @@ const useProjectStore = create<State & Actions>()(
         };
 
         const newTheme: Theme = { 
-            colorPrimary: '226 84% 30%', 
-            fontHeading: 'Inter, ui-sans-serif, sans-serif, system-ui', 
-            fontBody: 'Inter, ui-sans-serif, sans-serif, system-ui',
+            colorPrimary: '231 82% 30%', 
+            fontHeading: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui', 
+            fontBody: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui',
         };
 
         set({
@@ -499,6 +499,10 @@ const useProjectStore = create<State & Actions>()(
             if (blockIndex === -1) return;
 
             const [blockToMove] = sourceProject.blocks.splice(blockIndex, 1);
+            
+            if (!targetProject.blocks) {
+                targetProject.blocks = [];
+            }
             targetProject.blocks.push(blockToMove);
 
             state.isDirty = true;

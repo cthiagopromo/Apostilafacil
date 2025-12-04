@@ -22,6 +22,8 @@ const config = {
       fontFamily: {
         sans: ['var(--font-body)'],
         heading: ['var(--font-heading)'],
+        serif: ['Georgia', 'serif'],
+        mono: ['Menlo', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',
