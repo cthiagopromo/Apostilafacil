@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/select';
 
 const headingFonts = [
-  { name: 'Rethink Sans', value: '"Rethink Sans", sans-serif' },
-  { name: 'Georgia', value: '"Georgia", serif' },
-  { name: 'Menlo', value: '"Menlo", monospace' },
+  { name: 'Inter', value: 'Inter, ui-sans-serif, sans-serif, system-ui' },
+  { name: 'Georgia', value: 'Georgia, serif' },
+  { name: 'Menlo', value: 'Menlo, monospace' },
 ];
 
 const bodyFonts = [
-  { name: 'Rethink Sans', value: '"Rethink Sans", sans-serif' },
-  { name: 'Georgia', value: '"Georgia", serif' },
-  { name: 'Menlo', value: '"Menlo", monospace' },
+  { name: 'Inter', value: 'Inter, ui-sans-serif, sans-serif, system-ui' },
+  { name: 'Georgia', value: 'Georgia, serif' },
+  { name: 'Menlo', value: 'Menlo, monospace' },
 ];
 
 export default function TypographySettings() {

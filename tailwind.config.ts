@@ -20,8 +20,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-body)'],
-        heading: ['var(--font-heading)'],
+        sans: ['var(--font-body)', 'Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        heading: ['var(--font-heading)', 'Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
       },
       colors: {
         border: 'hsl(var(--border))',
