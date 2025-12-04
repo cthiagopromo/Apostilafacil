@@ -14,7 +14,7 @@
     --popover: 255 100% 100%;
     --popover-foreground: 209 78% 8%;
  
-    --primary: 231 82% 30%;
+    --primary: 234 83% 30%;
     --primary-foreground: 255 100% 100%;
  
     --secondary: 209 78% 8%;
@@ -23,24 +23,24 @@
     --muted: 240 5% 96%;
     --muted-foreground: 209 78% 8%;
  
-    --accent: 220 13% 95%;
-    --accent-foreground: 203 90% 12%;
+    --accent: 234 83% 97%;
+    --accent-foreground: 234 83% 20%;
  
     --destructive: 356 89% 54%;
     --destructive-foreground: 255 100% 100%;
 
     --border: 208 44% 91%;
     --input: 206 50% 97%;
-    --ring: 206 89% 53%;
+    --ring: 234 83% 53%;
 
     --sidebar: 240 6% 98%;
     --sidebar-foreground: 209 78% 8%;
-    --sidebar-primary: 231 82% 30%;
+    --sidebar-primary: 234 83% 30%;
     --sidebar-primary-foreground: 255 100% 100%;
-    --sidebar-accent: 231 82% 95%;
-    --sidebar-accent-foreground: 231 82% 30%;
+    --sidebar-accent: 234 83% 95%;
+    --sidebar-accent-foreground: 234 83% 30%;
     --sidebar-border: 208 44% 91%;
-    --sidebar-ring: 206 89% 53%;
+    --sidebar-ring: 234 83% 53%;
  
     --radius: 0.775rem;
 
@@ -55,28 +55,28 @@
     --card-foreground: 240 0% 85%;
     --popover: 0 0% 0%;
     --popover-foreground: 210 10% 92%;
-    --primary: 227 84% 37%;
+    --primary: 231 69% 50%;
     --primary-foreground: 255 100% 100%;
     --secondary: 38 100% 47%;
     --secondary-foreground: 209 78% 8%;
     --muted: 0 0% 9%;
     --muted-foreground: 210 3% 46%;
-    --accent: 204 80% 7%;
-    --accent-foreground: 204 31% 75%;
+    --accent: 231 69% 15%;
+    --accent-foreground: 231 69% 70%;
     --destructive: 356 89% 54%;
     --destructive-foreground: 255 100% 100%;
     --border: 210 5% 15%;
     --input: 207 33% 18%;
-    --ring: 206 100% 50%;
+    --ring: 231 69% 53%;
 
     --sidebar: 220 5% 10%;
     --sidebar-foreground: 240 0% 85%;
-    --sidebar-primary: 227 84% 37%;
+    --sidebar-primary: 231 69% 50%;
     --sidebar-primary-foreground: 255 100% 100%;
-    --sidebar-accent: 227 84% 15%;
-    --sidebar-accent-foreground: 227 84% 70%;
+    --sidebar-accent: 231 69% 15%;
+    --sidebar-accent-foreground: 231 69% 70%;
     --sidebar-border: 208 19% 26%;
-    --sidebar-ring: 206 89% 53%;
+    --sidebar-ring: 231 69% 53%;
   }
 
   body.high-contrast {
