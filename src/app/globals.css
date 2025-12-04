@@ -5,92 +5,92 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 215 14% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 14% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 14% 10%;
-    --primary: 231 82% 30%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 14% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 8% 97%;
-    --muted-foreground: 215 14% 10%;
-    --accent: 216 13% 95%;
-    --accent-foreground: 209 71% 11%;
-    --destructive: 356 89% 54%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 212 33% 94%;
-    --input: 210 20% 98%;
-    --ring: 202 89% 54%;
+    --background: 255 255 255;
+    --foreground: 15 20 25;
 
-    --sidebar: 210 20% 98%;
-    --sidebar-foreground: 215 14% 10%;
-    --sidebar-primary: 202 89% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 212 40% 92%;
-    --sidebar-accent-foreground: 202 89% 54%;
-    --sidebar-border: 212 33% 94%;
-    --sidebar-ring: 202 89% 54%;
- 
+    --card: 255 255 255;
+    --card-foreground: 15 20 25;
+
+    --popover: 255 255 255;
+    --popover-foreground: 15 20 25;
+
+    --primary: 12 34 143;
+    --primary-foreground: 255 255 255;
+
+    --secondary: 15 20 25;
+    --secondary-foreground: 255 255 255;
+
+    --muted: 244 244 245;
+    --muted-foreground: 15 20 25;
+
+    --accent: 241 243 245;
+    --accent-foreground: 3 33 53;
+
+    --destructive: 244 33 46;
+    --destructive-foreground: 255 255 255;
+
+    --border: 225 234 239;
+    --input: 247 249 250;
+    --ring: 29 161 242;
+
+    --sidebar: 248 250 252;
+    --sidebar-foreground: 15 20 25;
+
+    --sidebar-primary: 30 157 241;
+    --sidebar-primary-foreground: 255 255 255;
+
+    --sidebar-accent: 227 236 246;
+    --sidebar-accent-foreground: 30 157 241;
+
+    --sidebar-border: 225 232 237;
+    --sidebar-ring: 29 161 242;
+
     --radius: 0.775rem;
 
     --font-heading: "Rethink Sans", ui-sans-serif, sans-serif, system-ui;
     --font-body: "Rethink Sans", ui-sans-serif, sans-serif, system-ui;
   }
- 
+
   .dark {
-    --background: 220 5% 8%;
-    --foreground: 215 5% 91%;
-    --card: 220 5% 9%;
-    --card-foreground: 215 5% 85%;
-    --popover: 0 0% 0%;
-    --popover-foreground: 215 5% 91%;
-    --primary: 231 80% 43%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 35 100% 47%;
-    --secondary-foreground: 215 14% 10%;
-    --muted: 0 0% 9%;
-    --muted-foreground: 216 5% 45%;
-    --accent: 217 33% 7%;
-    --accent-foreground: 210 7% 78%;
-    --destructive: 356 89% 54%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 216 5% 15%;
-    --input: 211 15% 19%;
-    --ring: 206 100% 50%;
+    --background: 18 19 22;
+    --foreground: 231 233 234;
 
-    --sidebar: 220 5% 9%;
-    --sidebar-foreground: 215 5% 85%;
-    --sidebar-primary: 202 89% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 218 33% 7%;
-    --sidebar-accent-foreground: 204 90% 59%;
-    --sidebar-border: 210 11% 28%;
-    --sidebar-ring: 202 89% 54%;
-  }
+    --card: 23 24 28;
+    --card-foreground: 217 217 217;
 
-  body.high-contrast {
-    background-color: black;
-    color: white;
-  }
+    --popover: 0 0 0;
+    --popover-foreground: 231 233 234;
 
-  body.high-contrast .bg-card {
-      background-color: black;
-      border: 1px solid white;
-  }
+    --primary: 18 76 202;
+    --primary-foreground: 255 255 255;
 
-  body.high-contrast .text-primary {
-      color: yellow;
-  }
-  
-  body.high-contrast .text-muted-foreground {
-      color: lightgray;
-  }
+    --secondary: 239 150 0;
+    --secondary-foreground: 15 20 25;
 
-  body.high-contrast .border-primary {
-      border-color: yellow;
+    --muted: 24 24 24;
+    --muted-foreground: 114 118 122;
+
+    --accent: 4 20 32;
+    --accent-foreground: 189 204 214;
+
+    --destructive: 244 33 46;
+    --destructive-foreground: 255 255 255;
+
+    --border: 36 38 40;
+    --input: 34 48 60;
+    --ring: 0 157 255;
+
+    --sidebar: 23 24 28;
+    --sidebar-foreground: 217 217 217;
+
+    --sidebar-primary: 29 161 242;
+    --sidebar-primary-foreground: 255 255 255;
+
+    --sidebar-accent: 6 22 34;
+    --sidebar-accent-foreground: 28 156 240;
+
+    --sidebar-border: 56 68 77;
+    --sidebar-ring: 29 161 242;
   }
 }
 

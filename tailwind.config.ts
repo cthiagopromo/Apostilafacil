@@ -20,10 +20,11 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-body)'],
-        heading: ['var(--font-heading)'],
+        sans: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
         serif: ['Georgia', 'serif'],
         mono: ['Menlo', 'monospace'],
+        heading: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
+        body: ['Rethink Sans', 'ui-sans-serif', 'sans-serif', 'system-ui'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -74,11 +75,11 @@ const config = {
           ring: 'hsl(var(--sidebar-ring))',
         },
         chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
+          '1': '#1e9df1',
+          '2': '#00b87a',
+          '3': '#f7b928',
+          '4': '#17bf63',
+          '5': '#e0245e',
         },
       },
       borderRadius: {
