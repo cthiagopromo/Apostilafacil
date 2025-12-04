@@ -44,13 +44,13 @@ export default function MainContent() {
     if (index === 0) return '';
     switch (activeProject?.layoutSettings?.sectionSpacing) {
         case 'compact':
-            return 'mt-8';
+            return 'mt-6'; // 1.5rem
         case 'standard':
-            return 'mt-16';
+            return 'mt-10'; // 2.5rem
         case 'comfortable':
-            return 'mt-32';
+            return 'mt-16'; // 4rem
         default:
-            return 'mt-16';
+            return 'mt-10';
     }
   }
 
