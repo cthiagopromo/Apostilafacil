@@ -1,4 +1,3 @@
-
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -12,7 +11,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
 const colorOptions = [
-  { name: 'Azul INCI', hsl: '235 81% 30%'}, // Corrigido para o HSL de #0c228f
+  { name: 'Azul INCI', hsl: '235 81% 30%'},
   { name: 'Laranja', hsl: '32 100% 47%'},
   { name: 'Roxo', hsl: '262 84% 53%'},
   { name: 'Rosa', hsl: '322 84% 53%'},
@@ -183,5 +182,3 @@ export default function HandbookSettings() {
     </div>
   );
 }
-
-    
