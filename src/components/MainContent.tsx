@@ -63,7 +63,7 @@ export default function MainContent() {
           <h2 className="text-lg font-semibold">{activeProject.title}</h2>
         )}
       </div>
-      <ScrollArea className="flex-1 bg-secondary/40">
+      <ScrollArea className="flex-1 bg-muted">
         <div className={cn("mx-auto p-6 sm:p-8 lg:p-12", getContainerWidthClass())}>
           {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
             <DndContext
