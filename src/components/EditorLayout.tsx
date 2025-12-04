@@ -13,16 +13,14 @@ export function EditorLayout() {
   const activeProject = getActiveProject();
 
   useEffect(() => {
-    // This effect now only handles theme color, as fonts are handled by the store directly.
     const root = document.documentElement;
-    if (handbookTheme?.colorPrimary) {
-      root.style.setProperty('--primary', handbookTheme.colorPrimary);
-    }
-  }, [handbookTheme?.colorPrimary]);
+    // This effect is simplified as globals.css now handles the theme directly.
+    // This can be used for dynamic theme updates if needed in the future.
+  }, [handbookTheme]);
 
   if (!activeProject) {
     return (
-      <div className="flex items-center justify-center h-screen bg-secondary">
+      <div className="flex items-center justify-center h-screen bg-background">
         <p>Nenhum projeto selecionado. Selecione um na barra lateral.</p>
       </div>
     );
@@ -31,9 +29,9 @@ export function EditorLayout() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       <Header />
-      <div className="flex flex-1 border-t border-border overflow-hidden">
+      <div className="flex flex-1 border-t overflow-hidden">
         <LeftSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden bg-white">
+        <main className="flex-1 flex flex-col overflow-hidden">
           <MainContent />
         </main>
         <RightSidebar />

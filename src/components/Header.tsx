@@ -80,7 +80,7 @@ export default function Header() {
             </Button>
             <div className="w-px h-8 bg-border"></div>
               <div className='flex items-center gap-3'>
-                <h1 className="text-lg font-semibold truncate max-w-xs md:max-w-md">
+                <h1 className="text-lg font-semibold truncate max-w-xs md:max-w-md text-foreground">
                   {handbookTitle}
                 </h1>
                 {isSaving ? (

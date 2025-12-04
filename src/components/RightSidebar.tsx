@@ -16,11 +16,11 @@ import TypographySettings from './TypographySettings';
 
 export default function RightSidebar() {
   return (
-    <aside className="w-80 bg-card border-l flex flex-col">
-      <div className="p-4 border-b flex-shrink-0">
+    <aside className="w-80 bg-sidebar border-l border-sidebar-border flex flex-col">
+      <div className="p-4 border-b border-sidebar-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Configurações</h2>
+          <h2 className="text-lg font-semibold text-sidebar-foreground">Configurações</h2>
         </div>
       </div>
       <ScrollArea className="flex-1">

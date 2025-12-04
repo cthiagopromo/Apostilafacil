@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/select';
 
 const headingFonts = [
-  { name: 'Rethink Sans', value: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui' },
+  { name: 'Rethink Sans', value: '"Rethink Sans", ui-sans-serif, sans-serif, system-ui' },
   { name: 'Georgia', value: 'Georgia, serif' },
   { name: 'Menlo', value: 'Menlo, monospace' },
 ];
 
 const bodyFonts = [
-  { name: 'Rethink Sans', value: 'Rethink Sans, ui-sans-serif, sans-serif, system-ui' },
-  { name: 'Georgia', value: 'Georgia, serif' },
-  { name: 'Menlo', value: 'Menlo, monospace' },
+    { name: 'Rethink Sans', value: '"Rethink Sans", ui-sans-serif, sans-serif, system-ui' },
+    { name: 'Georgia', value: 'Georgia, serif' },
+    { name: 'Menlo', value: 'Menlo, monospace' },
 ];
 
 export default function TypographySettings() {
@@ -42,7 +42,7 @@ export default function TypographySettings() {
           value={handbookTheme.fontHeading}
           onValueChange={handleHeadingFontChange}
         >
-          <SelectTrigger>
+          <SelectTrigger className="rounded-md">
             <SelectValue placeholder="Selecione uma fonte" />
           </SelectTrigger>
           <SelectContent>
@@ -61,7 +61,7 @@ export default function TypographySettings() {
           value={handbookTheme.fontBody}
           onValueChange={handleBodyFontChange}
         >
-          <SelectTrigger>
+          <SelectTrigger className="rounded-md">
             <SelectValue placeholder="Selecione uma fonte" />
           </SelectTrigger>
           <SelectContent>
@@ -76,5 +76,3 @@ export default function TypographySettings() {
     </div>
   );
 }
-
-    

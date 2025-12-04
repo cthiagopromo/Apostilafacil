@@ -1,3 +1,4 @@
+
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -60,7 +61,7 @@ export default function MainContent() {
        <AddBlockModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       <div className="p-4 border-b bg-card">
         {activeProject && (
-          <h2 className="text-lg font-semibold">{activeProject.title}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{activeProject.title}</h2>
         )}
       </div>
       <ScrollArea className="flex-1 bg-muted">

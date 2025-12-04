@@ -77,8 +77,8 @@ function SortableModuleItem({ project }: { project: Project }) {
             ref={setNodeRef}
             style={style}
             className={cn(
-                "w-full rounded-md grid grid-cols-[auto_1fr_auto] items-center gap-2 group",
-                activeProjectId === project.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
+                "w-full rounded-md grid grid-cols-[auto_1fr_auto] items-center gap-2 group transition-colors duration-200 ease-in-out",
+                activeProjectId === project.id ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent"
             )}
         >
             {/* Drag Handle */}
@@ -94,7 +94,7 @@ function SortableModuleItem({ project }: { project: Project }) {
                 <File className='h-4 w-4 flex-shrink-0' />
                 <div className='flex flex-col min-w-0'>
                     <span className='font-semibold truncate text-sm'>{project.title}</span>
-                    <span className={cn('text-xs truncate', activeProjectId === project.id ? 'text-primary/80' : 'text-muted-foreground')}>
+                    <span className={cn('text-xs truncate text-muted-foreground', activeProjectId === project.id && 'text-sidebar-accent-foreground/80')}>
                         /{project.title.toLowerCase().replace(/\s/g, '-')}
                     </span>
                 </div>
@@ -162,11 +162,11 @@ export default function LeftSidebar() {
   return (
     <>
       <ReorderModulesModal isOpen={isReorderModalOpen} onOpenChange={setIsReorderModalOpen} />
-      <aside className="w-72 bg-card border-r flex flex-col">
-        <div className="p-4 border-b">
+      <aside className="w-72 bg-sidebar border-r border-sidebar-border flex flex-col">
+        <div className="p-4 border-b border-sidebar-border">
           <div className="flex justify-between items-center mb-4">
               <div className='flex items-center gap-2'>
-                  <h2 className="text-lg font-semibold">Módulos</h2>
+                  <h2 className="text-lg font-semibold text-sidebar-foreground">Módulos</h2>
                   <Badge variant="secondary">{projects.length}</Badge>
               </div>
           </div>
@@ -181,7 +181,7 @@ export default function LeftSidebar() {
             </Button>
           </div>
         </div>
-        <div className="p-4 border-b">
+        <div className="p-4 border-b border-sidebar-border">
           <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Filtrar módulos..." className="pl-9" />
