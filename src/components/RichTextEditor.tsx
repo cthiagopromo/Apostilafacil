@@ -3,6 +3,7 @@
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
 import {
   Bold,
   Italic,
@@ -18,6 +19,7 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  Underline as UnderlineIcon,
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 
@@ -46,6 +48,13 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className="h-4 w-4" />
+      </Toggle>
+       <Toggle
+        size="sm"
+        pressed={editor.isActive('underline')}
+        onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+      >
+        <UnderlineIcon className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
@@ -157,6 +166,7 @@ const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Underline,
     ],
     content: value,
     editorProps: {

@@ -39,6 +39,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tailwindcss/typography": "^0.5.15",
     "@tiptap/extension-text-align": "^2.5.7",
+    "@tiptap/extension-underline": "^2.5.7",
     "@tiptap/pm": "^2.5.7",
     "@tiptap/react": "^2.5.7",
     "@tiptap/starter-kit": "^2.5.7",
