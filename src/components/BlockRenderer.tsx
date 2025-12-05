@@ -144,71 +144,79 @@ const BlockRenderer = ({ block }: { block: Block }) => {
         }
     }, [block.content.text, block.type]);
 
-    switch(block.type) {
-        case 'text':
-             return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} className="prose dark:prose-invert max-w-none" />;
-        case 'image':
-            const { url } = block.content;
-            const width = block.content.width ?? 100;
-            return (
-                <div className='flex justify-center'>
-                    <figure className='flex flex-col items-center gap-1' style={{ width: `${width}%` }}>
-                        <img 
-                          src={url || 'https://placehold.co/600x400.png'} 
-                          alt={block.content.alt || 'Placeholder image'} 
-                          className="rounded-md shadow-md max-w-full h-auto" 
-                        />
-                        {block.content.caption && (
-                            <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
-                        )}
-                    </figure>
-                </div>
-            )
-        case 'quote':
-            return (
-                 <div className="relative">
-                    <blockquote className="p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
-                         <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon" />
-                        {block.content.text}
-                    </blockquote>
-                 </div>
-            )
-        case 'video':
-            const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, smartplayUrl, videoTitle, autoplay, showControls } = block.content;
+    const renderContent = () => {
+        switch(block.type) {
+            case 'text':
+                return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} className="prose dark:prose-invert max-w-none" />;
+            case 'image':
+                const { url } = block.content;
+                const width = block.content.width ?? 100;
+                return (
+                    <div className='flex justify-center'>
+                        <figure className='flex flex-col items-center gap-1' style={{ width: `${width}%` }}>
+                            <img 
+                            src={url || 'https://placehold.co/600x400.png'} 
+                            alt={block.content.alt || 'Placeholder image'} 
+                            className="rounded-md shadow-md max-w-full h-auto" 
+                            />
+                            {block.content.caption && (
+                                <figcaption className="text-sm text-center text-muted-foreground italic mt-2">{block.content.caption}</figcaption>
+                            )}
+                        </figure>
+                    </div>
+                )
+            case 'quote':
+                return (
+                    <div className="relative">
+                        <blockquote className="p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
+                            <Quote className="absolute -top-3 -left-2 h-10 w-10 text-primary/20 quote-icon" />
+                            {block.content.text}
+                        </blockquote>
+                    </div>
+                )
+            case 'video':
+                const { videoType, videoUrl, vimeoVideoId, cloudflareVideoId, smartplayUrl, videoTitle, autoplay, showControls } = block.content;
 
-            if (videoType === 'cloudflare') {
-                if (!cloudflareVideoId) return <p className="text-muted-foreground">ID do vídeo do Cloudflare não definido.</p>
-                return <CloudflareEmbed videoId={cloudflareVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
-            }
+                if (videoType === 'cloudflare') {
+                    if (!cloudflareVideoId) return <p className="text-muted-foreground">ID do vídeo do Cloudflare não definido.</p>
+                    return <CloudflareEmbed videoId={cloudflareVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+                }
 
-            if (videoType === 'vimeo') {
-                if (!vimeoVideoId) return <p className="text-muted-foreground">ID do vídeo do Vimeo não definido.</p>
-                return <VimeoEmbed videoId={vimeoVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
-            }
-            
-            if (videoType === 'smartplay') {
-                if (!smartplayUrl) return <p className="text-muted-foreground">URL do vídeo do Smartplay não definida.</p>
-                return <SmartplayEmbed url={smartplayUrl} title={videoTitle} />
-            }
-            
-            // Default to YouTube
-            if (!videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
-            return <YoutubeEmbed url={videoUrl} title={videoTitle} autoplay={autoplay} showControls={showControls} />
-        case 'button':
-            return (
-                <div className='flex justify-center'>
-                    <Button asChild size="lg" className="btn btn-primary">
-                        <a href={block.content.buttonUrl || '#'} target="_blank" rel="noopener noreferrer">
-                            {block.content.buttonText || 'Botão'}
-                        </a>
-                    </Button>
-                </div>
-            )
-        case 'quiz':
-            return <QuizBlock block={block} />
-        default:
-            return <p className="text-muted-foreground">Bloco <strong>{block.type}</strong> ainda não é renderizado.</p>
+                if (videoType === 'vimeo') {
+                    if (!vimeoVideoId) return <p className="text-muted-foreground">ID do vídeo do Vimeo não definido.</p>
+                    return <VimeoEmbed videoId={vimeoVideoId} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+                }
+                
+                if (videoType === 'smartplay') {
+                    if (!smartplayUrl) return <p className="text-muted-foreground">URL do vídeo do Smartplay não definida.</p>
+                    return <SmartplayEmbed url={smartplayUrl} title={videoTitle} />
+                }
+                
+                // Default to YouTube
+                if (!videoUrl) return <p className="text-muted-foreground">URL do vídeo não definida.</p>
+                return <YoutubeEmbed url={videoUrl} title={videoTitle} autoplay={autoplay} showControls={showControls} />
+            case 'button':
+                return (
+                    <div className='flex justify-center'>
+                        <Button asChild size="lg" className="btn btn-primary">
+                            <a href={block.content.buttonUrl || '#'} target="_blank" rel="noopener noreferrer">
+                                {block.content.buttonText || 'Botão'}
+                            </a>
+                        </Button>
+                    </div>
+                )
+            case 'quiz':
+                return <QuizBlock block={block} />
+            default:
+                return <p className="text-muted-foreground">Bloco <strong>{block.type}</strong> ainda não é renderizado.</p>
+        }
     }
+
+    return (
+        <div id="handbook-root">
+            {renderContent()}
+        </div>
+    )
 }
 
 export default BlockRenderer;
