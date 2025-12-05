@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react'; // --> otimizado: useMemo adicionado
+import { useEffect, useMemo } from 'react';
 import useProjectStore from '@/lib/store';
 import { EditorLayout } from '@/components/EditorLayout';
 import { useRouter, useParams } from 'next/navigation';
@@ -74,7 +74,6 @@ export default function EditorPage() {
   const router = useRouter();
   const params = useParams();
   
-  // --> otimizado: Seletores individuais para minimizar re-renderizações desnecessárias.
   const isInitialized = useProjectStore(state => state.isInitialized);
   const initializeStore = useProjectStore(state => state.initializeStore);
   const activeProjectId = useProjectStore(state => state.activeProjectId);
@@ -85,7 +84,6 @@ export default function EditorPage() {
   const handbookIdFromUrl = params.handbook_id as string;
 
   useEffect(() => {
-    // --> otimizado: Condição `!isInitialized` previne chamadas múltiplas.
     if (!isInitialized) {
       initializeStore(handbookIdFromUrl);
     }
@@ -93,14 +91,12 @@ export default function EditorPage() {
 
   useEffect(() => {
     if (isInitialized) {
-      // --> otimizado: A lógica agora só roda se o projectId da URL for diferente do ativo
       if (activeProjectId !== projectId) {
         setActiveProjectId(projectId);
       }
     }
   }, [projectId, isInitialized, activeProjectId, setActiveProjectId]);
   
-  // --> otimizado: useMemo para evitar recálculos do projeto ativo em cada renderização
   const projectData = useMemo(() => {
     if (!activeProjectId || !projects) return null;
     return projects.find(p => p.id === activeProjectId) ?? null;

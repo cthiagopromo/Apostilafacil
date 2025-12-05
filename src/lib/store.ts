@@ -8,7 +8,6 @@ import localforage from 'localforage';
 
 const STORE_KEY = 'apostila-facil-data';
 
-// --> otimizado: ID único agora usa crypto.randomUUID se disponível para performance e unicidade.
 const getUniqueId = (prefix: 'proj' | 'block' | 'opt' | 'handbook') => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -58,15 +57,12 @@ type Actions = {
   resetQuiz: (blockId: string) => void;
 };
 
-// --> otimizado: Função de salvamento isolada para clareza e manutenção.
 const performSave = async (dataToSave: HandbookData) => {
     if (!dataToSave || typeof window === 'undefined') return;
     try {
-        // --> otimizado: JSON.parse(JSON.stringify()) é uma forma de deep-cloning para evitar mutações.
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await localforage.setItem(STORE_KEY, cleanData);
 
-        // --> otimizado: A chamada para a API é "fire-and-forget" com .catch para não bloquear a UI.
         fetch('/api/saveApostila', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -103,7 +99,6 @@ const useProjectStore = create<State & Actions>()(
     isInitialized: false,
 
     initializeStore: async (handbookIdFromUrl: string | null) => {
-      // --> otimizado: `isInitialized` previne re-inicializações desnecessárias, melhorando a performance.
       if (get().isInitialized || typeof window === 'undefined') {
         return;
       }
@@ -111,7 +106,6 @@ const useProjectStore = create<State & Actions>()(
       let dataToLoad: HandbookData | null = null;
       let source: 'api' | 'local' | 'new' = 'new';
       
-      // --> otimizado: Tenta buscar da API primeiro (fonte da verdade mais recente).
       if (handbookIdFromUrl) {
           try {
               const response = await fetch(`/api/getApostila/${handbookIdFromUrl}`);
@@ -126,7 +120,6 @@ const useProjectStore = create<State & Actions>()(
           }
       }
       
-      // --> otimizado: Fallback para o armazenamento local se a API falhar ou não houver ID.
       if (!dataToLoad) {
           const localData = await localforage.getItem<HandbookData>(STORE_KEY);
           if (localData && (!handbookIdFromUrl || localData.id === handbookIdFromUrl)) {
@@ -135,7 +128,6 @@ const useProjectStore = create<State & Actions>()(
           }
       }
       
-      // --> otimizado: Carrega dados iniciais se nenhuma outra fonte estiver disponível.
       if (!dataToLoad) {
         dataToLoad = JSON.parse(JSON.stringify(initialHandbookData));
         if (dataToLoad && handbookIdFromUrl) {
@@ -146,11 +138,10 @@ const useProjectStore = create<State & Actions>()(
 
       if (!dataToLoad) {
         console.error("Fatal: dataToLoad is null after initialization logic.");
-        set({ isInitialized: true }); // --> otimizado: Garante que a app não fique em loop de loading.
+        set({ isInitialized: true });
         return;
       }
 
-      // --> otimizado: Usa `produce` do immer para migração segura de dados antigos.
       const migratedData = produce(dataToLoad, draft => {
           if (!draft.theme) draft.theme = { colorPrimary: '235 81% 30%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
           if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
@@ -175,7 +166,6 @@ const useProjectStore = create<State & Actions>()(
           activeProjectId: migratedData.projects[0]?.id || null,
       });
 
-      // --> otimizado: Salva apenas se os dados forem novos ou locais, evitando escritas desnecessárias.
       if (source === 'new' || source === 'local') {
           get().saveData();
       }
@@ -184,12 +174,10 @@ const useProjectStore = create<State & Actions>()(
     getActiveProject: () => {
         const state = get();
         if (!state.activeProjectId) return null;
-        // --> otimizado: `find` é O(n), mas com poucos projetos o impacto é mínimo. A reatividade é controlada nos componentes.
         return state.projects.find(p => p.id === state.activeProjectId) || null;
     },
 
     setActiveProjectId: (projectId) => {
-      // --> otimizado: Evita salvar se o projeto já está ativo.
       if (get().activeProjectId === projectId) return;
       get().saveData();
       set(state => {
@@ -331,7 +319,6 @@ const useProjectStore = create<State & Actions>()(
     },
 
     saveData: async () => {
-      // --> otimizado: Evita salvamentos desnecessários se o estado não estiver "sujo".
       if (!get().isDirty && get().isInitialized) {
         return;
       }
@@ -351,7 +338,7 @@ const useProjectStore = create<State & Actions>()(
       try {
         await performSave(dataToSave);
       } catch (error) {
-        set({ isDirty: true }); // --> otimizado: Se o salvamento falhar, marca como "sujo" para tentar novamente.
+        set({ isDirty: true });
       }
     },
 
@@ -511,15 +498,13 @@ const useProjectStore = create<State & Actions>()(
     },
 
     updateBlockContent: (blockId, newContent) => {
-      // --> otimizado: Esta é a operação mais custosa (O(n*m)). Para apps maiores, seria necessário normalizar o estado.
-      // Para a estrutura atual, o loop é inevitável, mas o `immer` otimiza a imutabilidade.
       set((state) => {
-        for (const project of state.projects) {
+        const project = state.projects.find(p => p.id === state.activeProjectId);
+        if (project) {
           const block = project.blocks.find(b => b.id === blockId);
           if (block) {
             block.content = {...block.content, ...newContent};
             state.isDirty = true;
-            break; 
           }
         }
       });
@@ -555,7 +540,6 @@ const useProjectStore = create<State & Actions>()(
                 if (option) {
                     Object.assign(option, updates);
                     if (updates.isCorrect) {
-                        // --> otimizado: Garante que apenas uma opção seja a correta.
                         block.content.options.forEach(o => {
                             if(o.id !== optionId) {
                                 o.isCorrect = false;
@@ -594,31 +578,26 @@ const useProjectStore = create<State & Actions>()(
   }))
 );
 
-// --> otimizado: Lógica de autosave com debounce e persistência em eventos de ciclo de vida do browser.
 if (typeof window !== 'undefined') {
   const SCRIPT_TAG_ID = 'zustand-init-script';
   if (!document.getElementById(SCRIPT_TAG_ID)) {
     let saveTimeout: NodeJS.Timeout;
     
-    // --> otimizado: `subscribe` para reagir a mudanças de estado.
     useProjectStore.subscribe((state) => {
-      // --> otimizado: Debounce para salvar. Evita escritas excessivas em disco/rede.
       if (state.isDirty && state.isInitialized) {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           useProjectStore.getState().saveData();
-        }, 2000); // --> otimizado: Salva 2 segundos após a última alteração.
+        }, 2000); 
       }
     });
 
-    // --> otimizado: Garante que dados não salvos sejam persistidos ao fechar a aba.
     window.addEventListener('beforeunload', () => {
         if (useProjectStore.getState().isDirty) {
           useProjectStore.getState().saveData();
         }
     });
 
-    // --> otimizado: Salva o estado quando o usuário muda de aba, melhorando a resiliência.
     window.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && useProjectStore.getState().isDirty) {
         useProjectStore.getState().saveData();
