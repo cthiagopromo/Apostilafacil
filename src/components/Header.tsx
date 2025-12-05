@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -39,13 +38,12 @@ export default function Header() {
     if (!isDirty) return;
 
     setIsSaving(true);
-    setTimeout(() => {
-        saveData();
+    saveData().then(() => {
         setIsSaving(false);
         toast({
             title: "Projeto salvo com sucesso!",
         });
-    }, 500);
+    });
   }
 
   const handlePreview = () => {
@@ -71,10 +69,10 @@ export default function Header() {
         isOpen={isPreviewModalOpen} 
         onOpenChange={setIsPreviewModalOpen}
       />
-      <LoadingModal isOpen={isNavigating} text="Carregando..." />
+      <LoadingModal isOpen={isNavigating} text="A carregar..." />
       <header className="flex items-center justify-between p-3 h-16 bg-card border-b">
         <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={handleNavigateHome}>
+            <Button variant="outline" onClick={handleNavigateHome} aria-label="Voltar para a página inicial">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Início
             </Button>
@@ -84,25 +82,25 @@ export default function Header() {
                   {handbookTitle}
                 </h1>
                 {isSaving ? (
-                  <Badge variant="outline">Salvando...</Badge>
+                  <Badge variant="outline" aria-live="polite">A Salvar...</Badge>
                 ) : isDirty ? (
-                  <Badge variant="destructive">Não Salvo</Badge>
+                  <Badge variant="destructive" aria-live="polite">Não Salvo</Badge>
                 ) : (
-                  <Badge variant="secondary">Salvo</Badge>
+                  <Badge variant="secondary" aria-live="polite">Salvo</Badge>
                 )}
               </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button onClick={handleSave} disabled={isSaving || !isDirty}>
+          <Button onClick={handleSave} disabled={isSaving || !isDirty} aria-label="Salvar alterações">
             {isSaving ? (
               <Loader className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            {isSaving ? 'Salvando...' : 'Salvar'}
+            {isSaving ? 'A Salvar...' : 'Salvar'}
           </Button>
-          <Button onClick={handlePreview} variant="outline">
+          <Button onClick={handlePreview} variant="outline" aria-label="Visualizar a apostila">
               <Eye className="mr-2 h-4 w-4" />
               Visualizar
           </Button>

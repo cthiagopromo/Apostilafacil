@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -82,7 +81,7 @@ function SortableModuleItem({ project }: { project: Project }) {
             )}
         >
             {/* Drag Handle */}
-            <button {...attributes} {...listeners} className="cursor-grab p-2 text-muted-foreground group-hover:text-foreground">
+            <button {...attributes} {...listeners} className="cursor-grab p-2 text-muted-foreground group-hover:text-foreground" aria-label={`Reordenar módulo ${project.title}`}>
                 <GripVertical className="h-5 w-5" />
             </button>
 
@@ -90,6 +89,8 @@ function SortableModuleItem({ project }: { project: Project }) {
             <div 
                 className="flex items-center gap-2 min-w-0 cursor-pointer h-full py-2"
                 onClick={() => handleProjectSelect(project.id)}
+                role="button"
+                aria-current={activeProjectId === project.id ? 'page' : undefined}
             >
                 <File className='h-4 w-4 flex-shrink-0' />
                 <div className='flex flex-col min-w-0'>
@@ -105,7 +106,7 @@ function SortableModuleItem({ project }: { project: Project }) {
               <AlertDialog>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()} aria-label={`Mais opções para o módulo ${project.title}`}>
                       <MoreHorizontal className='h-4 w-4' />
                     </Button>
                   </DropdownMenuTrigger>
@@ -128,7 +129,7 @@ function SortableModuleItem({ project }: { project: Project }) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={(e) => handleDeleteProject(e, project.id)}>Deletar</AlertDialogAction>
+                    <AlertDialogAction onClick={(e) => handleDeleteProject(e, project.id)} aria-label={`Confirmar exclusão do módulo ${project.title}`}>Deletar</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -167,7 +168,7 @@ export default function LeftSidebar() {
           <div className="flex justify-between items-center mb-4">
               <div className='flex items-center gap-2'>
                   <h2 className="text-lg font-semibold text-sidebar-foreground">Módulos</h2>
-                  <Badge variant="secondary">{projects.length}</Badge>
+                  <Badge variant="secondary" aria-label={`${projects.length} módulos no total`}>{projects.length}</Badge>
               </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -184,7 +185,7 @@ export default function LeftSidebar() {
         <div className="p-4 border-b border-sidebar-border">
           <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Filtrar módulos..." className="pl-9" />
+              <Input placeholder="Filtrar módulos..." className="pl-9" aria-label="Filtrar módulos por nome" />
           </div>
         </div>
         <ScrollArea className="flex-1">

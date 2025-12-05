@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -33,6 +32,7 @@ import { format } from 'date-fns';
 import { LoadingModal } from './LoadingModal';
 import { useToast } from '@/hooks/use-toast';
 import type { HandbookData } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProjectListProps {
   onNavigate: (handbookId: string, projectId: string) => void;
@@ -40,22 +40,16 @@ interface ProjectListProps {
 
 
 export function ProjectList({ onNavigate }: ProjectListProps) {
-  const { handbookId, handbookTitle, handbookUpdatedAt, projects, createNewHandbook, loadHandbookData } = useProjectStore();
+  const { handbookId, handbookTitle, handbookUpdatedAt, projects, createNewHandbook, loadHandbookData, isInitialized } = useProjectStore();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const handleNewHandbook = () => {
-    setIsLoading(true);
-     setTimeout(() => {
-        const { handbookId, projectId } = createNewHandbook();
-        if (handbookId && projectId) {
-            onNavigate(handbookId, projectId);
-        } else {
-            setIsLoading(false);
-        }
-    }, 100);
+    const { handbookId, projectId } = createNewHandbook();
+    if (handbookId && projectId) {
+        onNavigate(handbookId, projectId);
+    }
   };
 
   const handleDeleteHandbook = () => {
@@ -69,8 +63,7 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    setIsLoading(true);
+    
     const reader = new FileReader();
 
     reader.onload = async (e) => {
@@ -97,7 +90,6 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
           onNavigate(state.handbookId, firstProject.id);
         } else {
           router.push('/');
-          setIsLoading(false);
         }
       } catch (error) {
         console.error("Falha ao importar arquivo:", error);
@@ -106,7 +98,6 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
           title: 'Erro na Importação',
           description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.',
         });
-        setIsLoading(false);
       }
     };
 
@@ -116,7 +107,6 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
         title: 'Erro de Leitura',
         description: 'Não foi possível ler o arquivo selecionado.',
       });
-      setIsLoading(false);
     };
 
     reader.readAsText(file);
@@ -126,18 +116,13 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
   };
 
   const handleEditClick = (handbookId: string, projectId: string) => {
-    setIsLoading(true);
     onNavigate(handbookId, projectId);
   };
 
   const totalBlocks = projects.reduce((acc, proj) => acc + (proj.blocks?.length || 0), 0);
   const firstProjectId = projects.length > 0 ? projects[0].id : null;
 
-  if (isLoading) {
-    return <LoadingModal isOpen={true} text="Carregando apostila..." />;
-  }
-
-  if (projects.length === 0) {
+  if (projects.length === 0 && isInitialized) {
     return (
       <div className="text-center">
         <div className="border-2 border-dashed rounded-xl p-12 bg-card">
@@ -173,9 +158,9 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
   return (
     <div className="space-y-6">
        <div className="flex justify-center gap-4">
-        <Button onClick={handleNewHandbook} size="lg" disabled={isLoading}>
-          {isLoading ? <Loader className="mr-2 animate-spin" /> : <PlusCircle className="mr-2" />}
-          {isLoading ? 'Criando...' : 'Nova Apostila'}
+        <Button onClick={handleNewHandbook} size="lg">
+          <PlusCircle className="mr-2" />
+          Nova Apostila
         </Button>
         <Button onClick={handleImportClick} size="lg" variant="outline">
           <Upload className="mr-2" />
@@ -217,14 +202,14 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      disabled={!firstProjectId || isLoading}
+                      disabled={!firstProjectId}
                       onClick={() => firstProjectId && handleEditClick(handbookId, firstProjectId)}
                     >
                       Editar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon-sm">
+                        <Button variant="destructive" size="icon-sm" aria-label={`Excluir apostila ${handbookTitle}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -240,6 +225,7 @@ export function ProjectList({ onNavigate }: ProjectListProps) {
                           <AlertDialogAction
                             onClick={handleDeleteHandbook}
                             className="bg-destructive hover:bg-destructive/90"
+                            aria-label="Confirmar exclusão e começar uma nova apostila"
                           >
                             Excluir e Começar de Novo
                           </AlertDialogAction>
