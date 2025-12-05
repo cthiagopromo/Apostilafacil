@@ -84,7 +84,7 @@ export default function MainContent() {
             </DndContext>
           ) : (
             <div className="text-center text-muted-foreground py-16">
-              <div className="inline-flex items-center justify-center bg-primary/10 text-primary rounded-full h-16 w-16 mb-4">
+              <div className="inline-flex items-center justify-center bg-muted dark:bg-secondary text-foreground rounded-full h-16 w-16 mb-4">
                   <PlusCircle className="h-8 w-8" />
               </div>
               <h2 className="text-xl font-semibold text-foreground mb-1">Comece adicionando um bloco</h2>
