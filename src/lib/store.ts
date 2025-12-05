@@ -79,14 +79,6 @@ const performSave = async (dataToSave: HandbookData) => {
     }
 };
 
-const applyThemeToDom = (theme: Theme) => {
-  if (typeof window === 'undefined') return;
-  const root = document.documentElement;
-  root.style.setProperty('--primary', theme.colorPrimary || '231 84% 30%');
-  root.style.setProperty('--font-heading', theme.fontHeading || '"Roboto Slab", serif');
-  root.style.setProperty('--font-body', theme.fontBody || '"Inter", sans-serif');
-}
-
 const useProjectStore = create<State & Actions>()(
   immer((set, get) => ({
     handbookId: '',
@@ -151,7 +143,7 @@ const useProjectStore = create<State & Actions>()(
       }
 
       const migratedData = produce(dataToLoad, draft => {
-          if (!draft.theme) draft.theme = { colorPrimary: '231 84% 30%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
+          if (!draft.theme) draft.theme = { colorPrimary: '235 81% 30%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
           if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
           if (!draft.theme.fontBody) draft.theme.fontBody = '"Inter", sans-serif';
           draft.projects.forEach(p => {
@@ -173,8 +165,6 @@ const useProjectStore = create<State & Actions>()(
           isInitialized: true,
           activeProjectId: migratedData.projects[0]?.id || null,
       });
-
-      applyThemeToDom(themeToApply);
 
       if (source === 'new' || source === 'local') {
           get().saveData();
@@ -218,7 +208,6 @@ const useProjectStore = create<State & Actions>()(
             state.handbookTheme = { ...state.handbookTheme, ...themeUpdate };
             state.isDirty = true;
         });
-        applyThemeToDom(get().handbookTheme);
     },
 
     createNewHandbook: () => {
@@ -240,7 +229,7 @@ const useProjectStore = create<State & Actions>()(
         };
 
         const newTheme: Theme = { 
-            colorPrimary: '231 84% 30%', 
+            colorPrimary: '235 81% 30%', 
             fontHeading: '"Roboto Slab", serif', 
             fontBody: '"Inter", sans-serif',
         };
@@ -256,7 +245,6 @@ const useProjectStore = create<State & Actions>()(
             activeBlockId: null,
             isDirty: true,
         });
-        applyThemeToDom(newTheme);
         get().saveData();
         return { handbookId: newHandbookId, projectId: newProjectId };
     },
@@ -274,7 +262,6 @@ const useProjectStore = create<State & Actions>()(
             activeBlockId: null,
             isDirty: true,
         });
-        applyThemeToDom(themeToApply);
         await get().saveData();
     },
 
