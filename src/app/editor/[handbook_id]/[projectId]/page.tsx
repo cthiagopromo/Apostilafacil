@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react'; // --> otimizado: useMemo adicionado
 import useProjectStore from '@/lib/store';
 import { EditorLayout } from '@/components/EditorLayout';
-import type { Project } from '@/lib/types';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const EditorSkeleton = () => (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden" aria-live="polite" aria-busy="true">
         {/* Header Skeleton */}
         <div className="flex items-center justify-between p-3 h-16 bg-card border-b">
             <div className="flex items-center gap-4">
@@ -74,18 +73,19 @@ const EditorSkeleton = () => (
 export default function EditorPage() {
   const router = useRouter();
   const params = useParams();
-  const { 
-    isInitialized, 
-    initializeStore, 
-    getActiveProject, 
-    setActiveProjectId,
-    projects
-  } = useProjectStore();
   
+  // --> otimizado: Seletores individuais para minimizar re-renderizações desnecessárias.
+  const isInitialized = useProjectStore(state => state.isInitialized);
+  const initializeStore = useProjectStore(state => state.initializeStore);
+  const activeProjectId = useProjectStore(state => state.activeProjectId);
+  const setActiveProjectId = useProjectStore(state => state.setActiveProjectId);
+  const projects = useProjectStore(state => state.projects);
+
   const projectId = params.projectId as string;
   const handbookIdFromUrl = params.handbook_id as string;
 
   useEffect(() => {
+    // --> otimizado: Condição `!isInitialized` previne chamadas múltiplas.
     if (!isInitialized) {
       initializeStore(handbookIdFromUrl);
     }
@@ -93,28 +93,25 @@ export default function EditorPage() {
 
   useEffect(() => {
     if (isInitialized) {
-      const currentActiveProject = getActiveProject();
-      if (currentActiveProject?.id !== projectId) {
+      // --> otimizado: A lógica agora só roda se o projectId da URL for diferente do ativo
+      if (activeProjectId !== projectId) {
         setActiveProjectId(projectId);
       }
     }
-  }, [projectId, isInitialized, getActiveProject, setActiveProjectId]);
+  }, [projectId, isInitialized, activeProjectId, setActiveProjectId]);
   
-  if (!isInitialized || !projects || projects.length === 0) {
+  // --> otimizado: useMemo para evitar recálculos do projeto ativo em cada renderização
+  const projectData = useMemo(() => {
+    if (!activeProjectId || !projects) return null;
+    return projects.find(p => p.id === activeProjectId) ?? null;
+  }, [activeProjectId, projects]);
+
+  if (!isInitialized || !projectData) {
     return <EditorSkeleton />;
   }
   
-  const projectData = getActiveProject();
-
-  if (!projectData) {
-    // This can happen briefly while the active project is being set.
-    // It can also happen if the projectId in the URL is invalid.
-    const isValidProjectId = projects.some(p => p.id === projectId);
-    if (isValidProjectId) {
-      return <EditorSkeleton />;
-    }
-
-    // Invalid project ID, show an error message
+  const isValidProjectId = projects.some(p => p.id === projectId);
+  if (!isValidProjectId) {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-secondary">
             <p className="text-xl mb-4">Módulo não encontrado.</p>

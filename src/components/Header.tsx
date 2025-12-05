@@ -1,38 +1,24 @@
+
 'use client';
 
 import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save, Loader, ArrowLeft, Eye } from 'lucide-react';
+import { ArrowLeft, Eye, Loader, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
-import { handleExportZip } from '@/lib/export';
 import { LoadingModal } from './LoadingModal';
 
 
 export default function Header() {
-  const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects, saveData, isDirty } = useProjectStore();
-  const [isExporting, setIsExporting] = useState(false);
+  const { handbookTitle, saveData, isDirty } = useProjectStore();
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-
-  const onExportClick = async () => {
-    await handleExportZip({ 
-        projects, 
-        handbookTitle, 
-        handbookDescription, 
-        handbookId, 
-        handbookUpdatedAt,
-        handbookTheme,
-        setIsExporting, 
-        toast 
-    });
-  }
 
   const handleSave = () => {
     if (!isDirty) return;
@@ -47,14 +33,6 @@ export default function Header() {
   }
 
   const handlePreview = () => {
-     if (!projects || projects.length === 0) {
-      toast({
-          variant: "destructive",
-          title: "Nenhum projeto para visualizar",
-          description: "Adicione pelo menos um módulo antes de visualizar.",
-      });
-      return;
-    }
     setIsPreviewModalOpen(true);
   }
 
