@@ -1,6 +1,21 @@
 import type {NextConfig} from 'next';
 
-const nextConfig: NextConfig = {
+const securityHeaders = [
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'none';",
+  },
+]
+
+const config: NextConfig = {
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -17,7 +32,25 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+      {
+         source: '/_next/static/:path*',
+         headers: [
+           {
+             key: 'Cache-Control',
+             value: 'public, max-age=31536000, immutable',
+           },
+         ],
+       },
+    ]
   },
 };
 
-export default nextConfig;
+export default config;
