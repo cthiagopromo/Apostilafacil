@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
 import { LoadingModal } from './LoadingModal';
+import { ThemeToggle } from './ThemeToggle';
 
 
 export default function Header() {
@@ -70,6 +71,8 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <div className="w-px h-8 bg-border mx-2"></div>
           <Button onClick={handleSave} disabled={isSaving || !isDirty} aria-label="Salvar alterações">
             {isSaving ? (
               <Loader className="mr-2 h-4 w-4 animate-spin" />
