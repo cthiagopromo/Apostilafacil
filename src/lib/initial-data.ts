@@ -11,8 +11,8 @@ export const initialHandbookData: HandbookData = {
   updatedAt: new Date().toISOString(),
   theme: {
     colorPrimary: '231 84% 30%',
-    fontHeading: '"Rethink Sans", ui-sans-serif, sans-serif, system-ui',
-    fontBody: '"Rethink Sans", ui-sans-serif, sans-serif, system-ui',
+    fontHeading: '"Roboto Slab", serif',
+    fontBody: '"Inter", sans-serif',
   },
   projects: [
     {
