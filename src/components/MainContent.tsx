@@ -1,4 +1,3 @@
-
 'use client';
 
 import useProjectStore from '@/lib/store';
@@ -85,7 +84,7 @@ export default function MainContent() {
           ) : (
             <div className="text-center text-muted-foreground py-16">
               <div className="inline-flex items-center justify-center bg-muted dark:bg-secondary text-foreground rounded-full h-16 w-16 mb-4">
-                  <PlusCircle className="h-8 w-8" />
+                  <PlusCircle className="h-8 w-8 text-primary dark:text-foreground" />
               </div>
               <h2 className="text-xl font-semibold text-foreground mb-1">Comece adicionando um bloco</h2>
               <p>Escolha entre texto, imagem, vídeo, botão ou quiz para<br/>criar sua apostila interativa.</p>
