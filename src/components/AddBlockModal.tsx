@@ -25,42 +25,36 @@ const blockOptions = [
     title: 'Texto',
     description: 'Adicione texto formatado com negrito, itálico e listas',
     icon: <Type className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-blue-100 text-blue-800',
   },
   {
     type: 'image' as BlockType,
     title: 'Imagem',
     description: 'Insira imagens com legenda e texto alternativo',
     icon: <Image className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-green-100 text-green-800',
   },
     {
     type: 'quote' as BlockType,
     title: 'Citação',
     description: 'Destaque uma citação ou frase importante',
     icon: <Quote className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-yellow-100 text-yellow-800',
   },
   {
     type: 'video' as BlockType,
     title: 'Vídeo/Embed',
     description: 'Adicione vídeos do YouTube, Vimeo ou arquivos locais',
     icon: <Video className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-purple-100 text-purple-800',
   },
   {
     type: 'button' as BlockType,
     title: 'Botão',
     description: 'Crie botões com links para ações específicas',
     icon: <MousePointerClick className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-orange-100 text-orange-800',
   },
   {
     type: 'quiz' as BlockType,
     title: 'Quiz',
     description: 'Adicione perguntas interativas com múltiplas escolhas',
     icon: <HelpCircle className="h-6 w-6 text-primary" />,
-    badgeColor: 'bg-pink-100 text-pink-800',
   },
 ];
 
@@ -92,12 +86,12 @@ export function AddBlockModal({ isOpen, onOpenChange }: AddBlockModalProps) {
               onClick={() => handleAddBlock(option.type)}
             >
               <CardContent className="p-6 flex flex-col items-start gap-4">
-                <div className="p-2 bg-muted rounded-full">{option.icon}</div>
+                <div className="p-2 bg-primary/10 rounded-full">{option.icon}</div>
                 <div className="space-y-1">
                   <h3 className="font-semibold text-lg">{option.title}</h3>
                   <p className="text-sm text-muted-foreground">{option.description}</p>
                 </div>
-                <Badge variant="secondary" className={`${option.badgeColor} capitalize`}>{option.type}</Badge>
+                <Badge variant="secondary" className="capitalize">{option.type}</Badge>
               </CardContent>
             </Card>
           ))}
