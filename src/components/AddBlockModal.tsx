@@ -25,42 +25,42 @@ const blockOptions = [
     type: 'text' as BlockType,
     title: 'Texto',
     description: 'Adicione texto formatado com negrito, itálico e listas',
-    icon: <Type className="h-6 w-6 text-card-foreground" />,
+    icon: <Type className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
   },
   {
     type: 'image' as BlockType,
     title: 'Imagem',
     description: 'Insira imagens com legenda e texto alternativo',
-    icon: <Image className="h-6 w-6 text-card-foreground" />,
+    icon: <Image className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
   },
     {
     type: 'quote' as BlockType,
     title: 'Citação',
     description: 'Destaque uma citação ou frase importante',
-    icon: <Quote className="h-6 w-6 text-card-foreground" />,
+    icon: <Quote className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
   },
   {
     type: 'video' as BlockType,
     title: 'Vídeo/Embed',
     description: 'Adicione vídeos do YouTube, Vimeo ou arquivos locais',
-    icon: <Video className="h-6 w-6 text-card-foreground" />,
+    icon: <Video className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
   },
   {
     type: 'button' as BlockType,
     title: 'Botão',
     description: 'Crie botões com links para ações específicas',
-    icon: <MousePointerClick className="h-6 w-6 text-card-foreground" />,
+    icon: <MousePointerClick className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300'
   },
   {
     type: 'quiz' as BlockType,
     title: 'Quiz',
     description: 'Adicione perguntas interativas com múltiplas escolhas',
-    icon: <HelpCircle className="h-6 w-6 text-card-foreground" />,
+    icon: <HelpCircle className="h-6 w-6 text-primary dark:text-card-foreground" />,
     badgeColors: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
   },
 ];
