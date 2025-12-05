@@ -105,12 +105,16 @@
 }
 
 #handbook-root .prose, 
-#handbook-root .tiptap {
+#handbook-root .tiptap,
+.prose,
+.tiptap {
     font-family: var(--font-body);
 }
 
 #handbook-root .prose h1, #handbook-root .prose h2, #handbook-root .prose h3,
-#handbook-root .tiptap h1, #handbook-root .tiptap h2, #handbook-root .tiptap h3 {
+#handbook-root .tiptap h1, #handbook-root .tiptap h2, #handbook-root .tiptap h3,
+.prose h1, .prose h2, .prose h3,
+.tiptap h1, .tiptap h2, .tiptap h3 {
     font-family: var(--font-heading);
 }
 
