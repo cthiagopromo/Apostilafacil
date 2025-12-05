@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import useProjectStore from '@/lib/store';
 import { Type, Image, Video, MousePointerClick, HelpCircle, Quote } from 'lucide-react';
 import type { BlockType } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface AddBlockModalProps {
   isOpen: boolean;
@@ -86,7 +87,7 @@ export function AddBlockModal({ isOpen, onOpenChange }: AddBlockModalProps) {
               onClick={() => handleAddBlock(option.type)}
             >
               <CardContent className="p-6 flex flex-col items-start gap-4">
-                <div className="p-2 bg-primary/10 rounded-full">{option.icon}</div>
+                <div className="p-2 bg-muted dark:bg-primary/10 rounded-full">{option.icon}</div>
                 <div className="space-y-1">
                   <h3 className="font-semibold text-lg">{option.title}</h3>
                   <p className="text-sm text-muted-foreground">{option.description}</p>
