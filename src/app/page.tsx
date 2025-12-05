@@ -6,6 +6,7 @@ import { ProjectList } from '@/components/ProjectList';
 import { FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingModal } from '@/components/LoadingModal';
 
 const HomeSkeleton = () => (
   <div className="w-full max-w-5xl mx-auto">
@@ -76,7 +77,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      {!isInitialized || isNavigating ? (
+       <LoadingModal isOpen={isNavigating} text="A carregar editor..." />
+      {!isInitialized ? (
           <HomeSkeleton />
       ) : (
         <div className="w-full max-w-5xl mx-auto">
