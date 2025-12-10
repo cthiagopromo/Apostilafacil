@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Download, Loader } from 'lucide-react';
+import { Download, Loader, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import useProjectStore from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
@@ -27,27 +27,27 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
   const { toast } = useToast();
 
   const onExportClick = async () => {
-    await handleExportZip({ 
-        projects, 
-        handbookTitle, 
-        handbookDescription, 
-        handbookId, 
-        handbookUpdatedAt, 
-        handbookTheme,
-        setIsExporting, 
-        toast 
+    await handleExportZip({
+      projects,
+      handbookTitle,
+      handbookDescription,
+      handbookId,
+      handbookUpdatedAt,
+      handbookTheme,
+      setIsExporting,
+      toast
     });
   }
 
   const handbookData: HandbookData | null = isInitialized ? {
-      id: handbookId,
-      title: handbookTitle,
-      description: handbookDescription,
-      theme: handbookTheme,
-      projects,
-      updatedAt: handbookUpdatedAt,
+    id: handbookId,
+    title: handbookTitle,
+    description: handbookDescription,
+    theme: handbookTheme,
+    projects,
+    updatedAt: handbookUpdatedAt,
   } : null;
-  
+
   if (!isOpen) return null;
 
   return (
@@ -55,21 +55,23 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
       <DialogContent className="max-w-[95vw] h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
           <DialogTitle className="text-xl">Pré-visualização Interativa</DialogTitle>
-          <Button onClick={onExportClick} disabled={isExporting}>
-            {isExporting ? (
+          <div className="flex gap-2">
+            <Button onClick={onExportClick} disabled={isExporting}>
+              {isExporting ? (
                 <Loader className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
+              ) : (
                 <Download className="mr-2 h-4 w-4" />
-            )}
-            {isExporting ? 'Exportando...' : 'Exportar ZIP'}
-          </Button>
+              )}
+              {isExporting ? 'Exportando...' : 'Exportar ZIP'}
+            </Button>
+          </div>
         </DialogHeader>
         <div className="flex-1 w-full h-full overflow-hidden relative">
-            {!isInitialized ? (
-                 <LoadingModal isOpen={true} text="Carregando visualização..." />
-            ) : (
-                <PreviewContent handbookData={handbookData} />
-            )}
+          {!isInitialized ? (
+            <LoadingModal isOpen={true} text="Carregando visualização..." />
+          ) : (
+            <PreviewContent handbookData={handbookData} />
+          )}
         </div>
       </DialogContent>
     </Dialog>

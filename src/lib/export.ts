@@ -479,6 +479,10 @@ const getGlobalCss = (theme: Theme) => `
       @media print {
           @page {
             size: A4;
+            margin: 3cm 2cm !important;
+          }
+
+          @page cover {
             margin: 0 !important;
           }
           
@@ -507,9 +511,8 @@ const getGlobalCss = (theme: Theme) => `
             background: white !important;
             color: black !important;
             font-size: 11pt !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
-            min-width: 210mm !important;
+            width: 100% !important;
+            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             -webkit-print-color-adjust: exact !important;
@@ -519,12 +522,9 @@ const getGlobalCss = (theme: Theme) => `
           /* Containers principais */
           #printable-content,
           main.main-content {
-            width: 210mm !important;
-            max-width: 210mm !important;
+            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: visible !important;
-            height: auto !important;
             display: block !important;
           }
 
@@ -538,7 +538,7 @@ const getGlobalCss = (theme: Theme) => `
             padding: 0 !important;
           }
 
-          /* Handbook root - conteúdo centralizado com margens */
+          /* Handbook root */
           #handbook-root,
           div#handbook-root {
             box-shadow: none !important;
@@ -546,35 +546,30 @@ const getGlobalCss = (theme: Theme) => `
             border-radius: 0 !important;
             background: white !important;
             margin: 0 !important;
-            padding: 3cm 2cm 3cm 2cm !important;
-            width: 210mm !important;
-            max-width: 210mm !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
           }
 
           /* CAPA - página inteira sem margens */
           .cover-section,
           section.cover-section {
+            page: cover;
             width: 210mm !important;
             height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
             margin: 0 !important;
             padding: 0 !important;
             page-break-after: always !important;
-            display: block !important;
-            overflow: hidden !important;
             position: relative !important;
-            border-radius: 0 !important;
+            left: 0 !important;
+            top: 0 !important;
           }
 
           .cover-section .cover-image,
           .cover-section img {
-            width: 210mm !important;
-            height: 297mm !important;
+            width: 100% !important;
+            height: 100% !important;
             object-fit: cover !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
           }
 
           /* Esconder botão na capa */
@@ -589,11 +584,16 @@ const getGlobalCss = (theme: Theme) => `
             display: block !important;
             page-break-before: always !important;
             width: 100% !important;
-            padding-top: 1cm !important;
+            padding-top: 0 !important;
           }
 
           .module-section:first-of-type {
             page-break-before: auto !important;
+          }
+
+          .cover-section + .module-section,
+          section.cover-section + section.module-section {
+             page-break-before: auto !important;
           }
 
           .module-section:last-of-type {
@@ -603,28 +603,19 @@ const getGlobalCss = (theme: Theme) => `
           /* CONTRACAPA - página inteira sem margens */
           .back-cover-section,
           section.back-cover-section {
+            page: cover;
             width: 210mm !important;
             height: 297mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
             margin: 0 !important;
             padding: 0 !important;
             page-break-before: always !important;
-            display: block !important;
-            overflow: hidden !important;
-            position: relative !important;
-            border-radius: 0 !important;
-            background: transparent !important;
           }
 
           .back-cover-section img,
           .back-cover-image {
-            width: 210mm !important;
-            height: 297mm !important;
+            width: 100% !important;
+            height: 100% !important;
             object-fit: cover !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
           }
 
           .video-player-export { display: none !important; }
@@ -666,6 +657,148 @@ const getFloatingNavHtml = (projects: Project[]) => `
         </button>
     </div>
 `;
+
+export const generatePrintHtml = (data: HandbookData): string => {
+    const { theme, title } = data;
+
+    const coverHtml = theme.cover ? `
+        <section class="cover-section module-section">
+            <img src="${theme.cover}" alt="Capa da Apostila" class="cover-image"/>
+            <div class="cover-content">
+                <button id="start-handbook-btn" class="no-print inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Iniciar Apostila
+                </button>
+            </div>
+        </section>
+    ` : '';
+
+    const backCoverHtml = theme.backCover ? `
+        <section class="back-cover-section module-section">
+            <img src="${theme.backCover}" alt="Contracapa da Apostila" class="back-cover-image"/>
+        </section>
+    ` : '';
+
+    const interactiveContentHtml = renderProjectsToHtml(data.projects);
+    const floatingNavHtml = getFloatingNavHtml(data.projects);
+
+    return `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${title}</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="${getGoogleFontsUrl(theme)}" rel="stylesheet">
+            <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+            <style>${getGlobalCss(theme)}</style>
+            <script>
+                tailwind.config = {
+                  theme: { 
+                    extend: { 
+                      fontFamily: {
+                        heading: ['var(--font-heading)'],
+                        body: ['var(--font-body)'],
+                      },
+                      colors: { 
+                          border: 'hsl(var(--border))', 
+                          input: 'hsl(var(--input))', 
+                          ring: 'hsl(var(--ring))', 
+                          background: 'hsl(var(--background))', 
+                          foreground: 'hsl(var(--foreground))', 
+                          primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' }, 
+                          secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' }, 
+                          destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' }, 
+                          muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' }, 
+                          accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' }, 
+                          popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' }, 
+                          card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' } 
+                      },
+                      borderRadius: {
+                        lg: 'var(--radius)',
+                        md: 'calc(var(--radius) - 2px)',
+                        sm: 'calc(var(--radius) - 4px)',
+                      },
+                       typography: ({ theme }) => ({
+                        DEFAULT: {
+                          css: {
+                            '--tw-prose-body': 'hsl(var(--foreground))',
+                            '--tw-prose-headings': 'hsl(var(--foreground))',
+                            '--tw-prose-lead': 'hsl(var(--foreground))',
+                            '--tw-prose-links': 'hsl(var(--primary))',
+                            '--tw-prose-bold': 'hsl(var(--foreground))',
+                            '--tw-prose-counters': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-bullets': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-hr': 'hsl(var(--border))',
+                            '--tw-prose-quotes': 'hsl(var(--foreground))',
+                            '--tw-prose-quote-borders': 'hsl(var(--primary))',
+                            '--tw-prose-captions': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-code': 'hsl(var(--foreground))',
+                            '--tw-prose-pre-code': 'hsl(var(--foreground))',
+                            '--tw-prose-pre-bg': 'hsl(var(--muted))',
+                            '--tw-prose-invert-body': 'hsl(var(--background))',
+                            '--tw-prose-invert-headings': 'hsl(var(--primary))',
+                            '--tw-prose-invert-lead': 'hsl(var(--background))',
+                            '--tw-prose-invert-links': 'hsl(var(--primary))',
+                            '--tw-prose-invert-bold': 'hsl(var(--background))',
+                            '--tw-prose-invert-counters': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-invert-bullets': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-invert-hr': 'hsl(var(--border))',
+                            '--tw-prose-invert-quotes': 'hsl(var(--background))',
+                            '--tw-prose-invert-quote-borders': 'hsl(var(--border))',
+                            '--tw-prose-invert-captions': 'hsl(var(--muted-foreground))',
+                            '--tw-prose-invert-code': 'hsl(var(--background))',
+                            '--tw-prose-invert-pre-code': 'hsl(var(--background))',
+                            '--tw-prose-invert-pre-bg': 'rgb(0 0 0 / 50%)',
+                            '--tw-prose-invert-th-borders': 'hsl(var(--border))',
+                            '--tw-prose-invert-td-borders': 'hsl(var(--border))',
+                          },
+                        },
+                      }),
+                    } 
+                  }
+                }
+            </script>
+            <script id="handbook-data" type="application/json">${JSON.stringify(data)}</script>
+        </head>
+        <body class="bg-secondary/40 text-foreground font-sans antialiased">
+             <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
+                <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
+                    <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
+                    <p style="margin-top:10px;">Preparando impressão...</p>
+                </div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+             </div>
+    
+             <div id="handbook-root" class="max-w-4xl mx-auto bg-card shadow-xl min-h-screen">
+                ${coverHtml}
+                ${interactiveContentHtml}
+                ${backCoverHtml}
+             </div>
+    
+             ${floatingNavHtml}
+             <div class="accessibility-toolbar fixed top-5 right-5 z-50 flex gap-2 no-print">
+                 <button class="bg-primary text-primary-foreground p-2 rounded-full shadow-lg" data-action="print" title="Imprimir">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2-2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                 </button>
+                 <button class="bg-primary text-primary-foreground p-2 rounded-full shadow-lg" data-action="contrast" title="Alto Contraste">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z"></path></svg>
+                 </button>
+                 <button class="bg-primary text-primary-foreground p-2 rounded-full shadow-lg" data-action="zoom-in" title="Aumentar Fonte">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                 </button>
+                 <button class="bg-primary text-primary-foreground p-2 rounded-full shadow-lg" data-action="zoom-out" title="Diminuir Fonte">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                 </button>
+             </div>
+    
+             <script>${getInteractiveScript(theme)}</script>
+        </body>
+        </html>
+    `;
+};
 
 interface ExportParams {
     projects: Project[];
@@ -834,7 +967,6 @@ export const handleExportZip = async ({
         toast({ title: 'Exportação Concluída' });
     } catch (error) {
         console.error('Falha ao exportar o projeto', error);
-        toast({ variant: 'destructive', title: 'Erro na Exportação', description: `Não foi possível exportar o projeto. Detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido.'}` });
     } finally {
         setIsExporting(false);
     }

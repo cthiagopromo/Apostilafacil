@@ -149,6 +149,10 @@
 @media print {
   @page {
     size: A4;
+    margin: 3cm 2cm !important;
+  }
+
+  @page cover {
     margin: 0 !important;
   }
 
@@ -180,9 +184,8 @@
     background: white !important;
     color: black !important;
     font-size: 11pt !important;
-    width: 210mm !important;
-    max-width: 210mm !important;
-    min-width: 210mm !important;
+    width: 100% !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
@@ -193,12 +196,9 @@
   #handbook-root-container,
   #preview-scroll-area,
   #printable-content {
-    width: 210mm !important;
-    max-width: 210mm !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: visible !important;
-    height: auto !important;
     display: block !important;
   }
 
@@ -207,13 +207,12 @@
   main.p-4,
   main.sm\\:p-8,
   main.md\\:p-12 {
-    width: 210mm !important;
-    max-width: 210mm !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* Handbook root - conteúdo centralizado com margens */
+  /* Handbook root */
   #handbook-root,
   div#handbook-root {
     box-shadow: none !important;
@@ -221,35 +220,42 @@
     border-radius: 0 !important;
     background: white !important;
     margin: 0 !important;
-    padding: 3cm 2cm 3cm 2cm !important;
-    width: 210mm !important;
-    max-width: 210mm !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   /* CAPA - página inteira sem margens */
   .cover-section,
   section.cover-section {
+    page: cover;
     width: 210mm !important;
     height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     page-break-after: always !important;
-    display: block !important;
-    overflow: hidden !important;
     position: relative !important;
-    border-radius: 0 !important;
+    left: -2cm !important;
+    /* Compensate for @page margins if named pages fail, but usually with page: cover it works. If not, this hack helps in some browsers but hurts others. Let's rely on page:cover first. */
+    /* Wait, if page:cover works, margins are 0. If it doesn't, we are inside 3cm 2cm margins.
+       Safest is to NOT use negative margins blindly. Chrome supports page:cover.
+    */
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  /* Fix for browsers that support named pages */
+  @media print {
+    .cover-section {
+      margin: 0;
+    }
   }
 
   .cover-section .cover-image,
   .cover-section img {
-    width: 210mm !important;
-    height: 297mm !important;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: cover !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
   }
 
   /* Esconder botão na capa */
@@ -264,7 +270,7 @@
     display: block !important;
     page-break-before: always !important;
     width: 100% !important;
-    padding-top: 1cm !important;
+    padding-top: 0 !important;
   }
 
   .module-section:first-of-type {
@@ -278,27 +284,18 @@
   /* CONTRACAPA - página inteira sem margens */
   .back-cover-section,
   section.back-cover-section {
+    page: cover;
     width: 210mm !important;
     height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     page-break-before: always !important;
-    display: block !important;
-    overflow: hidden !important;
-    position: relative !important;
-    border-radius: 0 !important;
-    background: transparent !important;
   }
 
   .back-cover-section img {
-    width: 210mm !important;
-    height: 297mm !important;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: cover !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
   }
 
   /* Tipografia */

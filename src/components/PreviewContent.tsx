@@ -12,6 +12,8 @@ import FloatingNav from '@/components/FloatingNav';
 import { cn } from '@/lib/utils';
 import { Toaster } from './ui/toaster';
 
+import { generatePrintHtml } from '@/lib/export';
+
 interface PreviewContentProps {
     handbookData: HandbookData | null;
 }
@@ -21,15 +23,31 @@ export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
     useEffect(() => {
-        if (isPreparingPrint) {
+        if (isPreparingPrint && handbookData) {
             const handlePrint = async () => {
                 await new Promise(resolve => setTimeout(resolve, 500));
-                window.print();
+
+                // Opção 1: Abrir em nova janela para impressão (Resolve 'queria abrir pdf em nova guia')
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    const htmlContent = generatePrintHtml(handbookData);
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+
+                    // Aguarda imagens/recursos carregarem antes de imprimir
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                } else {
+                    // Fallback se popup bloqueado
+                    window.print();
+                }
+
                 setIsPreparingPrint(false);
             };
             handlePrint();
         }
-    }, [isPreparingPrint]);
+    }, [isPreparingPrint, handbookData]);
 
     useEffect(() => {
         if (handbookData?.theme) {
