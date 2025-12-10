@@ -18,7 +18,7 @@ const getInteractiveScript = (theme: Theme): string => {
             if (theme && theme.colorPrimary) {
                 document.documentElement.style.setProperty('--primary', theme.colorPrimary);
             }
-             if (theme.fontHeading) {
+            if (theme.fontHeading) {
                 document.documentElement.style.setProperty('--font-heading', theme.fontHeading);
             }
             if (theme.fontBody) {
@@ -37,7 +37,7 @@ const getInteractiveScript = (theme: Theme): string => {
             const startButton = document.getElementById('start-handbook-btn');
             const moduleSearchInput = document.getElementById('module-search-input');
             const moduleListScrollArea = document.getElementById('module-list-scroll-area');
-            
+
             if (moduleListScrollArea) {
                 moduleListScrollArea.style.maxHeight = '200px';
                 moduleListScrollArea.style.overflowY = 'auto';
@@ -50,14 +50,14 @@ const getInteractiveScript = (theme: Theme): string => {
                         const moduleTitle = (btn.textContent || '').toLowerCase();
                         const parentDiv = btn.parentElement;
                         if (parentDiv) {
-                           parentDiv.style.display = moduleTitle.includes(searchTerm) ? 'block' : 'none';
+                            parentDiv.style.display = moduleTitle.includes(searchTerm) ? 'block' : 'none';
                         }
                     });
                 });
             }
 
             const showModule = (index: number) => {
-                 if (coverSection) {
+                if (coverSection) {
                     (coverSection as HTMLElement).style.display = 'none';
                 }
                 if (handbookRoot) {
@@ -116,7 +116,7 @@ const getInteractiveScript = (theme: Theme): string => {
                     if (floatingNavMenu) floatingNavMenu.classList.add('hidden');
                 });
             });
-            
+
             if (floatingNavToggle && floatingNavMenu) {
                 floatingNavToggle.addEventListener('click', () => {
                     floatingNavMenu.classList.toggle('hidden');
@@ -131,20 +131,20 @@ const getInteractiveScript = (theme: Theme): string => {
                     const selectedOptionEl = (e.currentTarget as HTMLElement).closest('.quiz-option');
                     if (!selectedOptionEl) return;
                     radioButtons.forEach(rb => { rb.disabled = true; });
-                    
+
                     options.forEach(opt => {
                         const checkIcon = opt.querySelector('.lucide-check-circle') as HTMLElement | null;
                         const xIcon = opt.querySelector('.lucide-x-circle') as HTMLElement | null;
                         const isCorrect = (opt as HTMLElement).dataset.correct === 'true';
 
-                        if(isCorrect) {
+                        if (isCorrect) {
                             opt.classList.add('bg-primary/10', 'border-primary/50');
-                            if(checkIcon) checkIcon.style.display = 'inline-block';
+                            if (checkIcon) checkIcon.style.display = 'inline-block';
                         }
-                        
+
                         if (opt === selectedOptionEl && !isCorrect) {
-                           opt.classList.add('bg-destructive/10', 'border-destructive/50');
-                           if(xIcon) xIcon.style.display = 'inline-block';
+                            opt.classList.add('bg-destructive/10', 'border-destructive/50');
+                            if (xIcon) xIcon.style.display = 'inline-block';
                         }
                     });
 
@@ -155,11 +155,11 @@ const getInteractiveScript = (theme: Theme): string => {
                     retryBtn.addEventListener('click', () => {
                         radioButtons.forEach(rb => { rb.disabled = false; rb.checked = false; });
                         options.forEach(opt => {
-                           opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-destructive/10', 'border-destructive/50');
-                           const checkIcon = opt.querySelector('.lucide-check-circle') as HTMLElement | null;
-                           const xIcon = opt.querySelector('.lucide-x-circle') as HTMLElement | null;
-                           if(checkIcon) checkIcon.style.display = 'none';
-                           if(xIcon) xIcon.style.display = 'none';
+                            opt.classList.remove('bg-primary/10', 'border-primary/50', 'bg-destructive/10', 'border-destructive/50');
+                            const checkIcon = opt.querySelector('.lucide-check-circle') as HTMLElement | null;
+                            const xIcon = opt.querySelector('.lucide-x-circle') as HTMLElement | null;
+                            if (checkIcon) checkIcon.style.display = 'none';
+                            if (xIcon) xIcon.style.display = 'none';
                         });
                         retryBtn.style.display = 'none';
                     });
@@ -172,14 +172,14 @@ const getInteractiveScript = (theme: Theme): string => {
                 const zoomInBtn = toolbar.querySelector('[data-action="zoom-in"]');
                 const zoomOutBtn = toolbar.querySelector('[data-action="zoom-out"]');
                 const contrastBtn = toolbar.querySelector('[data-action="contrast"]');
-                
+
                 if (printBtn) {
                     printBtn.addEventListener('click', () => {
                         const modal = document.getElementById('printing-modal');
                         if (modal) {
                             modal.style.display = 'flex';
                         }
-                        
+
                         // Show all modules for printing
                         document.querySelectorAll('.module-section').forEach(module => {
                             (module as HTMLElement).style.display = 'block';
@@ -187,12 +187,12 @@ const getInteractiveScript = (theme: Theme): string => {
 
                         setTimeout(() => {
                             window.print();
-                             if (modal) {
+                            if (modal) {
                                 modal.style.display = 'none';
                             }
                             // Restore view after printing
                             showModule(currentModuleIndex);
-                        }, 1000); 
+                        }, 1000);
                     });
                 }
 
@@ -206,7 +206,7 @@ const getInteractiveScript = (theme: Theme): string => {
                 if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleFontSize(true));
                 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleFontSize(false));
             }
-            
+
             window.addEventListener('afterprint', () => {
                 const modal = document.getElementById('printing-modal');
                 if (modal) {
@@ -220,7 +220,7 @@ const getInteractiveScript = (theme: Theme): string => {
                 (coverSection as HTMLElement).style.display = 'flex';
                 (handbookRoot as HTMLElement).style.display = 'none';
             } else {
-                 showModule(0);
+                showModule(0);
             }
         });
     };
@@ -239,15 +239,15 @@ const getGoogleFontsUrl = (theme: Theme): string => {
 
     const fonts = new Set([headingFontName, bodyFontName, 'Rethink Sans']);
     const fontFamilies = Array.from(fonts).map(font => `family=${font.replace(/\s/g, '+')}:wght@400;700`).join('&');
-    
+
     return `https://fonts.googleapis.com/css2?${fontFamilies}&display=swap`;
 };
 
 const renderBlockToHtml = (block: Block): string => {
-    
+
     switch (block.type) {
         case 'text':
-             return `<div class="prose max-w-none">${DOMPurify.sanitize(block.content.text || '')}</div>`;
+            return `<div class="prose max-w-none">${DOMPurify.sanitize(block.content.text || '')}</div>`;
         case 'image':
             const { url, alt, caption, width } = block.content;
             return `
@@ -258,7 +258,7 @@ const renderBlockToHtml = (block: Block): string => {
                     </figure>
                 </div>`;
         case 'quote':
-             return `
+            return `
                 <div class="relative">
                     <blockquote class="p-4 bg-muted/50 border-l-4 border-primary rounded-r-lg text-lg italic text-foreground/80 m-0">
                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute -top-3 -left-2 h-10 w-10 text-primary/20"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2S6 3.75 6 5v6H4c-1 1 0 5 3 5z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2s-2 1.25-2 3v6h-2c-1 1 0 5 3 5z"></path></svg>
@@ -280,7 +280,7 @@ const renderBlockToHtml = (block: Block): string => {
                         videoEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}&rel=0`;
                         videoLink = videoUrl;
                     }
-                } catch(e) {}
+                } catch (e) { }
             } else if (videoType === 'vimeo' && vimeoVideoId) {
                 videoEmbedUrl = `https://player.vimeo.com/video/${vimeoVideoId}?autoplay=${autoplay ? 1 : 0}&controls=${showControls ? 1 : 0}`;
                 videoLink = `https://vimeo.com/${vimeoVideoId}`;
@@ -294,7 +294,7 @@ const renderBlockToHtml = (block: Block): string => {
 
             if (videoLink !== '#') {
                 let displayUrl = videoLink;
-                if(videoType === 'smartplay' && displayUrl.length > 50) {
+                if (videoType === 'smartplay' && displayUrl.length > 50) {
                     displayUrl = displayUrl.substring(0, 50) + '...';
                 }
                 finalVideoLinkHtml = `<div class="text-sm">Link: <a href="${videoLink}" target="_blank" rel="noopener noreferrer">${displayUrl}</a></div>`;
@@ -444,104 +444,204 @@ const getGlobalCss = (theme: Theme) => `
         display: none;
       }
 
+      /* Estilos de tela para o conteúdo */
+      .main-content {
+        padding: 1rem;
+      }
+      @media (min-width: 640px) {
+        .main-content { padding: 2rem; }
+      }
+      @media (min-width: 768px) {
+        .main-content { padding: 3rem; }
+      }
+
+      .print-content {
+        padding: 2rem;
+      }
+      @media (min-width: 640px) {
+        .print-content { padding: 3rem; }
+      }
+      @media (min-width: 768px) {
+        .print-content { padding: 4rem; }
+      }
+
+      /* Padding para tela - será removido na impressão */
+      #handbook-root {
+        padding: 2rem;
+      }
+      @media (min-width: 640px) {
+        #handbook-root { padding: 3rem; }
+      }
+      @media (min-width: 768px) {
+        #handbook-root { padding: 4rem; }
+      }
+
       @media print {
           @page {
             size: A4;
-            margin: 0;
+            margin: 0 !important;
           }
+          
+          /* Reset agressivo para impressão */
+          *, *::before, *::after {
+            box-sizing: border-box !important;
+          }
+
+          /* Esconder elementos que não devem aparecer na impressão */
+          .no-print,
+          .no-print *,
+          header,
+          .accessibility-toolbar,
+          #floating-nav-container,
+          footer.no-print,
+          button.no-print {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            overflow: hidden !important;
+          }
+
+          /* HTML e Body */
           html, body {
-            width: 100%;
-            height: auto;
             background: white !important;
             color: black !important;
-            font-size: 11pt;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            display: block !important;
-          }
-          body, main.main-content {
+            font-size: 11pt !important;
+            width: 210mm !important;
+            max-width: 210mm !important;
+            min-width: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          #handbook-root {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            border: none !important;
+
+          /* Containers principais */
+          #printable-content,
+          main.main-content {
+            width: 210mm !important;
+            max-width: 210mm !important;
+            margin: 0 !important;
             padding: 0 !important;
-            margin: 0 auto !important;
-            width: 210mm;
-            max-width: 100%;
-            box-sizing: border-box;
+            overflow: visible !important;
+            height: auto !important;
+            display: block !important;
           }
-          .no-print, .no-print * { display: none !important; }
-          
+
           #printing-modal {
             display: none !important;
           }
 
-          .cover-section {
-            display: flex !important;
-            width: 210mm;
-            height: 297mm;
+          /* Reset de padding para impressão */
+          .main-content,
+          .print-content {
             padding: 0 !important;
+          }
+
+          /* Handbook root - conteúdo centralizado com margens */
+          #handbook-root,
+          div#handbook-root {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: white !important;
             margin: 0 !important;
-            page-break-after: always;
-          }
-          
-          .module-section:not(.cover-section):not(.back-cover-section) {
-            padding: 0 2.5cm 3cm 2.5cm;
-            box-sizing: border-box; 
+            padding: 3cm 2cm 3cm 2cm !important;
+            width: 210mm !important;
+            max-width: 210mm !important;
           }
 
-          .module-section:not(.cover-section) {
-            page-break-before: always;
-          }
-          
-          .module-section:not(.cover-section):not(.back-cover-section) > *:first-child {
-            padding-top: 100px !important;
-          }
-
-          .cover-section > *:first-child,
-          .back-cover-section > *:first-child {
-              padding-top: 0 !important;
-          }
-
-          .quiz-card,
-          figure,
-          blockquote {
-            page-break-inside: avoid;
-          }
-        
-          .module-section:last-of-type {
-              page-break-after: auto;
-          }
-
-          .back-cover-section {
+          /* CAPA - página inteira sem margens */
+          .cover-section,
+          section.cover-section {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-after: always !important;
             display: block !important;
-            width: 210mm;
-            height: 297mm;
-            padding: 0;
-            margin: 0;
-            overflow: hidden;
-            page-break-before: always;
+            overflow: hidden !important;
+            position: relative !important;
+            border-radius: 0 !important;
           }
+
+          .cover-section .cover-image,
+          .cover-section img {
+            width: 210mm !important;
+            height: 297mm !important;
+            object-fit: cover !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+          }
+
+          /* Esconder botão na capa */
+          .cover-section .cover-content,
+          .cover-section button {
+            display: none !important;
+          }
+
+          /* MÓDULOS - páginas de conteúdo */
+          .module-section,
+          section.module-section {
+            display: block !important;
+            page-break-before: always !important;
+            width: 100% !important;
+            padding-top: 1cm !important;
+          }
+
+          .module-section:first-of-type {
+            page-break-before: auto !important;
+          }
+
+          .module-section:last-of-type {
+            page-break-after: auto !important;
+          }
+
+          /* CONTRACAPA - página inteira sem margens */
+          .back-cover-section,
+          section.back-cover-section {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-before: always !important;
+            display: block !important;
+            overflow: hidden !important;
+            position: relative !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+          }
+
+          .back-cover-section img,
           .back-cover-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 210mm !important;
+            height: 297mm !important;
+            object-fit: cover !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
           }
 
           .video-player-export { display: none !important; }
           .video-print-placeholder-export { display: block !important; }
 
-          h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
-          .quiz-card, figure, blockquote {
-            page-break-inside: avoid;
+          /* Tipografia */
+          h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid !important;
           }
-          .prose { color: black; }
+
+          figure, .quiz-card, blockquote, .prose, img {
+            page-break-inside: avoid !important;
+          }
+
           a {
             color: #000 !important;
-            text-decoration: underline !important;
+            text-decoration: none !important;
           }
       }
 `;
@@ -556,7 +656,7 @@ const getFloatingNavHtml = (projects: Project[]) => `
              <div id="module-list-scroll-area" class="space-y-1">
                 ${projects.map((p, i) => `
                     <div class="module-item-container">
-                        <button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-primary/10 rounded-md">${i+1}. ${p.title}</button>
+                        <button class="floating-nav-btn w-full text-left p-2 text-sm hover:bg-primary/10 rounded-md">${i + 1}. ${p.title}</button>
                     </div>
                 `).join('')}
             </div>
@@ -586,12 +686,12 @@ export const handleExportZip = async ({
         return;
     }
     setIsExporting(true);
-    
+
     try {
         const zip = new JSZip();
         const cleanTitle = (handbookTitle || 'apostila').toLowerCase().replace(/\s+/g, '-');
         const handbookData: HandbookData = { id: handbookId, title: handbookTitle, description: handbookDescription, updatedAt: handbookUpdatedAt, theme: handbookTheme, projects };
-        
+
         const coverHtml = handbookTheme.cover ? `
             <section class="cover-section module-section">
                 <img src="${handbookTheme.cover}" alt="Capa da Apostila" class="cover-image"/>
@@ -612,7 +712,7 @@ export const handleExportZip = async ({
 
         const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
         const floatingNavHtml = getFloatingNavHtml(handbookData.projects);
-        
+
         const finalHtml = `
             <!DOCTYPE html>
             <html lang="pt-BR">
@@ -715,9 +815,9 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main id="printable-content" class="max-w-4xl mx-auto main-content p-4 sm:p-8 md:p-12">
+                 <main id="printable-content" class="max-w-4xl mx-auto main-content">
                     ${coverHtml}
-                    <div id="handbook-root" class="bg-card rounded-xl shadow-lg p-8 sm:p-12 md:p-16">
+                    <div id="handbook-root" class="bg-card rounded-xl shadow-lg print-content">
                         ${interactiveContentHtml}
                     </div>
                     ${backCoverHtml}

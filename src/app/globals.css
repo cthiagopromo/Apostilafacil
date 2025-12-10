@@ -12,7 +12,7 @@
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    
+
     --primary: 231 84% 30%;
     --primary-foreground: 0 0% 98%;
 
@@ -21,7 +21,7 @@
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    
+
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
@@ -37,7 +37,7 @@
     --sidebar-border: 216 19% 88%;
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 208 91% 11%;
-    
+
     --radius: 0.775rem;
   }
 
@@ -69,7 +69,7 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 217 91% 65%;
-    
+
     --sidebar: 240 5% 7%;
     --sidebar-foreground: 240 4% 91%;
     --sidebar-border: 240 5% 15%;
@@ -82,13 +82,20 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.3s, color 0.3s;
     font-family: "Rethink Sans", ui-sans-serif, sans-serif, system-ui;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: "Rethink Sans", ui-sans-serif, sans-serif, system-ui;
   }
 }
@@ -97,26 +104,33 @@
   @apply rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
   min-height: 150px;
 }
-.tiptap > p:first-child {
+
+.tiptap>p:first-child {
   margin-top: 0.25rem;
 }
+
 .tiptap:focus {
   @apply ring-2 ring-ring;
 }
 
 /* Isola as fontes da apostila para não afetarem a UI do editor */
-#handbook-root .prose, 
+#handbook-root .prose,
 #handbook-root .tiptap {
-    font-family: var(--font-body, "Inter", sans-serif);
+  font-family: var(--font-body, "Inter", sans-serif);
 }
 
-#handbook-root .prose h1, #handbook-root .prose h2, #handbook-root .prose h3,
-#handbook-root .tiptap h1, #handbook-root .tiptap h2, #handbook-root .tiptap h3 {
-    font-family: var(--font-heading, "Roboto Slab", serif);
+#handbook-root .prose h1,
+#handbook-root .prose h2,
+#handbook-root .prose h3,
+#handbook-root .tiptap h1,
+#handbook-root .tiptap h2,
+#handbook-root .tiptap h3 {
+  font-family: var(--font-heading, "Roboto Slab", serif);
 }
 
 
-.tiptap ul, .tiptap ol {
+.tiptap ul,
+.tiptap ol {
   @apply pl-4 my-2;
 }
 
@@ -135,97 +149,198 @@
 @media print {
   @page {
     size: A4;
-    margin: 0;
+    margin: 0 !important;
   }
 
-  .no-print, .no-print * {
+  /* Reset agressivo para impressão */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box !important;
+  }
+
+  /* Esconder elementos que não devem aparecer na impressão */
+  .no-print,
+  .no-print *,
+  header,
+  .accessibility-toolbar,
+  #floating-nav-container,
+  footer.no-print,
+  button.no-print {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
   }
 
-  body, #printable-content {
+  /* HTML e Body */
+  html,
+  body {
     background: white !important;
     color: black !important;
-    font-size: 11pt;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size: 11pt !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  main {
-    max-width: 100% !important;
+  /* Containers principais */
+  #handbook-root-container,
+  #preview-scroll-area,
+  #printable-content {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Main - remover todo padding */
+  main,
+  main.p-4,
+  main.sm\\:p-8,
+  main.md\\:p-12 {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    margin: 0 !important;
     padding: 0 !important;
   }
 
-  #handbook-root {
+  /* Handbook root - conteúdo centralizado com margens */
+  #handbook-root,
+  div#handbook-root {
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
+    background: white !important;
     margin: 0 !important;
-    padding: 2cm !important;
-  }
-  
-  .cover-section {
-    width: 210mm;
-    height: 297mm;
-    margin: -2cm; /* Counteract the @page margin for the full-bleed cover */
-    page-break-after: always;
-    display: block !important;
-    overflow: hidden;
-    position: relative;
+    padding: 3cm 2cm 3cm 2cm !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
   }
 
-  .cover-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-  }
-  
-  .module-section {
+  /* CAPA - página inteira sem margens */
+  .cover-section,
+  section.cover-section {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: always !important;
     display: block !important;
-    page-break-after: always;
+    overflow: hidden !important;
+    position: relative !important;
+    border-radius: 0 !important;
+  }
+
+  .cover-section .cover-image,
+  .cover-section img {
+    width: 210mm !important;
+    height: 297mm !important;
+    object-fit: cover !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  /* Esconder botão na capa */
+  .cover-section .cover-content,
+  .cover-section button {
+    display: none !important;
+  }
+
+  /* MÓDULOS - páginas de conteúdo */
+  .module-section,
+  section.module-section {
+    display: block !important;
+    page-break-before: always !important;
+    width: 100% !important;
+    padding-top: 1cm !important;
+  }
+
+  .module-section:first-of-type {
+    page-break-before: auto !important;
   }
 
   .module-section:last-of-type {
-    page-break-after: auto;
+    page-break-after: auto !important;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    page-break-after: avoid;
+  /* CONTRACAPA - página inteira sem margens */
+  .back-cover-section,
+  section.back-cover-section {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-before: always !important;
+    display: block !important;
+    overflow: hidden !important;
+    position: relative !important;
+    border-radius: 0 !important;
+    background: transparent !important;
   }
 
-  figure, .quiz-card, blockquote, .prose {
-    page-break-inside: avoid;
+  .back-cover-section img {
+    width: 210mm !important;
+    height: 297mm !important;
+    object-fit: cover !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  /* Tipografia */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-after: avoid !important;
+  }
+
+  figure,
+  .quiz-card,
+  blockquote,
+  .prose,
+  img {
+    page-break-inside: avoid !important;
   }
 
   a {
-    color: #000;
-    text-decoration: none;
+    color: #000 !important;
+    text-decoration: none !important;
   }
 }
 
 .cover-section {
-    width: 100%;
-    height: 400px;
-    position: relative;
-    border-radius: var(--radius);
-    overflow: hidden;
+  width: 100%;
+  height: 400px;
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 .cover-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
 .cover-overlay {
@@ -234,7 +349,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 2;
 }
 

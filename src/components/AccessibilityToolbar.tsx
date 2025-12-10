@@ -19,19 +19,26 @@ import {
 
 interface AccessibilityToolbarProps {
   setIsExporting: (isExporting: boolean) => void;
+  handbookId?: string;
 }
 
-export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarProps) {
+export function AccessibilityToolbar({ setIsExporting, handbookId }: AccessibilityToolbarProps) {
 
   const handlePdfExport = () => {
-    setIsExporting(true);
+    if (handbookId) {
+      // Abre página de impressão dedicada em nova aba
+      window.open(`/print/${handbookId}`, '_blank');
+    } else {
+      // Fallback para impressão direta
+      setIsExporting(true);
+    }
   };
 
   const handleFontSize = (increase: boolean) => {
     const body = document.body;
     const currentSize = parseFloat(window.getComputedStyle(body).fontSize);
     const newSize = increase ? currentSize + 1 : currentSize - 1;
-    if (newSize >= 12 && newSize <= 24) { 
+    if (newSize >= 12 && newSize <= 24) {
       body.style.fontSize = `${newSize}px`;
     }
   };
@@ -39,7 +46,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
   const toggleContrast = () => {
     document.body.classList.toggle('high-contrast');
   };
-  
+
   const showAlert = (feature: string) => {
     alert(`${feature} - Funcionalidade em desenvolvimento.`);
   }
@@ -56,7 +63,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
             </TooltipTrigger>
             <TooltipContent><p>Imprimir ou Salvar como PDF</p></TooltipContent>
           </Tooltip>
-          
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={() => showAlert('Libras')} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
@@ -93,7 +100,7 @@ export function AccessibilityToolbar({ setIsExporting }: AccessibilityToolbarPro
             </TooltipTrigger>
             <TooltipContent><p>Alto Contraste</p></TooltipContent>
           </Tooltip>
-          
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" onClick={() => showAlert('Acessibilidade')} className='text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'>
