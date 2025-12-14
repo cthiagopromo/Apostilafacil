@@ -11,6 +11,7 @@ ApostilaFácil é uma aplicação web projetada para educadores, criadores de co
 -   **Organização de Módulos**: Interface de arrastar e soltar para organizar módulos e sequenciar o conteúdo de forma lógica e intuitiva.
 -   **Conteúdo Rico e Interativo**: Adicione textos formatados, imagens, vídeos, citações, botões com links e até mesmo quizzes interativos para engajar os leitores.
 -   **Exportação Offline**: Exporte a apostila completa como um arquivo `.zip` auto-contido, que inclui um `index.html` e todos os recursos necessários para funcionar perfeitamente em qualquer navegador sem acesso à internet.
+-   **Exportação PDF Nativa**: Gere arquivos PDF prontos para impressão, com paginação A4 correta e sem cabeçalhos/rodapés de navegador, garantindo um visual profissional.
 -   **Customização Visual**: Altere a cor principal e a imagem de capa da apostila para alinhar o material à sua identidade visual.
 -   **Pré-visualização em Tempo Real**: Visualize como a apostila final se parecerá para o usuário final a qualquer momento, incluindo a interatividade e o design responsivo.
 
@@ -19,6 +20,7 @@ ApostilaFácil é uma aplicação web projetada para educadores, criadores de co
 ## 🛠️ Arsenal de Tecnologias (Tech Stack)
 
 -   **Interface (Frontend)**: Next.js, React, TypeScript, TailwindCSS, ShadCN UI
+-   **Geração de Documentos**: @react-pdf/renderer (PDF)
 -   **Lógica (Backend)**: Next.js (API Routes), Vercel Postgres
 -   **Banco de Dados**: PostgreSQL (via Vercel Postgres)
 -   **Ambiente de Desenvolvimento**: Node.js v18+
