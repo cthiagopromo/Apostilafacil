@@ -3,7 +3,7 @@
 
 import type { Block, QuizOption, VideoType } from '@/lib/types';
 import useProjectStore from '@/lib/store';
-import { cn } from '@/lib/utils';
+import { cn, resizeImage } from '@/lib/utils';
 import { Button } from './ui/button';
 import { GripVertical, Trash2, ArrowRightLeft, Copy, PlusCircle, Save, Upload } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
@@ -52,36 +52,33 @@ const BlockSettingsEditor = ({ block, onSave }: { block: Block, onSave: (e: Reac
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit before resize
             toast({
                 variant: 'destructive',
                 title: 'Imagem muito grande',
-                description: 'Por favor, escolha uma imagem com menos de 2MB.',
+                description: 'Por favor, escolha uma imagem com menos de 10MB.',
             });
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (loadEvent) => {
-            const base64Url = loadEvent.target?.result as string;
+        try {
+            const base64Url = await resizeImage(file, 1200, 0.8);
             updateBlockContent(block.id, { url: base64Url });
             toast({
                 title: 'Upload concluído',
-                description: 'A imagem foi incorporada com sucesso.',
+                description: 'A imagem foi processada e incorporada com sucesso.',
             });
-        };
-        reader.onerror = () => {
-             toast({
+        } catch (error) {
+            toast({
                 variant: 'destructive',
                 title: 'Erro no Upload',
-                description: 'Não foi possível ler o arquivo da imagem.',
+                description: 'Não foi possível processar a imagem.',
             });
         }
-        reader.readAsDataURL(file);
     };
 
     const renderContent = () => {

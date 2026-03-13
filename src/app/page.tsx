@@ -12,7 +12,7 @@ const HomeSkeleton = () => (
   <div className="w-full max-w-5xl mx-auto">
     <header className="text-center my-10">
         <div className="inline-block p-4 bg-primary/10 rounded-2xl mb-4">
-            <FileText className="h-12 w-12 text-primary" />
+            <FileText className="h-12 w-12 text-primary" suppressHydrationWarning />
         </div>
         <h1 className="text-5xl font-bold text-primary">Apostila Fácil</h1>
         <p className="text-xl text-muted-foreground mt-2">Crie, edite e exporte suas apostilas interativas com facilidade.</p>

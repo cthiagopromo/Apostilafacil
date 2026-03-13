@@ -204,9 +204,7 @@
 
   /* Main - remover todo padding */
   main,
-  main.p-4,
-  main.sm\\:p-8,
-  main.md\\:p-12 {
+  main.p-4 {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;

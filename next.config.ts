@@ -31,6 +31,10 @@ const config: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_IMAGE_HOST || 'imagedelivery.net',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
   },
@@ -51,6 +55,6 @@ const config: NextConfig = {
        },
     ]
   },
-};
+} as NextConfig;
 
 export default config;

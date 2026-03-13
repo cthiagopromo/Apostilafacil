@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { apostila_id: string } }
+  { params }: { params: Promise<{ apostila_id: string }> }
 ) {
   try {
-    const apostila_id = params.apostila_id;
+    const { apostila_id } = await params;
 
     if (!apostila_id) {
       return NextResponse.json({ error: 'ID da apostila é obrigatório' }, { status: 400 });

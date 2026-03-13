@@ -3,7 +3,7 @@
 
 import useProjectStore from '@/lib/store';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { cn, resizeImage } from '@/lib/utils';
 import { Check, Upload, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRef } from 'react';

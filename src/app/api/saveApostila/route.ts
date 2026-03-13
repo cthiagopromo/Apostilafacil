@@ -18,6 +18,10 @@ export async function POST(request: Request) {
       );
     `;
 
+    // Ensure columns exist if table was created previously without them
+    await db`ALTER TABLE apostilas ADD COLUMN IF NOT EXISTS font_heading TEXT`;
+    await db`ALTER TABLE apostilas ADD COLUMN IF NOT EXISTS font_body TEXT`;
+
     // Extrai as configurações de fonte do objeto de dados
     const fontHeading = data?.theme?.fontHeading || null;
     const fontBody = data?.theme?.fontBody || null;
