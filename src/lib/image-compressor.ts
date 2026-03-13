@@ -5,6 +5,8 @@
 // Referência: frontendtools.tech/blog/modern-image-optimization-techniques-2025
 // ============================================================================
 
+import { HandbookData } from './types';
+
 export interface ImageCompressionOptions {
   /** Largura máxima em pixels (padrão: 1600px) */
   maxWidth?: number;

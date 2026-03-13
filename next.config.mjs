@@ -1,14 +1,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    // Set ignoreBuildErrors to true only in development
-    ignoreBuildErrors: process.env.NODE_ENV === 'development',
-  },
-  eslint: {
-    // Set ignoreDuringBuilds to true only in development
-    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
-  },
   images: {
     remotePatterns: [
       {
