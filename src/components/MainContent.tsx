@@ -10,11 +10,17 @@ import { AddBlockModal } from './AddBlockModal';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
+import { useRef } from 'react';
+import { PageScrollButtons } from './PageScrollButtons';
+import { WatermarkOverlay } from './WatermarkOverlay';
+import { BrandLogoOverlay } from './BrandLogoOverlay';
+import { ContentBackgroundOverlay } from './ContentBackgroundOverlay';
 
 
 export default function MainContent() {
-  const { getActiveProject, reorderBlocks } = useProjectStore();
+  const { getActiveProject, reorderBlocks, handbookTheme } = useProjectStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const activeProject = getActiveProject();
 
@@ -63,42 +69,48 @@ export default function MainContent() {
           <h2 className="text-lg font-semibold text-foreground">{activeProject.title}</h2>
         )}
       </div>
-      <ScrollArea className="flex-1 bg-muted">
-        <div className={cn("mx-auto p-6 sm:p-8 lg:p-12", getContainerWidthClass())}>
-          {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
-            <DndContext
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-            >
-                <SortableContext
-                    items={activeProject.blocks.map(b => b.id)}
-                    strategy={verticalListSortingStrategy}
-                >
-                    {activeProject.blocks.map((block, index) => (
-                      <div key={block.id} className={cn(index > 0 && getBlockSpacingClass(index))}>
-                        <BlockEditor block={block} index={index}/>
-                      </div>
-                    ))}
-                </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="text-center text-muted-foreground py-16">
-              <div className="inline-flex items-center justify-center bg-muted dark:bg-secondary text-foreground rounded-full h-16 w-16 mb-4">
-                  <PlusCircle className="h-8 w-8 text-primary dark:text-foreground" />
+      <div className='flex-1 flex flex-col min-w-0 bg-transparent relative overflow-hidden'>
+      <ContentBackgroundOverlay />
+      <WatermarkOverlay />
+      <BrandLogoOverlay />
+      <ScrollArea ref={scrollAreaRef} className={cn("flex-1", (handbookTheme?.brandLogo?.enabled || handbookTheme?.contentBackground?.enabled) && "bg-transparent")} id="main-scroll-area">
+          <div className={cn("mx-auto p-6 sm:p-8 lg:p-12", getContainerWidthClass())}>
+            {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
+              <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+              >
+                  <SortableContext
+                      items={activeProject.blocks.map(b => b.id)}
+                      strategy={verticalListSortingStrategy}
+                  >
+                      {activeProject.blocks.map((block, index) => (
+                        <div key={block.id} className={cn(index > 0 && getBlockSpacingClass(index))}>
+                          <BlockEditor block={block} index={index}/>
+                        </div>
+                      ))}
+                  </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="text-center text-muted-foreground py-16">
+                <div className="inline-flex items-center justify-center bg-muted dark:bg-secondary text-foreground rounded-full h-16 w-16 mb-4">
+                    <PlusCircle className="h-8 w-8 text-primary dark:text-foreground" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-1">Comece adicionando um bloco</h2>
+                <p>Escolha entre texto, imagem, vídeo, botão ou quiz para<br/>criar sua apostila interativa.</p>
               </div>
-              <h2 className="text-xl font-semibold text-foreground mb-1">Comece adicionando um bloco</h2>
-              <p>Escolha entre texto, imagem, vídeo, botão ou quiz para<br/>criar sua apostila interativa.</p>
-            </div>
-          )}
+            )}
 
-          <div className="text-center mt-6">
-            <Button variant="outline" onClick={() => setIsModalOpen(true)}>
-              <PlusCircle className="mr-2" />
-              Adicionar Bloco
-            </Button>
+            <div className="text-center mt-6">
+              <Button variant="outline" onClick={() => setIsModalOpen(true)}>
+                <PlusCircle className="mr-2" />
+                Adicionar Bloco
+              </Button>
+            </div>
           </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
+        <PageScrollButtons scrollAreaRef={scrollAreaRef} />
+      </div>
     </div>
   );
 }

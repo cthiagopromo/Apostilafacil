@@ -48,12 +48,37 @@ export interface Block {
   content: BlockContent;
 }
 
+export interface WatermarkSettings {
+  enabled: boolean;
+  text: string;
+  opacity: number;
+  color: string;
+  pattern: 'single' | 'diagonal';
+  visibility: 'always' | 'screen' | 'print';
+}
+
+export interface BrandLogoSettings {
+  enabled: boolean;
+  imageUrl?: string; // base64
+  opacity: number;
+  visibility: 'always' | 'screen' | 'print';
+}
+
+export interface ContentBackgroundSettings {
+  enabled: boolean;
+  imageUrl?: string; // base64
+  opacity: number;
+}
+
 export interface Theme {
   colorPrimary: string;
   cover?: string; // URL da imagem de capa (base64)
   backCover?: string; // URL da imagem da contracapa (base64)
   fontHeading: string;
   fontBody: string;
+  watermark?: WatermarkSettings;
+  brandLogo?: BrandLogoSettings;
+  contentBackground?: ContentBackgroundSettings;
 }
 
 export interface LayoutSettings {

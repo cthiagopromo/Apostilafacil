@@ -12,6 +12,139 @@ const { aggressiveMinifyHtml, removeRedundantAttributes, minifyCss, minifyJs } =
 const { compactHandbookData } = dataCompressor;
 
 // ============================================================================
+// ANOTAÇÕES DO ESTUDANTE
+// ============================================================================
+
+const getNotesCss = (): string => `
+  .notes-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: white;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    z-index: 2000;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #ddd;
+    color: #333;
+    font-family: sans-serif;
+  }
+  .notes-panel.open {
+    right: 0;
+  }
+  .notes-header {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9f9f9;
+  }
+  .notes-content {
+    flex: 1;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .notes-textarea {
+    flex: 1;
+    width: 100%;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    resize: none;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    background: #fff;
+    color: #000;
+  }
+  .notes-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .notes-footer {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .notes-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    z-index: 900;
+    transition: transform 0.2s;
+  }
+  .notes-toggle-btn:hover {
+    transform: scale(1.05);
+  }
+  .notes-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+  }
+  
+  @media (max-width: 450px) {
+    .notes-panel {
+      width: 100%;
+      right: -100%;
+    }
+  }
+  @media print { .notes-manager, .notes-toggle-btn, .notes-panel { display: none !important; } }
+`;
+
+const getNotesHtml = (): string => `
+  <div id="notes-manager" class="no-print">
+    <div id="notes-toggle" class="notes-toggle-btn" title="Minhas Anotações">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/><path d="M9 18h6"/><path d="M9 14h6"/><path d="M9 10h1"/></svg>
+        <div id="global-notes-count" class="notes-indicator" style="display:none">0</div>
+    </div>
+    
+    <div id="notes-panel" class="notes-panel">
+      <div class="notes-header">
+        <h3 class="font-bold text-lg">Minhas Anotações</h3>
+        <button id="close-notes" class="p-1 hover:bg-gray-100 rounded">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="notes-content">
+        <p id="active-note-module" class="text-xs text-gray-500 mb-2 font-medium uppercase tracking-tight"></p>
+        <textarea id="note-text" class="notes-textarea" placeholder="Escreva suas anotações aqui..."></textarea>
+      </div>
+      <div class="notes-footer">
+        <button id="export-notes" class="btn btn-outline text-xs flex-1">Exportar (.txt)</button>
+        <button id="clear-notes" class="btn btn-ghost text-xs text-red-500">Limpar</button>
+      </div>
+    </div>
+  </div>
+`;
+
+// ============================================================================
 // DEDUPLICAÇÃO DE IMAGENS
 // ============================================================================
 
@@ -63,6 +196,11 @@ export const deduplicateImages = (handbookData: HandbookData): { data: HandbookD
     processed.theme.backCover = processImage(processed.theme.backCover);
   }
 
+  // Processar background de conteúdo
+  if (processed.theme.contentBackground?.imageUrl) {
+    processed.theme.contentBackground.imageUrl = processImage(processed.theme.contentBackground.imageUrl);
+  }
+
   // Processar imagens dos blocos
   for (const project of processed.projects) {
     for (const block of project.blocks) {
@@ -70,6 +208,11 @@ export const deduplicateImages = (handbookData: HandbookData): { data: HandbookD
         block.content.url = processImage(block.content.url);
       }
     }
+  }
+
+  // Processar logo da marca
+  if (processed.theme.brandLogo?.imageUrl) {
+    processed.theme.brandLogo.imageUrl = processImage(processed.theme.brandLogo.imageUrl);
   }
 
   return { data: processed, savings };
@@ -97,11 +240,188 @@ export const resetQuizStates = (handbookData: HandbookData): HandbookData => {
 };
 
 // ============================================================================
+// MARCA D'ÁGUA
+// ============================================================================
+
+const getWatermarkCss = (theme: Theme): string => {
+    const wm = theme.watermark;
+    if (!wm || !wm.enabled) return '';
+    
+    return `
+      .watermark-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: ${wm.opacity};
+        color: ${wm.color};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        overflow: hidden;
+      }
+      .watermark-pattern-diagonal {
+        position: absolute;
+        inset: -100%;
+        width: 300%;
+        height: 300%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 15vw;
+        transform: rotate(-25deg);
+      }
+      .watermark-text {
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      .watermark-single .watermark-text {
+        font-size: 8vw;
+        transform: rotate(-30deg);
+        border: 0.5vw solid currentColor;
+        padding: 2vw 4vw;
+        border-radius: 2vw;
+      }
+      .watermark-diagonal .watermark-text {
+        font-size: 3vw;
+      }
+      
+      @media print {
+        .watermark-overlay {
+          display: ${wm.visibility === 'screen' ? 'none' : 'flex'} !important;
+        }
+      }
+      @media screen {
+        .watermark-overlay {
+          display: ${wm.visibility === 'print' ? 'none' : 'flex'} !important;
+        }
+      }
+    `;
+};
+
+const getWatermarkHtml = (theme: Theme): string => {
+    const wm = theme.watermark;
+    if (!wm || !wm.enabled) return '';
+    
+    if (wm.pattern === 'diagonal') {
+        const patternHtml = Array.from({ length: 60 }).map(() => `<span class="watermark-text">${wm.text}</span>`).join('');
+        return `<div class="watermark-overlay watermark-diagonal"><div class="watermark-pattern-diagonal">${patternHtml}</div></div>`;
+    }
+    
+    return `<div class="watermark-overlay watermark-single"><span class="watermark-text">${wm.text}</span></div>`;
+};
+
+// ============================================================================
+// LOGO DA MARCA (BRANDING)
+// ============================================================================
+
+const getBrandLogoCss = (theme: Theme): string => {
+    const logo = theme.brandLogo;
+    if (!logo || !logo.enabled || !logo.imageUrl) return '';
+
+    return `
+      .brand-logo-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        select-none: none;
+        overflow: hidden;
+        z-index: 0;
+      }
+      .brand-logo-image {
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(rgba(255, 255, 255, ${1 - logo.opacity}), rgba(255, 255, 255, ${1 - logo.opacity})), url('${logo.imageUrl}');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      
+      @media print {
+        .brand-logo-overlay {
+          display: none !important;
+        }
+      }
+      @media screen {
+        .brand-logo-overlay {
+          display: ${logo.visibility === 'print' ? 'none' : 'block'} !important;
+        }
+      }
+    `;
+};
+
+const getBrandLogoHtml = (theme: Theme): string => {
+    const logo = theme.brandLogo;
+    if (!logo || !logo.enabled || !logo.imageUrl) return '';
+    return `<div class="brand-logo-overlay"><div class="brand-logo-image"></div></div>`;
+};
+
+// ============================================================================
+// CONTENT BACKGROUND
+// ============================================================================
+
+const getContentBackgroundCss = (theme: Theme): string => {
+    const cb = theme.contentBackground;
+    if (!cb || !cb.enabled || !cb.imageUrl) return '';
+    
+    const overlayColor = `rgba(255, 255, 255, ${1 - cb.opacity})`;
+    const backgroundImage = `linear-gradient(${overlayColor}, ${overlayColor}), url('${cb.imageUrl}')`;
+
+    return `
+      /* Estratégia Global: Fundo no Body */
+      body {
+        background-image: ${backgroundImage} !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* No PDF, precisamos que cada seção também tenha o fundo se o body fixed falhar */
+      @media print {
+        .module-section {
+          background-image: ${backgroundImage} !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+          position: relative;
+        }
+      }
+
+      /* Forçar todos os containers a serem transparentes */
+      #handbook-root, 
+      .module-section, 
+      .module-header, 
+      .module-content, 
+      .module-footer,
+      .prose,
+      .card,
+      .quiz-card,
+      div[class*="bg-white"],
+      div[class*="bg-card"],
+      div[class*="bg-secondary"] {
+        background-color: transparent !important;
+        background: transparent !important;
+      }
+    `;
+};
+
+const getContentBackgroundHtml = (theme: Theme): string => {
+    const cb = theme.contentBackground;
+    if (!cb || !cb.enabled || !cb.imageUrl) return '';
+    return `<div class="content-background-overlay no-print"><div class="content-background-image"></div></div>`;
+};
+
+// ============================================================================
 // CLASSES CSS CONSOLIDADAS (para reduzir repetição no HTML)
 // ============================================================================
 
 const consolidatedCss = `
-.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--primary));color:hsl(var(--primary-foreground));transition:background-color .15s ease}.btn-primary:hover{background:hsl(var(--primary)/.9)}.btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-outline:hover{background:hsl(var(--accent))}.btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid transparent;background:transparent;color:hsl(var(--foreground));transition:background-color .15s ease}.btn-ghost:hover{background:hsl(var(--accent))}.btn-icon{height:2.5rem;width:2.5rem;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-icon:hover{background:hsl(var(--accent))}.btn-icon-sm{height:2.25rem;width:2.25rem;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-icon-sm:hover{background:hsl(var(--accent))}.btn-large{height:2.75rem;padding:0 2rem;font-size:.875rem}.btn-large svg{width:1.25rem;height:1.25rem;margin-right:.5rem}.btn-nav{height:2.5rem;padding:0 1rem}.card{border-radius:.75rem;border:1px solid hsl(var(--border));background:hsl(var(--card));color:hsl(var(--card-foreground));box-shadow:0 1px 3px rgba(0,0,0,.1)}.card-header{padding:1rem;border-bottom:1px solid hsl(var(--border))}.card-content{padding:1rem}.card-footer{padding:1rem;border-top:1px solid hsl(var(--border))}.input{display:flex;width:100%;height:2.5rem;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));padding:0 .75rem;font-size:.875rem}.input:focus{outline:2px solid hsl(var(--ring));outline-offset:2px}.label{display:block;font-size:.875rem;font-weight:500;margin-bottom:.5rem}.quiz-card{border-radius:.75rem;border:1px solid hsl(var(--border));background:hsl(var(--muted)/.3);color:hsl(var(--card-foreground));box-shadow:0 1px 3px rgba(0,0,0,.1)}.quiz-question{font-size:1.25rem;font-weight:600;margin-bottom:.5rem}.quiz-instruction{font-size:.875rem;color:hsl(var(--muted-foreground))}.quiz-options{display:grid;gap:.5rem;margin-top:1rem}.quiz-option{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:.375rem;border:1px solid hsl(var(--border));transition:all .15s ease;cursor:pointer}.quiz-option:hover{background:hsl(var(--accent))}.quiz-option-label{flex:1;cursor:pointer}.quiz-option .check-icon,.quiz-option .x-icon{display:none;width:1.25rem;height:1.25rem;flex-shrink:0}.radio-group-item{height:1rem;width:1rem;border-radius:50%;border:2px solid hsl(var(--border));cursor:pointer;flex-shrink:0}.retry-btn{margin-top:.5rem}.prose{max-width:none;overflow-wrap:break-word;word-wrap:break-word;word-break:break-word;hyphens:auto}.prose a{word-break:break-all}.prose :where(p):not(:where([class~="not-prose"])){margin-top:1.25em;margin-bottom:1.25em}.prose :where(h1):not(:where([class~="not-prose"])){font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h2):not(:where([class~="not-prose"])){font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h3):not(:where([class~="not-prose"])){font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(img):not(:where([class~="not-prose"])){margin-top:2em;margin-bottom:2em;max-width:100%;height:auto}.prose :where(figure):not(:where([class~="not-prose"])){margin-top:2em;margin-bottom:2em}.prose :where(blockquote):not(:where([class~="not-prose"])){margin-top:1.6em;margin-bottom:1.6em;padding-left:1em;border-left-width:.25rem;border-left-color:hsl(var(--primary));font-style:italic}.img-wrapper{display:flex;justify-content:center}.img-figure{display:flex;flex-direction:column;align-items:center;gap:.25rem}.img-element{border-radius:.375rem;box-shadow:0 1px 3px rgba(0,0,0,.1);max-width:100%;height:auto}.img-caption{font-size:.875rem;text-align:center;font-style:italic;margin-top:.5rem;color:hsl(var(--muted-foreground))}.quote-wrapper{position:relative}.quote-block{padding:1rem;background:hsl(var(--muted)/.5);border-left:4px solid hsl(var(--primary));border-top-right-radius:.5rem;border-bottom-right-radius:.5rem;font-size:1.125rem;font-style:italic;color:hsl(var(--foreground)/.8);margin:0}.quote-block .quote-icon{position:absolute;top:-.75rem;left:-.5rem;width:2.5rem;height:2.5rem;color:hsl(var(--primary)/.2)}.video-container{position:relative}.video-iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:.375rem}.video-print-placeholder{display:none;padding:1rem;background:hsl(var(--muted)/.5);border:2px dashed hsl(var(--border));border-radius:.5rem;align-items:center;gap:1rem}.video-print-placeholder .video-print-content{flex:1}.video-print-title{font-weight:600;margin-bottom:.25rem}.video-print-subtitle{font-size:.875rem;color:hsl(var(--muted-foreground))}.video-link{font-size:.875rem;margin-top:.5rem}.video-link a{color:hsl(var(--primary));text-decoration:underline}.video-error{color:hsl(var(--destructive))}.btn-wrapper{display:flex;justify-content:center}.module-section{display:none}.module-section:not(.cover-section):not(.back-cover-section){display:none}.cover-section{width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}.cover-image{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1}.cover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:2}.cover-content{position:relative;z-index:3;color:#fff;padding:2rem}.back-cover-section{display:none}.block-spacer{height:2rem}#handbook-root{margin-top:0;display:block}.main-content{padding:1rem}@media(min-width:640px){.main-content{padding:2rem}}@media(min-width:768px){.main-content{padding:3rem}}.print-content{padding:2rem}@media(min-width:640px){.print-content{padding:3rem}}@media(min-width:768px){.print-content{padding:4rem}}#handbook-root{padding:2rem}@media(min-width:640px){#handbook-root{padding:3rem}}@media(min-width:768px){#handbook-root{padding:4rem}}.module-header{text-align:center;margin-bottom:3rem}.module-title{font-size:2rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:2px solid hsl(var(--border))}.module-description{font-size:1rem;color:hsl(var(--muted-foreground))}.module-content{display:grid;gap:1.5rem}.module-footer{margin-top:2rem;padding-top:1.5rem;border-top:1px solid hsl(var(--border));display:flex;justify-content:space-between;align-items:center}.module-progress{font-size:.875rem;color:hsl(var(--muted-foreground))}.module-nav-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease,opacity .15s ease;padding:.5rem 1rem;height:2.5rem;cursor:pointer}.module-nav-btn:hover:not(:disabled){background:hsl(var(--accent))}.module-nav-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}.module-nav-btn svg{width:1rem;height:1rem}.floating-nav-btn{width:100%;text-align:left;padding:.5rem;font-size:.875rem;border-radius:.375rem;background:transparent;border:none;transition:background-color .15s ease;cursor:pointer}.floating-nav-btn:hover{background:hsl(var(--primary)/.1)}.floating-nav-btn.active-module{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}.accessibility-toolbar{display:flex;gap:.5rem}body,.prose{font-family:'Inter',system-ui,sans-serif}h1,h2,h3,h4,h5,h6,.prose h1,.prose h2,.prose h3{font-family:'Inter',system-ui,sans-serif}@media print{@page{size:A4;margin:2cm}@page cover{margin:0!important}*,*::before,*::after{box-sizing:border-box!important}.no-print,.no-print *,header,.accessibility-toolbar,#floating-nav-container,footer.no-print,.module-nav-btn{display:none!important;visibility:hidden!important;height:0!important;width:0!important;overflow:hidden!important}html,body{background:#fff!important;color:#000!important;font-size:11pt!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}#printable-content,main.main-content{width:100%!important;margin:0!important;padding:0!important;display:block!important}#printing-modal{display:none!important}.main-content,.print-content{padding:0!important}#handbook-root,div#handbook-root{box-shadow:none!important;border:none!important;border-radius:0!important;background:#fff!important;margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.cover-section,section.cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-after:always!important;position:relative!important;left:0!important;top:0!important}.cover-section .cover-image,.cover-section img{width:100%!important;height:100%!important;object-fit:cover!important}.cover-section .cover-content,.cover-section button{display:none!important}.module-section,section.module-section{display:block!important;page-break-before:always!important;width:100%!important;padding-top:0!important}.module-section:first-of-type{page-break-before:auto!important}.cover-section+.module-section,section.cover-section+section.module-section{page-break-before:auto!important}.module-section:last-of-type{page-break-after:auto!important}.back-cover-section,section.back-cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-before:always!important}.back-cover-section img,.back-cover-image{width:100%!important;height:100%!important;object-fit:cover!important}.video-player-export{display:none!important}.video-print-placeholder-export{display:block!important}.video-container .video-iframe{display:none!important}.video-container .video-print-placeholder{display:flex!important;break-inside:avoid;page-break-inside:avoid!important}h1,h2,h3,h4,h5,h6{page-break-after:avoid!important;break-after:avoid!important}.quiz-card,.video-container,.img-figure,blockquote,figure{page-break-inside:avoid!important;break-inside:avoid!important}a{color:#000!important;text-decoration:none!important}}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--primary));color:hsl(var(--primary-foreground));transition:background-color .15s ease}.btn-primary:hover{background:hsl(var(--primary)/.9)}.btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-outline:hover{background:hsl(var(--accent))}.btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid transparent;background:transparent;color:hsl(var(--foreground));transition:background-color .15s ease}.btn-ghost:hover{background:hsl(var(--accent))}.btn-icon{height:2.5rem;width:2.5rem;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-icon:hover{background:hsl(var(--accent))}.btn-icon-sm{height:2.25rem;width:2.25rem;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease}.btn-icon-sm:hover{background:hsl(var(--accent))}.btn-large{height:2.75rem;padding:0 2rem;font-size:.875rem}.btn-large svg{width:1.25rem;height:1.25rem;margin-right:.5rem}.btn-nav{height:2.5rem;padding:0 1rem}.card{border-radius:.75rem;border:1px solid hsl(var(--border));background:hsl(var(--card)/var(--card-opacity, 1));color:hsl(var(--card-foreground));box-shadow:0 1px 3px rgba(0,0,0,.1)}.card-header{padding:1rem;border-bottom:1px solid hsl(var(--border))}.card-content{padding:1rem}.card-footer{padding:1rem;border-top:1px solid hsl(var(--border))}.input{display:flex;width:100%;height:2.5rem;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));padding:0 .75rem;font-size:.875rem}.input:focus{outline:2px solid hsl(var(--ring));outline-offset:2px}.label{display:block;font-size:.875rem;font-weight:500;margin-bottom:.5rem}.quiz-card{border-radius:.75rem;border:1px solid hsl(var(--border));background:hsl(var(--muted)/.3);color:hsl(var(--card-foreground));box-shadow:0 1px 3px rgba(0,0,0,.1)}.quiz-question{font-size:1.25rem;font-weight:600;margin-bottom:.5rem}.quiz-instruction{font-size:.875rem;color:hsl(var(--muted-foreground))}.quiz-options{display:grid;gap:.5rem;margin-top:1rem}.quiz-option{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:.375rem;border:1px solid hsl(var(--border));transition:all .15s ease;cursor:pointer}.quiz-option:hover{background:hsl(var(--accent))}.quiz-option-label{flex:1;cursor:pointer}.quiz-option .check-icon,.quiz-option .x-icon{display:none;width:1.25rem;height:1.25rem;flex-shrink:0}.radio-group-item{height:1rem;width:1rem;border-radius:50%;border:2px solid hsl(var(--border));cursor:pointer;flex-shrink:0}.retry-btn{margin-top:.5rem}.prose{max-width:none;overflow-wrap:break-word;word-wrap:break-word;word-break:break-word;hyphens:auto}.prose a{word-break:break-all}.prose :where(p):not(:where([class~="not-prose"])){margin-top:1.25em;margin-bottom:1.25em}.prose :where(h1):not(:where([class~="not-prose"])){font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h2):not(:where([class~="not-prose"])){font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h3):not(:where([class~="not-prose"])){font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(img):not(:where([class~="not-prose"])){margin-top:2em;margin-bottom:2em;max-width:100%;height:auto}.prose :where(figure):not(:where([class~="not-prose"])){margin-top:2em;margin-bottom:2em}.prose :where(blockquote):not(:where([class~="not-prose"])){margin-top:1.6em;margin-bottom:1.6em;padding-left:1em;border-left-width:.25rem;border-left-color:hsl(var(--primary));font-style:italic}.img-wrapper{display:flex;justify-content:center}.img-figure{display:flex;flex-direction:column;align-items:center;gap:.25rem}.img-element{border-radius:.375rem;box-shadow:0 1px 3px rgba(0,0,0,.1);max-width:100%;height:auto}.img-caption{font-size:.875rem;text-align:center;font-style:italic;margin-top:.5rem;color:hsl(var(--muted-foreground))}.quote-wrapper{position:relative}.quote-block{padding:1rem;background:hsl(var(--muted)/.5);border-left:4px solid hsl(var(--primary));border-top-right-radius:.5rem;border-bottom-right-radius:.5rem;font-size:1.125rem;font-style:italic;color:hsl(var(--foreground)/.8);margin:0}.quote-block .quote-icon{position:absolute;top:-.75rem;left:-.5rem;width:2.5rem;height:2.5rem;color:hsl(var(--primary)/.2)}.video-container{position:relative}.video-iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:.375rem}.video-print-placeholder{display:none;padding:1rem;background:hsl(var(--muted)/.5);border:2px dashed hsl(var(--border));border-radius:.5rem;align-items:center;gap:1rem}.video-print-placeholder .video-print-content{flex:1}.video-print-title{font-weight:600;margin-bottom:.25rem}.video-print-subtitle{font-size:.875rem;color:hsl(var(--muted-foreground))}.video-link{font-size:.875rem;margin-top:.5rem}.video-link a{color:hsl(var(--primary));text-decoration:underline}.video-error{color:hsl(var(--destructive))}.btn-wrapper{display:flex;justify-content:center}.module-section{display:none}.module-section:not(.cover-section):not(.back-cover-section){display:none}.cover-section{width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}.cover-image{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1}.cover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:2}.cover-content{position:relative;z-index:3;color:#fff;padding:2rem}.back-cover-section{display:none}.block-spacer{height:2rem}#handbook-root{margin-top:0;display:block}.main-content{padding:1rem}@media(min-width:640px){.main-content{padding:2rem}}@media(min-width:768px){.main-content{padding:3rem}}.print-content{padding:2rem}@media(min-width:640px){.print-content{padding:3rem}}@media(min-width:768px){.print-content{padding:4rem}}#handbook-root{padding:2rem}@media(min-width:640px){#handbook-root{padding:3rem}}@media(min-width:768px){#handbook-root{padding:4rem}}.module-header{text-align:center;margin-bottom:3rem}.module-title{font-size:2rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:2px solid hsl(var(--border))}.module-description{font-size:1rem;color:hsl(var(--muted-foreground))}.module-content{display:grid;gap:1.5rem}.module-footer{margin-top:2rem;padding-top:1.5rem;border-top:1px solid hsl(var(--border));display:flex;justify-content:space-between;align-items:center}.module-progress{font-size:.875rem;color:hsl(var(--muted-foreground))}.module-nav-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;font-weight:500;border-radius:.375rem;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));transition:background-color .15s ease,opacity .15s ease;padding:.5rem 1rem;height:2.5rem;cursor:pointer}.module-nav-btn:hover:not(:disabled){background:hsl(var(--accent))}.module-nav-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}.module-nav-btn svg{width:1rem;height:1rem}.floating-nav-btn{width:100%;text-align:left;padding:.5rem;font-size:.875rem;border-radius:.375rem;background:transparent;border:none;transition:background-color .15s ease;cursor:pointer}.floating-nav-btn:hover{background:hsl(var(--primary)/.1)}.floating-nav-btn.active-module{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}.accessibility-toolbar{display:flex;gap:.5rem}body,.prose{font-family:'Inter',system-ui,sans-serif}h1,h2,h3,h4,h5,h6,.prose h1,.prose h2,.prose h3{font-family:'Inter',system-ui,sans-serif}@media print{@page{size:A4;margin:2cm}@page cover{margin:0!important}*,*::before,*::after{box-sizing:border-box!important}.no-print,.no-print *,header,.accessibility-toolbar,#floating-nav-container,footer.no-print,.module-nav-btn{display:none!important;visibility:hidden!important;height:0!important;width:0!important;overflow:hidden!important}html,body{background:#fff!important;color:#000!important;font-size:11pt!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}#printable-content,main.main-content{width:100%!important;margin:0!important;padding:0!important;display:block!important}#printing-modal{display:none!important}.main-content,.print-content{padding:0!important}#handbook-root,div#handbook-root{box-shadow:none!important;border:none!important;border-radius:0!important;background:#fff!important;margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.cover-section,section.cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-after:always!important;position:relative!important;left:0!important;top:0!important}.cover-section .cover-image,.cover-section img{width:100%!important;height:100%!important;object-fit:cover!important}.cover-section .cover-content,.cover-section button{display:none!important}.module-section,section.module-section{display:block!important;page-break-before:always!important;width:100%!important;padding-top:0!important}.module-section:first-of-type{page-break-before:auto!important}.cover-section+.module-section,section.cover-section+section.module-section{page-break-before:auto!important}.module-section:last-of-type{page-break-after:auto!important}.back-cover-section,section.back-cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-before:always!important}.back-cover-section img,.back-cover-image{width:100%!important;height:100%!important;object-fit:cover!important}.video-player-export{display:none!important}.video-print-placeholder-export{display:block!important}.video-container .video-iframe{display:none!important}.video-container .video-print-placeholder{display:flex!important;break-inside:avoid;page-break-inside:avoid!important}h1,h2,h3,h4,h5,h6{page-break-after:avoid!important;break-after:avoid!important}.quiz-card,.video-container,.img-figure,blockquote,figure{page-break-inside:avoid!important;break-inside:avoid!important}a{color:#000!important;text-decoration:none!important}}
 `;
 
 
@@ -356,6 +676,114 @@ const getInteractiveScript = (theme: Theme): string => {
             } else {
                 showModule(0);
             }
+
+            // --- SISTEMA DE ANOTAÇÕES ---
+            const notesToggle = document.getElementById('notes-toggle');
+            const notesPanel = document.getElementById('notes-panel');
+            const closeNotes = document.getElementById('close-notes');
+            const noteTextarea = document.getElementById('note-text') as HTMLTextAreaElement;
+            const activeNoteModuleLabel = document.getElementById('active-note-module');
+            const exportNotesBtn = document.getElementById('export-notes');
+            const clearNotesBtn = document.getElementById('clear-notes');
+            const globalNotesCount = document.getElementById('global-notes-count');
+
+            const getNoteKey = (moduleId: string) => `note_${handbookData.id}_${moduleId}`;
+
+            const updateNotesIndicator = () => {
+                let count = 0;
+                modules.forEach((m, idx) => {
+                    const id = (m as HTMLElement).dataset.moduleId || '';
+                    if (localStorage.getItem(getNoteKey(id))) {
+                        count++;
+                    }
+                });
+                if (globalNotesCount) {
+                    globalNotesCount.style.display = count > 0 ? 'flex' : 'none';
+                    globalNotesCount.textContent = count.toString();
+                }
+            };
+
+            const loadActiveNote = () => {
+                const currentModule = modules[currentModuleIndex] as HTMLElement;
+                const moduleId = currentModule.dataset.moduleId || '';
+                const moduleTitle = currentModule.querySelector('.module-title')?.textContent || '';
+                
+                if (activeNoteModuleLabel) activeNoteModuleLabel.textContent = moduleId ? `MÓDULO: ${moduleTitle}` : '';
+                noteTextarea.value = localStorage.getItem(getNoteKey(moduleId)) || '';
+            };
+
+            if (notesToggle && notesPanel) {
+                notesToggle.addEventListener('click', () => {
+                    loadActiveNote();
+                    notesPanel.classList.toggle('open');
+                });
+            }
+
+            if (closeNotes && notesPanel) {
+                closeNotes.addEventListener('click', () => {
+                    notesPanel.classList.remove('open');
+                });
+            }
+
+            noteTextarea.addEventListener('input', () => {
+                const currentModule = modules[currentModuleIndex] as HTMLElement;
+                const moduleId = currentModule.dataset.moduleId || '';
+                const val = noteTextarea.value.trim();
+                
+                if (val) {
+                    localStorage.setItem(getNoteKey(moduleId), val);
+                } else {
+                    localStorage.removeItem(getNoteKey(moduleId));
+                }
+                updateNotesIndicator();
+            });
+
+            if (exportNotesBtn) {
+                exportNotesBtn.addEventListener('click', () => {
+                    let fullText = `ANOTAÇÕES: ${handbookData.title}\n`;
+                    fullText += `Gerado em: ${new Date().toLocaleString()}\n\n`;
+                    
+                    let hasNotes = false;
+                    modules.forEach((m, idx) => {
+                        const id = (m as HTMLElement).dataset.moduleId || '';
+                        const title = (m as HTMLElement).querySelector('.module-title')?.textContent || '';
+                        const note = localStorage.getItem(getNoteKey(id));
+                        if (note) {
+                            hasNotes = true;
+                            fullText += `--- MÓDULO ${idx + 1}: ${title} ---\n`;
+                            fullText += `${note}\n\n`;
+                        }
+                    });
+
+                    if (!hasNotes) {
+                        alert('Nenhuma anotação encontrada para exportar.');
+                        return;
+                    }
+
+                    const blob = new Blob([fullText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `anotacoes-${handbookData.title.toLowerCase().replace(/\\s/g, '-')}.txt`;
+                    a.click();
+                });
+            }
+
+            if (clearNotesBtn) {
+                clearNotesBtn.addEventListener('click', () => {
+                    if (confirm('Deseja limpar todas as suas anotações desta apostila?')) {
+                        modules.forEach((m) => {
+                            const id = (m as HTMLElement).dataset.moduleId || '';
+                            localStorage.removeItem(getNoteKey(id));
+                        });
+                        noteTextarea.value = '';
+                        updateNotesIndicator();
+                    }
+                });
+            }
+
+            updateNotesIndicator();
+            // --- FIM SISTEMA DE ANOTAÇÕES ---
         });
     };
     return `(${scriptContent.toString()})()`;
@@ -444,11 +872,33 @@ const renderBlockToHtml = (block: Block): string => {
     }
 };
 
-const renderProjectsToHtml = (projects: Project[]): string => {
+const renderProjectsToHtml = (projects: Project[], theme: Theme): string => {
     return projects.map((project, index) => {
         const blocksHtml = project.blocks.map((block) => `<div data-block-id="${block.id}"><div class="block-spacer"></div>${renderBlockToHtml(block)}</div>`).join('');
         
-        return `<section class="module-section" data-module-id="${project.id}"><header class="module-header"><h2 class="module-title">${project.title}</h2><p class="module-description">${project.description}</p></header><div class="module-content">${blocksHtml}</div><footer class="module-footer"><button data-direction="prev" class="btn btn-outline btn-nav module-nav-btn">${prevArrowSvg}Módulo Anterior</button><span class="module-progress">Módulo ${index + 1} de ${projects.length}</span><button data-direction="next" class="btn btn-primary btn-nav module-nav-btn">Próximo Módulo${nextArrowSvg}</button></footer></section>`;
+        const brandLogoHtml = theme.brandLogo?.enabled && theme.brandLogo?.imageUrl ? `
+            <img 
+                src="${theme.brandLogo.imageUrl}" 
+                alt="Logo" 
+                class="brand-logo-print" 
+                style="position: absolute; top: 1cm; right: 1cm; max-width: 3cm; max-height: 1.5cm; object-fit: contain; z-index: 10; opacity: ${theme.brandLogo.opacity};"
+            />
+        ` : '';
+
+        return `
+            <section class="module-section" data-module-id="${project.id}" style="position: relative;">
+                ${brandLogoHtml}
+                <header class="module-header">
+                    <h2 class="module-title">${project.title}</h2>
+                    <p class="module-description">${project.description}</p>
+                </header>
+                <div class="module-content">${blocksHtml}</div>
+                <footer class="module-footer">
+                    <button data-direction="prev" class="btn btn-outline btn-nav module-nav-btn">${prevArrowSvg}Módulo Anterior</button>
+                    <span class="module-progress">Módulo ${index + 1} de ${projects.length}</span>
+                    <button data-direction="next" class="btn btn-primary btn-nav module-nav-btn">Próximo Módulo${nextArrowSvg}</button>
+                </footer>
+            </section>`;
     }).join('');
 };
 
@@ -457,7 +907,7 @@ const renderProjectsToHtml = (projects: Project[]): string => {
 // ============================================================================
 
 const getOptimizedCss = (theme: Theme): string => {
-  return `:root{--background:240 5% 96%;--foreground:222.2 84% 4.9%;--card:0 0% 100%;--card-foreground:222.2 84% 4.9%;--popover:0 0% 100%;--popover-foreground:0 0% 3.9%;--primary:${theme.colorPrimary};--primary-foreground:0 0% 98%;--secondary:210 40% 98%;--secondary-foreground:222.2 47.4% 11.2%;--muted:210 40% 96.1%;--muted-foreground:215 20.2% 65.1%;--accent:210 40% 96.1%;--accent-foreground:222.2 47.4% 11.2%;--destructive:0 84.2% 60.2%;--destructive-foreground:0 0% 98%;--border:214 31.8% 91.4%;--input:214 31.8% 91.4%;--ring:${theme.colorPrimary};--radius:.75rem;--font-heading:'Inter',system-ui,sans-serif;--font-body:'Inter',system-ui,sans-serif}.dark{--background:222.2 84% 4.9%;--foreground:210 40% 98%;--card:222.2 84% 4.9%;--card-foreground:210 40% 98%;--popover:222.2 84% 4.9%;--popover-foreground:210 40% 98%;--primary:217 91% 65%;--primary-foreground:222.2 47.4% 11.2%;--secondary:217.2 32.6% 17.5%;--secondary-foreground:210 40% 98%;--muted:217.2 32.6% 17.5%;--muted-foreground:215 20.2% 65.1%;--accent:217.2 32.6% 17.5%;--accent-foreground:210 40% 98%;--destructive:0 62.8% 30.6%;--destructive-foreground:210 40% 98%;--border:217.2 32.6% 17.5%;--input:217.2 32.6% 17.5%;--ring:217.2 32.6% 17.5%}body.high-contrast{background-color:#000!important;color:#fff!important}body.high-contrast *{color:#fff!important}body.high-contrast .bg-card,body.high-contrast .bg-muted\\/30,body.high-contrast .bg-primary{background-color:#000!important;border:1px solid #fff}body.high-contrast .text-primary{color:#ff0!important}body.high-contrast .border-primary,body.high-contrast .quiz-option.bg-primary\\/10{border-color:#ff0!important}body.high-contrast a,body.high-contrast .text-primary,body.high-contrast .check-icon{color:#ff0!important}body.high-contrast .radio-group-item{border-color:#fff!important}body.high-contrast .check-icon{fill:#ff0!important}body,.prose{font-family:var(--font-body)}h1,h2,h3,h4,h5,h6,.prose h1,.prose h2,.prose h3{font-family:var(--font-heading)}.module-section:not(.cover-section){display:none}.video-player-export{display:block}.video-print-placeholder-export{display:none}#handbook-root{margin-top:0;display:block}.cover-section{width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}.cover-image{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1}.cover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:2}.cover-content{position:relative;z-index:3;color:#fff;padding:2rem}.back-cover-section{display:none}.main-content{padding:1rem}@media(min-width:640px){.main-content{padding:2rem}}@media(min-width:768px){.main-content{padding:3rem}}.print-content{padding:2rem}@media(min-width:640px){.print-content{padding:3rem}}@media(min-width:768px){.print-content{padding:4rem}}#handbook-root{padding:2rem}@media(min-width:640px){#handbook-root{padding:3rem}}@media(min-width:768px){#handbook-root{padding:4rem}}@media print{@page{size:A4;margin:2cm}@page cover{margin:0!important}*,*::before,*::after{box-sizing:border-box!important}.no-print,.no-print *,header,.accessibility-toolbar,#floating-nav-container,footer.no-print,button.no-print,.module-nav-btn{display:none!important;visibility:hidden!important;height:0!important;width:0!important;overflow:hidden!important}html,body{background:#fff!important;color:#000!important;font-size:11pt!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}#printable-content,main.main-content{width:100%!important;margin:0!important;padding:0!important;display:block!important}#printing-modal{display:none!important}.main-content,.print-content{padding:0!important}#handbook-root,div#handbook-root{box-shadow:none!important;border:none!important;border-radius:0!important;background:#fff!important;margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.cover-section,section.cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-after:always!important;position:relative!important;left:0!important;top:0!important}.cover-section .cover-image,.cover-section img{width:100%!important;height:100%!important;object-fit:cover!important}.cover-section .cover-content,.cover-section button{display:none!important}.module-section,section.module-section{display:block!important;page-break-before:always!important;width:100%!important;padding-top:0!important}.module-section:first-of-type{page-break-before:auto!important}.cover-section+.module-section,section.cover-section+section.module-section{page-break-before:auto!important}.module-section:last-of-type{page-break-after:auto!important}.back-cover-section,section.back-cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-before:always!important}.back-cover-section img,.back-cover-image{width:100%!important;height:100%!important;object-fit:cover!important}.video-player-export{display:none!important}.video-print-placeholder-export{display:block!important}.video-container .video-iframe{display:none!important}.video-container .video-print-placeholder{display:flex!important;break-inside:avoid;page-break-inside:avoid!important}h1,h2,h3,h4,h5,h6{page-break-after:avoid!important;break-after:avoid!important}.quiz-card,.video-container,.img-figure,blockquote,figure{page-break-inside:avoid!important;break-inside:avoid!important}a{color:#000!important;text-decoration:none!important}}${consolidatedCss}`;
+  return `:root{--background:240 5% 96%;--foreground:222.2 84% 4.9%;--card:0 0% 100%;--card-foreground:222.2 84% 4.9%;--popover:0 0% 100%;--popover-foreground:0 0% 3.9%;--primary:${theme.colorPrimary};--primary-foreground:0 0% 98%;--secondary:210 40% 98%;--secondary-foreground:222.2 47.4% 11.2%;--muted:210 40% 96.1%;--muted-foreground:215 20.2% 65.1%;--accent:210 40% 96.1%;--accent-foreground:222.2 47.4% 11.2%;--destructive:0 84.2% 60.2%;--destructive-foreground:0 0% 98%;--border:214 31.8% 91.4%;--input:214 31.8% 91.4%;--ring:${theme.colorPrimary};--radius:.75rem;--font-heading:'Inter',system-ui,sans-serif;--font-body:'Inter',system-ui,sans-serif}.dark{--background:222.2 84% 4.9%;--foreground:210 40% 98%;--card:222.2 84% 4.9%;--card-foreground:210 40% 98%;--popover:222.2 84% 4.9%;--popover-foreground:210 40% 98%;--primary:217 91% 65%;--primary-foreground:222.2 47.4% 11.2%;--secondary:217.2 32.6% 17.5%;--secondary-foreground:210 40% 98%;--muted:217.2 32.6% 17.5%;--muted-foreground:215 20.2% 65.1%;--accent:217.2 32.6% 17.5%;--accent-foreground:210 40% 98%;--destructive:0 62.8% 30.6%;--destructive-foreground:210 40% 98%;--border:217.2 32.6% 17.5%;--input:217.2 32.6% 17.5%;--ring:217.2 32.6% 17.5%}body.high-contrast{background-color:#000!important;color:#fff!important}body.high-contrast *{color:#fff!important}body.high-contrast .bg-card,body.high-contrast .bg-muted\\/30,body.high-contrast .bg-primary{background-color:#000!important;border:1px solid #fff}body.high-contrast .text-primary{color:#ff0!important}body.high-contrast .border-primary,body.high-contrast .quiz-option.bg-primary\\/10{border-color:#ff0!important}body.high-contrast a,body.high-contrast .text-primary,body.high-contrast .check-icon{color:#ff0!important}body.high-contrast .radio-group-item{border-color:#fff!important}body.high-contrast .check-icon{fill:#ff0!important}body,.prose{font-family:var(--font-body)}h1,h2,h3,h4,h5,h6,.prose h1,.prose h2,.prose h3{font-family:var(--font-heading)}.module-section:not(.cover-section){display:none}.video-player-export{display:block}.video-print-placeholder-export{display:none}#handbook-root{margin-top:0;display:block}.cover-section{width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}.cover-image{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1}.cover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:2}.cover-content{position:relative;z-index:3;color:#fff;padding:2rem}.back-cover-section{display:none}.main-content{padding:1rem}@media(min-width:640px){.main-content{padding:2rem}}@media(min-width:768px){.main-content{padding:3rem}}.print-content{padding:2rem}@media(min-width:640px){.print-content{padding:3rem}}@media(min-width:768px){.print-content{padding:4rem}}#handbook-root{padding:2rem}@media(min-width:640px){#handbook-root{padding:3rem}}@media(min-width:768px){#handbook-root{padding:4rem}}@media print{@page{size:A4;margin:2cm}@page cover{margin:0!important}*,*::before,*::after{box-sizing:border-box!important}.no-print,.no-print *,header,.accessibility-toolbar,#floating-nav-container,footer.no-print,button.no-print,.module-nav-btn{display:none!important;visibility:hidden!important;height:0!important;width:0!important;overflow:hidden!important}html,body{background-color:transparent!important;color:#000!important;font-size:11pt!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}#printable-content,main.main-content{width:100%!important;margin:0!important;padding:0!important;display:block!important}#printing-modal{display:none!important}.main-content,.print-content{padding:0!important}#handbook-root,div#handbook-root{box-shadow:none!important;border:none!important;border-radius:0!important;background-color:transparent!important;margin:0!important;padding:0!important;width:100%!important;max-width:none!important}.cover-section,section.cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-after:always!important;position:relative!important;left:0!important;top:0!important}.cover-section .cover-image,.cover-section img{width:100%!important;height:100%!important;object-fit:cover!important}.cover-section .cover-content,.cover-section button{display:none!important}.module-section,section.module-section{display:block!important;page-break-before:always!important;width:100%!important;padding-top:0!important}.module-section:first-of-type{page-break-before:auto!important}.cover-section+.module-section,section.cover-section+section.module-section{page-break-before:auto!important}.module-section:last-of-type{page-break-after:auto!important}.back-cover-section,section.back-cover-section{page:cover;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;page-break-before:always!important}.back-cover-section img,.back-cover-image{width:100%!important;height:100%!important;object-fit:cover!important}.video-player-export{display:none!important}.video-print-placeholder-export{display:block!important}.video-container .video-iframe{display:none!important}.video-container .video-print-placeholder{display:flex!important;break-inside:avoid;page-break-inside:avoid!important}h1,h2,h3,h4,h5,h6{page-break-after:avoid!important;break-after:avoid!important}.quiz-card,.video-container,.img-figure,blockquote,figure{page-break-inside:avoid!important;break-inside:avoid!important}a{color:#000!important;text-decoration:none!important}}${consolidatedCss}${getWatermarkCss(theme)}${getBrandLogoCss(theme)}${getContentBackgroundCss(theme)}${getNotesCss()}`;
 };
 
 
@@ -466,7 +916,7 @@ const getOptimizedCss = (theme: Theme): string => {
 // ============================================================================
 
 const getFloatingNavHtml = (projects: Project[]) => `
-    <div id="floating-nav-container" class="fixed bottom-5 right-5 z-50 no-print">
+    <div id="floating-nav-container" class="fixed bottom-5 right-5 z-[1000] no-print">
         <div id="floating-nav-menu" class="hidden absolute bottom-16 right-0 bg-card border rounded-lg shadow-lg p-2 w-64">
              <p class="font-semibold text-sm px-2 py-1">Módulos</p>
              <div class="px-1 pb-1">
@@ -489,7 +939,7 @@ const getFloatingNavHtml = (projects: Project[]) => `
 export const generatePrintHtml = (data: HandbookData): string => {
     const { theme, title } = data;
 
-    const globalCss = getOptimizedCss(theme);
+    const globalCss = getOptimizedCss(theme) + getBrandLogoCss(theme) + getContentBackgroundCss(theme);
     const interactiveScript = minifyJs(getInteractiveScript(theme));
 
     const coverHtml = theme.cover ? `
@@ -510,7 +960,7 @@ export const generatePrintHtml = (data: HandbookData): string => {
         </section>
     ` : '';
 
-    const interactiveContentHtml = renderProjectsToHtml(data.projects);
+    const interactiveContentHtml = renderProjectsToHtml(data.projects, theme);
     const floatingNavHtml = getFloatingNavHtml(data.projects);
 
     return removeRedundantAttributes(aggressiveMinifyHtml(`
@@ -595,7 +1045,7 @@ export const generatePrintHtml = (data: HandbookData): string => {
             </script>
             <script id="handbook-data" type="application/json">${JSON.stringify(data)}</script>
         </head>
-        <body class="bg-secondary/40 text-foreground font-sans antialiased">
+<body class="bg-secondary/40 text-foreground font-sans antialiased">
              <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
                 <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
                     <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
@@ -605,12 +1055,16 @@ export const generatePrintHtml = (data: HandbookData): string => {
              </div>
     
              <div id="handbook-root" class="max-w-4xl mx-auto bg-card shadow-xl min-h-screen">
+                ${getWatermarkHtml(theme)}
+                ${getBrandLogoHtml(theme)}
+                ${getContentBackgroundHtml(theme)}
                 ${coverHtml}
                 ${interactiveContentHtml}
                 ${backCoverHtml}
              </div>
     
              ${floatingNavHtml}
+             ${getNotesHtml()}
              <div class="accessibility-toolbar fixed top-5 right-5 z-50 flex gap-2 no-print">
                  <button class="bg-primary text-primary-foreground p-2 rounded-full shadow-lg" data-action="print" title="Imprimir">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2-2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
@@ -694,7 +1148,7 @@ export const handleExportZip = async ({
             </section>
         ` : '';
 
-        const interactiveContentHtml = renderProjectsToHtml(handbookData.projects);
+        const interactiveContentHtml = renderProjectsToHtml(handbookData.projects, handbookData.theme);
         const floatingNavHtml = getFloatingNavHtml(handbookData.projects);
 
         const interactiveScript = minifyJs(getInteractiveScript(handbookData.theme));
@@ -710,7 +1164,12 @@ export const handleExportZip = async ({
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                 <link href="${getGoogleFontsUrl(handbookTheme)}" rel="stylesheet">
                 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-                <style>${getOptimizedCss(handbookTheme)}</style>
+                <style>
+                    ${getOptimizedCss(handbookTheme)}
+                    ${getWatermarkCss(handbookTheme)}
+                    ${getBrandLogoCss(handbookTheme)}
+                    ${getContentBackgroundCss(handbookTheme)}
+                </style>
                 <script>
                     tailwind.config = {
                       theme: { 
@@ -780,8 +1239,8 @@ export const handleExportZip = async ({
                     }
                 </script>
                 <script id="handbook-data" type="application/json">${JSON.stringify(handbookData)}</script>
-            </head>
-            <body class="bg-secondary/40 text-foreground font-sans antialiased">
+</head>
+<body class="bg-secondary/40 text-foreground font-sans antialiased">
                  <div id="printing-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:9999;">
                     <div style="background:white; padding:20px; border-radius:12px; font-family:sans-serif; text-align:center;">
                         <div class="loader" style="margin:auto; width:24px; height:24px; border:3px solid #ccc; border-top-color:#000; border-radius:50%; animation: spin 1s linear infinite;"></div>
@@ -802,14 +1261,18 @@ export const handleExportZip = async ({
                         </div>
                     </div>
                 </header>
-                 <main id="printable-content" class="max-w-4xl mx-auto main-content">
+                ${getBrandLogoHtml(handbookData.theme)}
+                ${getContentBackgroundHtml(handbookData.theme)}
+                <main id="printable-content" class="max-w-4xl mx-auto main-content">
                     ${coverHtml}
                     <div id="handbook-root" class="bg-card rounded-xl shadow-lg print-content">
-                        ${interactiveContentHtml}
+                         ${getWatermarkHtml(handbookData.theme)}
+                         ${interactiveContentHtml}
                     </div>
                     ${backCoverHtml}
                 </main>
                 ${floatingNavHtml}
+                ${getNotesHtml()}
                 <script>${interactiveScript}</script>
             </body>
             </html>`));

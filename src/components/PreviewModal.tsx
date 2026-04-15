@@ -24,6 +24,7 @@ interface PreviewModalProps {
 export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
   const { handbookTitle, handbookDescription, handbookId, handbookUpdatedAt, handbookTheme, projects, isInitialized } = useProjectStore();
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
   const { toast } = useToast();
 
   const onExportClick = async () => {
@@ -37,6 +38,10 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
       setIsExporting,
       toast
     });
+  }
+
+  const onDownloadPDFClick = () => {
+    setIsGeneratingPDF(true);
   }
 
   const handbookData: HandbookData | null = isInitialized ? {
@@ -56,7 +61,15 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
         <DialogHeader className="p-4 border-b flex-row flex justify-between items-center">
           <DialogTitle className="text-xl">Pré-visualização Interativa</DialogTitle>
           <div className="flex gap-2">
-            <Button onClick={onExportClick} disabled={isExporting}>
+            <Button variant="outline" onClick={onDownloadPDFClick} disabled={isGeneratingPDF || isExporting}>
+              {isGeneratingPDF ? (
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {isGeneratingPDF ? 'Gerando PDF...' : 'Download PDF'}
+            </Button>
+            <Button onClick={onExportClick} disabled={isExporting || isGeneratingPDF}>
               {isExporting ? (
                 <Loader className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -70,7 +83,11 @@ export function PreviewModal({ isOpen, onOpenChange }: PreviewModalProps) {
           {!isInitialized ? (
             <LoadingModal isOpen={true} text="Carregando visualização..." />
           ) : (
-            <PreviewContent handbookData={handbookData} />
+            <PreviewContent 
+              handbookData={handbookData} 
+              isGeneratingPDF={isGeneratingPDF}
+              setIsGeneratingPDF={setIsGeneratingPDF}
+            />
           )}
         </div>
       </DialogContent>
