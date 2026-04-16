@@ -7,6 +7,7 @@ import Header from './Header';
 import LeftSidebar from './LeftSidebar';
 import MainContent from './MainContent';
 import RightSidebar from './RightSidebar';
+import EditorNavigation from './EditorNavigation';
 import type { Theme } from '@/lib/types';
 
 const applyThemeToDom = (theme: Theme) => {
@@ -48,8 +49,9 @@ export function EditorLayout() {
       <Header />
       <div className="flex flex-1 border-t overflow-hidden">
         <LeftSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden relative">
           <MainContent />
+          <EditorNavigation />
         </main>
         <RightSidebar />
       </div>

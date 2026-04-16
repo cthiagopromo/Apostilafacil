@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { temporal } from 'zundo';
 import type { Project, Block, BlockType, BlockContent, QuizOption, LayoutSettings, HandbookData, Theme } from './types';
 import { initialHandbookData } from './initial-data';
 import { produce } from 'immer';
@@ -9,9 +10,6 @@ import localforage from 'localforage';
 const STORE_KEY = 'apostila-facil-data';
 
 const getUniqueId = (prefix: 'proj' | 'block' | 'opt' | 'handbook') => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
   return `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
@@ -55,6 +53,7 @@ type Actions = {
   updateQuizOption: (blockId: string, optionId: string, updates: Partial<QuizOption>) => void;
   deleteQuizOption: (blockId: string, optionId: string) => void;
   resetQuiz: (blockId: string) => void;
+  duplicateProject: (projectId: string) => void;
 };
 
 const performSave = async (dataToSave: HandbookData) => {
@@ -63,16 +62,21 @@ const performSave = async (dataToSave: HandbookData) => {
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await localforage.setItem(STORE_KEY, cleanData);
 
-        fetch('/api/saveApostila', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                apostila_id: cleanData.id,
-                data: cleanData
-            })
-        }).catch(apiError => {
+        try {
+          const response = await fetch('/api/saveApostila', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  apostila_id: cleanData.id,
+                  data: cleanData
+              })
+          });
+          if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (apiError) {
             console.warn('[Store] Falha ao salvar na API, mas os dados foram salvos localmente:', apiError);
-        });
+        }
     } catch (error) {
         console.error('[Store] Falha crítica ao salvar os dados:', error);
         throw error;
@@ -80,7 +84,8 @@ const performSave = async (dataToSave: HandbookData) => {
 };
 
 const useProjectStore = create<State & Actions>()(
-  immer((set, get) => ({
+  temporal(
+    immer((set, get) => ({
     handbookId: '',
     handbookTitle: '',
     handbookDescription: '',
@@ -146,6 +151,17 @@ const useProjectStore = create<State & Actions>()(
           if (!draft.theme) draft.theme = { colorPrimary: '235 81% 30%', fontHeading: '"Roboto Slab", serif', fontBody: '"Inter", sans-serif' };
           if (!draft.theme.fontHeading) draft.theme.fontHeading = '"Roboto Slab", serif';
           if (!draft.theme.fontBody) draft.theme.fontBody = '"Inter", sans-serif';
+if (!draft.theme.watermark) {
+                draft.theme.watermark = {
+                    enabled: false,
+                    text: 'CONFIDENCIAL',
+                    opacity: 0.1,
+                    fontSize: 60,
+                    color: '#000000',
+                    rotate: -45,
+                    style: 'sidebar',
+                };
+            }
           draft.projects.forEach(p => {
               if (!p.layoutSettings) {
                   p.layoutSettings = { containerWidth: 'large', sectionSpacing: 'standard', navigationType: 'sidebar' };
@@ -362,16 +378,15 @@ const useProjectStore = create<State & Actions>()(
       })
     },
 
-    updateLayoutSetting: (projectId, setting, value) => {
+    updateLayoutSetting: (<K extends keyof LayoutSettings>(projectId: string, setting: K, value: LayoutSettings[K]) => {
         set(state => {
             const project = state.projects.find(p => p.id === projectId);
             if (project) {
-                // @ts-ignore
                 project.layoutSettings[setting] = value;
                 state.isDirty = true;
             }
         });
-    },
+    }) as unknown as (projectId: string, setting: keyof LayoutSettings, value: string) => void,
 
     addBlock: (projectId, type) => {
         let content: BlockContent = {};
@@ -573,24 +588,75 @@ const useProjectStore = create<State & Actions>()(
                 block.content.userAnswerId = null;
             }
         })
+    },
+    
+    duplicateProject: (projectId: string) => {
+        set(state => {
+            const projectIndex = state.projects.findIndex(p => p.id === projectId);
+            if (projectIndex === -1) return;
+
+            const originalProject = state.projects[projectIndex];
+            const newProject = produce(originalProject, draft => {
+                draft.id = getUniqueId('proj');
+                draft.title = `${draft.title} (cópia)`;
+                draft.createdAt = new Date().toISOString();
+                draft.updatedAt = new Date().toISOString();
+
+                if (draft.blocks) {
+                    draft.blocks = draft.blocks.map(block => {
+                        const newBlock = { ...block, id: getUniqueId('block') };
+                        if (newBlock.type === 'quiz' && newBlock.content.options) {
+                            newBlock.content = {
+                                ...newBlock.content,
+                                userAnswerId: null,
+                                options: newBlock.content.options.map(opt => ({
+                                    ...opt,
+                                    id: getUniqueId('opt')
+                                }))
+                            };
+                        }
+                        return newBlock;
+                    });
+                }
+            });
+
+            state.projects.splice(projectIndex + 1, 0, newProject);
+            state.activeProjectId = newProject.id;
+            state.isDirty = true;
+        });
+        get().saveData();
     }
 
-  }))
+  })),
+    {
+      limit: 50,
+      partialize: (state) => {
+        const { isDirty, isInitialized, activeProjectId, activeBlockId, ...rest } = state;
+        return rest;
+      },
+    }
+  )
 );
 
-if (typeof window !== 'undefined') {
-  const SCRIPT_TAG_ID = 'zustand-init-script';
-  if (!document.getElementById(SCRIPT_TAG_ID)) {
-    let saveTimeout: NodeJS.Timeout;
-    
-    useProjectStore.subscribe((state) => {
-      if (state.isDirty && state.isInitialized) {
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-          useProjectStore.getState().saveData();
-        }, 2000); 
-      }
-    });
+export const useTemporalProjectStore = useProjectStore.temporal;
+
+  if (typeof window !== 'undefined') {
+    const SCRIPT_TAG_ID = 'zustand-init-script';
+    if (!document.getElementById(SCRIPT_TAG_ID)) {
+      let saveTimeout: ReturnType<typeof setTimeout>;
+
+      useProjectStore.subscribe((state) => {
+        if (state.isDirty && state.isInitialized) {
+          if (saveTimeout) clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(async () => {
+            try {
+              await useProjectStore.getState().saveData();
+            } catch (error) {
+              console.error('[Auto-save] Falha ao salvar automaticamente:', error);
+            }
+          }, 2000);
+        }
+      });
 
     window.addEventListener('beforeunload', () => {
         if (useProjectStore.getState().isDirty) {

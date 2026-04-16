@@ -10,17 +10,12 @@ import { AddBlockModal } from './AddBlockModal';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { useRef } from 'react';
-import { PageScrollButtons } from './PageScrollButtons';
-import { WatermarkOverlay } from './WatermarkOverlay';
-import { BrandLogoOverlay } from './BrandLogoOverlay';
-import { ContentBackgroundOverlay } from './ContentBackgroundOverlay';
-
+import EditorNavigation from './EditorNavigation';
+import WatermarkOverlay from './WatermarkOverlay';
 
 export default function MainContent() {
-  const { getActiveProject, reorderBlocks, handbookTheme } = useProjectStore();
+  const { getActiveProject, reorderBlocks } = useProjectStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const activeProject = getActiveProject();
 
@@ -69,13 +64,12 @@ export default function MainContent() {
           <h2 className="text-lg font-semibold text-foreground">{activeProject.title}</h2>
         )}
       </div>
-      <div className='flex-1 flex flex-col min-w-0 bg-transparent relative overflow-hidden'>
-      <ContentBackgroundOverlay />
-      <WatermarkOverlay />
-      <BrandLogoOverlay />
-      <ScrollArea ref={scrollAreaRef} className={cn("flex-1", (handbookTheme?.brandLogo?.enabled || handbookTheme?.contentBackground?.enabled) && "bg-transparent")} id="main-scroll-area">
-          <div className={cn("mx-auto p-6 sm:p-8 lg:p-12", getContainerWidthClass())}>
-            {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
+      <div className="relative flex-1 overflow-hidden">
+        <WatermarkOverlay />
+        <ScrollArea className="h-full bg-muted" data-editor-scroll="true">
+          <div className={cn("relative mx-auto p-6 sm:p-8 lg:p-12 min-h-full", getContainerWidthClass())}>
+            <div className="relative z-10">
+              {activeProject && activeProject.blocks && activeProject.blocks.length > 0 ? (
               <DndContext
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
@@ -106,10 +100,10 @@ export default function MainContent() {
                 <PlusCircle className="mr-2" />
                 Adicionar Bloco
               </Button>
+              </div>
             </div>
           </div>
         </ScrollArea>
-        <PageScrollButtons scrollAreaRef={scrollAreaRef} />
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ import LayoutSettings from './LayoutSettings';
 import HandbookSettings from './HandbookSettings';
 import { ScrollArea } from './ui/scroll-area';
 import TypographySettings from './TypographySettings';
+import WatermarkSettings from './WatermarkSettings';
+import { ShieldCheck } from 'lucide-react';
 
 export default function RightSidebar() {
   return (
@@ -35,6 +37,17 @@ export default function RightSidebar() {
               </AccordionTrigger>
               <AccordionContent>
                 <HandbookSettings />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-watermark">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Marca D'água</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <WatermarkSettings />
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-modulo">

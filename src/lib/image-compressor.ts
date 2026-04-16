@@ -268,16 +268,6 @@ export const processHandbookImages = async (
     });
   }
 
-  // Processar background de conteúdo
-  if (processed.theme.contentBackground?.enabled && processed.theme.contentBackground.imageUrl && isImageBase64(processed.theme.contentBackground.imageUrl)) {
-    processed.theme.contentBackground.imageUrl = await compressImage(processed.theme.contentBackground.imageUrl, {
-      maxWidth: 1200,
-      maxHeight: 1200,
-      quality: 0.80,
-      format: 'avif',
-    });
-  }
-
   // Processar imagens dos blocos
   for (const project of processed.projects) {
     for (const block of project.blocks) {

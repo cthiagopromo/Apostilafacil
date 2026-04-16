@@ -13,6 +13,15 @@ export const initialHandbookData: HandbookData = {
     colorPrimary: '231 84% 30%',
     fontHeading: '"Roboto Slab", serif',
     fontBody: '"Inter", sans-serif',
+    watermark: {
+      enabled: false,
+      text: 'CONFIDENCIAL',
+      opacity: 0.1,
+      fontSize: 60,
+      color: '#000000',
+      rotate: -45,
+      style: 'sidebar',
+    },
   },
   projects: [
     {

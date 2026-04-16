@@ -3,181 +3,130 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import DOMPurify from 'dompurify';
-
-interface Block {
-    id: string;
-    type: string;
-    content: any;
-}
-
-interface Project {
-    id: string;
-    title: string;
-    description: string;
-    blocks: Block[];
-}
-
-interface Theme {
-    cover?: string;
-    backCover?: string;
-    colorPrimary?: string;
-    fontHeading?: string;
-    fontBody?: string;
-}
-
-interface HandbookData {
-    id: string;
-    title: string;
-    description: string;
-    projects: Project[];
-    theme: Theme;
-}
+import WatermarkPrint from '@/components/WatermarkPrint';
+import type { Block, BlockContent, Project, HandbookData as HandbookDataType, QuizOption } from '@/lib/types';
 
 export default function PrintPage() {
-    const params = useParams();
-    const apostilaId = params.apostila_id as string;
-    const [data, setData] = useState<HandbookData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const params = useParams();
+  const apostilaId = params.apostila_id as string;
+  const [data, setData] = useState<HandbookDataType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch(`/api/getApostila/${apostilaId}`);
-                if (!response.ok) {
-                    throw new Error('Falha ao carregar apostila');
-                }
-                const result = await response.json();
-                setData(result);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Erro desconhecido');
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+      const fetchData = async () => {
+          try {
+              const response = await fetch(`/api/getApostila/${apostilaId}`);
+              if (!response.ok) {
+                  throw new Error('Falha ao carregar apostila');
+              }
+              const result = await response.json();
+              setData(result);
+          } catch (err) {
+              setError(err instanceof Error ? err.message : 'Erro desconhecido');
+          } finally {
+              setLoading(false);
+          }
+      };
 
-        if (apostilaId) {
-            fetchData();
-        }
-    }, [apostilaId]);
+      if (apostilaId) {
+          fetchData();
+      }
+  }, [apostilaId]);
 
-    useEffect(() => {
-        if (data && !loading) {
-            // Auto-print after load
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        }
-    }, [data, loading]);
+  useEffect(() => {
+      if (data && !loading) {
+          setTimeout(() => {
+              window.print();
+          }, 500);
+      }
+  }, [data, loading]);
 
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
-                <p>Carregando apostila para impressão...</p>
-            </div>
-        );
-    }
+  if (loading) {
+      return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
+              <p>Carregando apostila para impressão...</p>
+          </div>
+      );
+  }
 
-    if (error || !data) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
-                <p>Erro: {error || 'Dados não encontrados'}</p>
-            </div>
-        );
-    }
+  if (error || !data) {
+      return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
+              <p>Erro: {error || 'Dados não encontrados'}</p>
+          </div>
+      );
+  }
 
-    const renderBlock = (block: Block) => {
-        switch (block.type) {
-            case 'text':
-                return (
-                    <div
-                        className="prose-content"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.content.text || '') }}
-                    />
-                );
-            case 'image':
-                return (
-                    <figure style={{ margin: '1.5rem 0', textAlign: 'center' }}>
-                        <img
-                            src={block.content.url}
-                            alt={block.content.alt || ''}
-                            style={{ maxWidth: block.content.width ? `${block.content.width}%` : '100%', height: 'auto' }}
-                        />
-                        {block.content.caption && (
-                            <figcaption style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
-                                {block.content.caption}
-                            </figcaption>
-                        )}
-                    </figure>
-                );
-            case 'quote':
-                return (
-                    <blockquote style={{
-                        borderLeft: '4px solid #3b82f6',
-                        paddingLeft: '1rem',
-                        margin: '1.5rem 0',
-                        fontStyle: 'italic',
-                        color: '#4b5563'
-                    }}>
-                        <p>{block.content.quote}</p>
-                        {block.content.author && (
-                            <footer style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>— {block.content.author}</footer>
-                        )}
-                    </blockquote>
-                );
-            case 'notice':
-                const colors: Record<string, { bg: string; border: string }> = {
-                    info: { bg: '#eff6ff', border: '#3b82f6' },
-                    warning: { bg: '#fef3c7', border: '#f59e0b' },
-                    success: { bg: '#d1fae5', border: '#10b981' },
-                    error: { bg: '#fee2e2', border: '#ef4444' },
-                };
-                const color = colors[block.content.type] || colors.info;
-                return (
-                    <div style={{
-                        backgroundColor: color.bg,
-                        borderLeft: `4px solid ${color.border}`,
-                        padding: '1rem',
-                        margin: '1.5rem 0',
-                        borderRadius: '0.25rem'
-                    }}>
-                        {block.content.title && <strong style={{ display: 'block', marginBottom: '0.5rem' }}>{block.content.title}</strong>}
-                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.content.content || '') }} />
-                    </div>
-                );
-            case 'quiz':
-                return (
-                    <div style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '0.5rem',
-                        padding: '1.5rem',
-                        margin: '1.5rem 0',
-                        backgroundColor: '#f9fafb'
-                    }}>
-                        <p style={{ fontWeight: 'bold', marginBottom: '1rem' }}>{block.content.question}</p>
-                        <ul style={{ listStyle: 'none', padding: 0 }}>
-                            {block.content.options?.map((opt: any, idx: number) => (
-                                <li key={idx} style={{
-                                    padding: '0.5rem 1rem',
-                                    marginBottom: '0.5rem',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '0.25rem',
-                                    backgroundColor: 'white'
-                                }}>
-                                    {String.fromCharCode(65 + idx)}) {opt.text}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
+  const renderBlock = (block: Block) => {
+      switch (block.type) {
+          case 'text':
+              return (
+                  <div
+                      className="prose-content"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.content.text || '') }}
+                  />
+              );
+          case 'image':
+              return (
+                  <figure style={{ margin: '1.5rem 0', textAlign: 'center' }}>
+                      <img
+                          src={block.content.url}
+                          alt={block.content.alt || ''}
+                          style={{ maxWidth: block.content.width ? `${block.content.width}%` : '100%', height: 'auto' }}
+                      />
+                      {block.content.caption && (
+                          <figcaption style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
+                              {block.content.caption}
+                          </figcaption>
+                      )}
+                  </figure>
+              );
+          case 'quote':
+              return (
+                  <blockquote style={{
+                      borderLeft: '4px solid #3b82f6',
+                      paddingLeft: '1rem',
+                      margin: '1.5rem 0',
+                      fontStyle: 'italic',
+                      color: '#4b5563'
+                  }}>
+                      <p>{block.content.text}</p>
+                  </blockquote>
+              );
+          case 'quiz':
+              return (
+                  <div style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.5rem',
+                      padding: '1.5rem',
+                      margin: '1.5rem 0',
+                      backgroundColor: '#f9fafb'
+                  }}>
+                      <p style={{ fontWeight: 'bold', marginBottom: '1rem' }}>{block.content.question}</p>
+                      <ul style={{ listStyle: 'none', padding: 0 }}>
+                          {block.content.options?.map((opt: QuizOption, idx: number) => (
+                              <li key={opt.id} style={{
+                                  padding: '0.5rem 1rem',
+                                  marginBottom: '0.5rem',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '0.25rem',
+                                  backgroundColor: 'white'
+                              }}>
+                                  {String.fromCharCode(65 + idx)}) {opt.text}
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+              );
+          default:
+              return null;
+      }
+  };
 
-    return (
-        <>
-            <style jsx global>{`
+  return (
+      <>
+          <style jsx global>{`
         @page {
           size: A4;
           margin: 0;
@@ -283,6 +232,9 @@ export default function PrintPage() {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
+          .content-page {
+            position: relative;
+          }
         }
         
         @media screen {
@@ -299,39 +251,40 @@ export default function PrintPage() {
         }
       `}</style>
 
-            {/* Capa */}
-            {data.theme.cover && (
-                <div className="cover-page">
-                    <img src={data.theme.cover} alt="Capa" />
-                </div>
-            )}
+          {/* Capa */}
+          {data.theme.cover && (
+              <div className="cover-page">
+                  <img src={data.theme.cover} alt="Capa" />
+              </div>
+          )}
 
-            {/* Módulos */}
-            {data.projects.map((project) => (
-                <div key={project.id} className="content-page">
-                    <header className="module-header">
-                        <h2 className="module-title">{project.title}</h2>
-                        {project.description && (
-                            <p className="module-description">{project.description}</p>
-                        )}
-                    </header>
+          {/* Módulos */}
+          {data.projects.map((project) => (
+              <div key={project.id} className="content-page">
+                  {data.theme.watermark?.enabled && <WatermarkPrint watermark={data.theme.watermark} />}
+                  <header className="module-header">
+                      <h2 className="module-title">{project.title}</h2>
+                      {project.description && (
+                          <p className="module-description">{project.description}</p>
+                      )}
+                  </header>
 
-                    <div className="module-content">
-                        {project.blocks.map((block) => (
-                            <div key={block.id} className="block-wrapper">
-                                {renderBlock(block)}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ))}
+                  <div className="module-content">
+                      {project.blocks.map((block) => (
+                          <div key={block.id} className="block-wrapper">
+                              {renderBlock(block)}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          ))}
 
-            {/* Contracapa */}
-            {data.theme.backCover && (
-                <div className="back-cover-page">
-                    <img src={data.theme.backCover} alt="Contracapa" />
-                </div>
-            )}
-        </>
-    );
+          {/* Contracapa */}
+          {data.theme.backCover && (
+              <div className="back-cover-page">
+                  <img src={data.theme.backCover} alt="Contracapa" />
+              </div>
+          )}
+      </>
+  );
 }

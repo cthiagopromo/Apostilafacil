@@ -48,26 +48,16 @@ export interface Block {
   content: BlockContent;
 }
 
+export type WatermarkStyle = 'classic' | 'center' | 'sidebar' | 'ghost';
+
 export interface WatermarkSettings {
   enabled: boolean;
   text: string;
   opacity: number;
+  fontSize: number;
   color: string;
-  pattern: 'single' | 'diagonal';
-  visibility: 'always' | 'screen' | 'print';
-}
-
-export interface BrandLogoSettings {
-  enabled: boolean;
-  imageUrl?: string; // base64
-  opacity: number;
-  visibility: 'always' | 'screen' | 'print';
-}
-
-export interface ContentBackgroundSettings {
-  enabled: boolean;
-  imageUrl?: string; // base64
-  opacity: number;
+  rotate: number; // In degrees
+  style: WatermarkStyle;
 }
 
 export interface Theme {
@@ -77,8 +67,6 @@ export interface Theme {
   fontHeading: string;
   fontBody: string;
   watermark?: WatermarkSettings;
-  brandLogo?: BrandLogoSettings;
-  contentBackground?: ContentBackgroundSettings;
 }
 
 export interface LayoutSettings {

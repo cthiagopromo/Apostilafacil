@@ -4,27 +4,21 @@
 import React, { useEffect, useState } from 'react';
 import BlockRenderer from '@/components/BlockRenderer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Loader } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import PreviewHeader from '@/components/PreviewHeader';
 import { LoadingModal } from '@/components/LoadingModal';
 import type { HandbookData, Project } from '@/lib/types';
 import FloatingNav from '@/components/FloatingNav';
 import { cn } from '@/lib/utils';
 import { Toaster } from './ui/toaster';
-import { WatermarkOverlay } from './WatermarkOverlay';
-import { BrandLogoOverlay } from './BrandLogoOverlay';
-import { ContentBackgroundOverlay } from './ContentBackgroundOverlay';
 
 import { generatePrintHtml } from '@/lib/export';
-import { exportToPDF } from '@/lib/pdf-service';
 
 interface PreviewContentProps {
     handbookData: HandbookData | null;
-    isGeneratingPDF?: boolean;
-    setIsGeneratingPDF?: (val: boolean) => void;
 }
 
-export default function PreviewContent({ handbookData, isGeneratingPDF = false, setIsGeneratingPDF }: PreviewContentProps) {
+export default function PreviewContent({ handbookData }: PreviewContentProps) {
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
@@ -54,25 +48,6 @@ export default function PreviewContent({ handbookData, isGeneratingPDF = false, 
             handlePrint();
         }
     }, [isPreparingPrint, handbookData]);
-
-    useEffect(() => {
-        if (isGeneratingPDF && handbookData) {
-            const handlePDFGeneration = async () => {
-                // Aguarda um pouco para garantir que todos os módulos (agora não ocultos) renderizaram
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                try {
-                    const filename = `${(handbookData.title || 'apostila').toLowerCase().replace(/\s+/g, '-')}.pdf`;
-                    await exportToPDF('printable-content', filename);
-                } catch (error) {
-                    console.error('Falha ao gerar PDF:', error);
-                } finally {
-                    if (setIsGeneratingPDF) setIsGeneratingPDF(false);
-                }
-            };
-            handlePDFGeneration();
-        }
-    }, [isGeneratingPDF, handbookData, setIsGeneratingPDF]);
 
     useEffect(() => {
         if (handbookData?.theme) {
@@ -128,12 +103,10 @@ export default function PreviewContent({ handbookData, isGeneratingPDF = false, 
         }
     };
 
-    const isShowingAllModules = isPreparingPrint || isGeneratingPDF;
-
     return (
         <>
             <Toaster />
-            <LoadingModal isOpen={isPreparingPrint || isGeneratingPDF} text={isGeneratingPDF ? "Gerando PDF de alta fidelidade..." : "Preparando para impressão..."} />
+            <LoadingModal isOpen={isPreparingPrint} text="Preparando para impressão..." />
             <div id="handbook-root-container" className="h-full flex flex-col bg-secondary/40">
                 <PreviewHeader setIsExporting={setIsPreparingPrint} handbookTitle={handbookData.title} handbookId={handbookData.id} />
                 <div id="preview-scroll-area" className="flex-1 overflow-y-auto">
@@ -145,7 +118,7 @@ export default function PreviewContent({ handbookData, isGeneratingPDF = false, 
                         />
 
                         {handbookData.theme.cover && (
-                            <section className={cn("cover-section", { 'module-section': isShowingAllModules })}>
+                            <section className={cn("cover-section", { 'module-section': isPreparingPrint })}>
                                 <img src={handbookData.theme.cover} alt="Capa da Apostila" className="cover-image" />
                                 <div className="cover-content">
                                     <button id="start-handbook-btn" className="no-print inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8">
@@ -157,33 +130,12 @@ export default function PreviewContent({ handbookData, isGeneratingPDF = false, 
                         )}
 
                         <main className={cn("p-4 sm:p-8 md:p-12 relative flex-grow print:p-0 print:m-0")}>
-                            <div id="handbook-root" className={cn(
-                                "bg-card rounded-xl shadow-lg mx-auto print:shadow-none print:rounded-none print:bg-white relative", 
-                                (handbookData.theme.brandLogo?.enabled || handbookData.theme.contentBackground?.enabled) && "!bg-transparent",
-                                getContainerWidthClass(currentProject), 
-                                { 'p-8 sm:p-12 md:p-16': !isShowingAllModules }, 
-                                { 'mt-8': !!handbookData.theme.cover && !isShowingAllModules }
-                            )}>
-                                {!isGeneratingPDF && (
-                                    <>
-                                        <ContentBackgroundOverlay />
-                                        <WatermarkOverlay />
-                                        <BrandLogoOverlay />
-                                    </>
-                                )}
+                            <div id="handbook-root" className={cn("bg-card rounded-xl shadow-lg mx-auto print:shadow-none print:rounded-none print:bg-white", getContainerWidthClass(currentProject), { 'p-8 sm:p-12 md:p-16': !isPreparingPrint }, { 'mt-8': !!handbookData.theme.cover && !isPreparingPrint })}>
                                 {handbookData.projects.map((project, index) => (
                                     <section
                                         key={project.id}
-                                        className={cn('module-section relative html2pdf__page-break', { 'hidden': !isShowingAllModules && index !== currentModuleIndex })}
-                                        style={isGeneratingPDF ? { minHeight: '297mm', position: 'relative' } : {}}
+                                        className={cn('module-section', { 'hidden': !isPreparingPrint && index !== currentModuleIndex })}
                                     >
-                                        {isGeneratingPDF && (
-                                            <>
-                                                <ContentBackgroundOverlay />
-                                                <WatermarkOverlay />
-                                                <BrandLogoOverlay />
-                                            </>
-                                        )}
                                         <header className='text-center mb-12'>
                                             <h2 className="text-3xl font-bold mb-2 pb-2">{project.title}</h2>
                                             <p className="text-muted-foreground">{project.description}</p>

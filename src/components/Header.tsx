@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PreviewModal } from './PreviewModal';
 import { LoadingModal } from './LoadingModal';
 import { ThemeToggle } from './ThemeToggle';
+import { UndoRedoControls } from './UndoRedoControls';
 
 
 export default function Header() {
@@ -70,6 +71,8 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-2">
+          <UndoRedoControls />
+          <div className="w-px h-8 bg-border mx-1"></div>
           <ThemeToggle />
           <div className="w-px h-8 bg-border mx-2"></div>
           <Button onClick={handleSave} disabled={isSaving || !isDirty} aria-label="Salvar alterações">

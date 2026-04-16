@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import useProjectStore from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, File, MoreHorizontal, Trash2, GripVertical, ListOrdered } from 'lucide-react';
+import { PlusCircle, Search, File, MoreHorizontal, Trash2, GripVertical, ListOrdered, Copy } from 'lucide-react';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { useRouter } from 'next/navigation';
@@ -36,7 +36,7 @@ import { ReorderModulesModal } from './ReorderModulesModal';
 
 function SortableModuleItem({ project }: { project: Project }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: project.id });
-    const { activeProjectId, setActiveProjectId, deleteProject, projects, handbookId } = useProjectStore();
+    const { activeProjectId, setActiveProjectId, deleteProject, duplicateProject, projects, handbookId } = useProjectStore();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -71,6 +71,20 @@ function SortableModuleItem({ project }: { project: Project }) {
         }
     }
     
+    const handleDuplicateProject = (e: React.MouseEvent, projectId: string) => {
+        e.stopPropagation();
+        duplicateProject(projectId);
+        const newState = useProjectStore.getState();
+        if (newState.activeProjectId && handbookId) {
+            router.push(`/editor/${handbookId}/${newState.activeProjectId}`);
+        }
+        
+        toast({
+            title: "Módulo duplicado",
+            description: "O novo módulo foi criado com sucesso.",
+        });
+    }
+
     return (
         <div
             ref={setNodeRef}
@@ -111,6 +125,10 @@ function SortableModuleItem({ project }: { project: Project }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={(e) => handleDuplicateProject(e, project.id)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicar Módulo
+                    </DropdownMenuItem>
                     <AlertDialogTrigger asChild>
                         <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
                           <Trash2 className="mr-2 h-4 w-4" />
