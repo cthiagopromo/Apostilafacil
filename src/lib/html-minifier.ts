@@ -1,16 +1,8 @@
 export const aggressiveMinifyHtml = (html: string): string => {
   return html
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/>\s+</g, '><')
     .replace(/\s{2,}/g, ' ')
-    .replace(/>\s+/g, '>')
-    .replace(/\s+</g, '<')
-    .replace(/"\s+"/g, '""')
-    .replace(/:\s+/g, ':')
-    .replace(/;\s+/g, ';')
-    .replace(/\(\s+/g, '(')
-    .replace(/\s+\)/g, ')')
-    .replace(/\s+,\s+/g, ',')
+    .replace(/\s+=\s+"/g, '="')
     .replace(/\n/g, '')
     .replace(/\r/g, '')
     .trim();

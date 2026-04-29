@@ -33,33 +33,39 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     return null;
   }
 
+  // Prevent the editor from losing focus when toolbar buttons are clicked
+  const handleMouseDown = (e: React.MouseEvent, action: () => void) => {
+    e.preventDefault();
+    action();
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-1 rounded-t-md border border-input bg-transparent p-2">
       <Toggle
         size="sm"
         pressed={editor.isActive('bold')}
-        onPressedChange={() => editor.chain().focus().toggleBold().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleBold().run())}
       >
         <Bold className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive('italic')}
-        onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleItalic().run())}
       >
         <Italic className="h-4 w-4" />
       </Toggle>
-       <Toggle
+      <Toggle
         size="sm"
         pressed={editor.isActive('underline')}
-        onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleUnderline().run())}
       >
         <UnderlineIcon className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive('strike')}
-        onPressedChange={() => editor.chain().focus().toggleStrike().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleStrike().run())}
       >
         <Strikethrough className="h-4 w-4" />
       </Toggle>
@@ -67,28 +73,28 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'left' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().setTextAlign('left').run())}
       >
         <AlignLeft className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'center' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().setTextAlign('center').run())}
       >
         <AlignCenter className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'right' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().setTextAlign('right').run())}
       >
         <AlignRight className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'justify' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().setTextAlign('justify').run())}
       >
         <AlignJustify className="h-4 w-4" />
       </Toggle>
@@ -96,27 +102,21 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive('heading', { level: 1 })}
-        onPressedChange={() =>
-          editor.chain().focus().toggleHeading({ level: 1 }).run()
-        }
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleHeading({ level: 1 }).run())}
       >
         <Heading1 className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive('heading', { level: 2 })}
-        onPressedChange={() =>
-          editor.chain().focus().toggleHeading({ level: 2 }).run()
-        }
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
       >
         <Heading2 className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive('heading', { level: 3 })}
-        onPressedChange={() =>
-          editor.chain().focus().toggleHeading({ level: 3 }).run()
-        }
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
       >
         <Heading3 className="h-4 w-4" />
       </Toggle>
@@ -124,29 +124,29 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive('bulletList')}
-        onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleBulletList().run())}
       >
         <List className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive('orderedList')}
-        onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().toggleOrderedList().run())}
       >
         <ListOrdered className="h-4 w-4" />
       </Toggle>
       <div className="w-px h-6 bg-border mx-1"></div>
       <Toggle
         size="sm"
-        onPressedChange={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().chain().focus().undo().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().undo().run())}
       >
         <Undo className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
-        onPressedChange={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().chain().focus().redo().run()}
+        onMouseDown={(e) => handleMouseDown(e, () => editor.chain().focus().redo().run())}
       >
         <Redo className="h-4 w-4" />
       </Toggle>
@@ -157,6 +157,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
 const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
